@@ -9,6 +9,7 @@
 | Skill | 用途 |
 |---|---|
 | [`shift-log`](shift-log/SKILL.md) | 「開工 / 收工」工作階段慣例:開工時讀專案交接文件(HANDOFF.md 等)並驗證裡面的運行狀態是否過期;收工時把工作摘要寫回交接文件的進度日誌。適用於任何專案資料夾,不限定特定專案。 |
+| [`notion-database-design`](notion-database-design/SKILL.md) | 用 Notion 當應用系統資料庫時的規劃與建置流程:單一 Page + 前綴詞的多系統共存架構、主鍵格式設計、權限隔離三道防線、敏感個資加密、API 速率限制的因應、以及建表用的 SQL DDL 速查。 |
 
 ## 怎麼在一台新機器上安裝使用
 
