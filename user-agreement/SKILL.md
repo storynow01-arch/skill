@@ -1,15 +1,61 @@
 ---
 name: user-agreement
-description: 提供使用者服務條款、免責聲明、個人資料隱私權規範與註冊同意書之檢視與維護
+description: 全系統通用服務條款、免責聲明、個人資料隱私權規範與註冊同意書生成與維護技能
 ---
 
-# User Agreement & Terms of Service Skill
+# 通用型服務條款與免責聲明生成器 (Universal Terms of Service Generator Skill)
 
-本 Skill 用於管理「努豆先生線上排課系統」及相關個人開發軟體之服務條款（Terms of Service）、免責聲明（Disclaimer）與隱私權規範。
+本 Skill 用於為任何個人或團隊開發之 Web 應用、Mobile App 或系統軟體，快速生成合法、合規且完善的**「使用者服務條款與免責聲明（Terms of Service & Disclaimer）」**。
 
-## 主要檔案
-- [`USER_AGREEMENT.md`](USER_AGREEMENT.md)：服務條款完整規範內文
+---
 
-## 使用與觸發說明
-1. 當使用者或開發者需要檢閱、更新或引用註冊同意書時，請參閱本目錄之 `USER_AGREEMENT.md`。
-2. 系統註冊頁面（如 `app/signup/page.tsx`）之服務條款請與此規範同步。
+## 🎯 觸發時機與關鍵字
+
+當使用者或開發者在對話中提出以下需求時觸發：
+- 「建立 / 產生服務條款」、「新增免責聲明」
+- 「註冊同意書」、「使用者協議」、「Privacy Policy / Terms of Service」
+- 「幫我的 [系統名稱] 寫一份同意書」
+
+---
+
+## 🛠️ 參數設定與自動填入
+
+執行時請確認或提示以下參數變數（若未提供，預設使用括弧內參考值）：
+
+| 參數變數 | 說明 | 範例 / 預設值 |
+|---|---|---|
+| `{SYSTEM_NAME}` | 系統或產品正式名稱 | 努豆先生線上排課系統 / [系統名稱] |
+| `{DEVELOPER_NAME}` | 開發者、團隊或公司名稱 | 努豆先生 / 開發團隊 |
+| `{EFFECTIVE_YEAR}` | 生效年份 | 2026 |
+| `{SUPPORT_EMAIL}` | 聯絡或客服 Email | storynow01@gmail.com / 客服聯絡管道 |
+| `{GOVERNING_COURT}` | 爭議第一審管轄法院 | 台灣台北地方法院 |
+
+---
+
+## 📋 支援產出的檔案格式
+
+依專案需求，本 Skill 可自動生成以下三種格式：
+
+1. **Markdown 文件 (`USER_AGREEMENT.md`)**：適用於 GitHub 專案根目錄、文檔頁面或靜態說明。
+2. **React / Next.js Modal 彈窗元件 (`TermsModal.tsx`)**：包含強制滾動閱讀、核取同意、按鈕控制等完整前端交互代碼。
+3. **TypeScript / JavaScript 常數檔 (`termsData.ts`)**：結構化常數資料，便於前端模組化引用與動態渲染。
+
+---
+
+## 📄 預設通用條款範本架構 (§1 ~ §9)
+
+1. **§1 服務性質與免費聲明**：無償提供、無 SLA 保證說明。
+2. **§2 服務中斷與停止免責**：伺服器成本、維護或第三方平台故障免責。
+3. **§3 資料儲存與維護免責**：使用者自行維護備份、資料遺失免責提示。
+4. **§4 使用限制**：非商業用途授權、禁止轉售或自動化抓取。
+5. **§5 智慧財產權**：程式碼與介面設計著作權聲明。
+6. **§6 隱私與個人資料**：資料不外洩說明、第三方服務規範。
+7. **§7 擔保免除**：現狀（AS IS）提供、無附帶擔保。
+8. **§8 條款變更**：隨時修改權利與終止使用條件。
+9. **§9 準據法與爭議解決**：中華民國法律與指定管轄法院。
+
+---
+
+## 檔案參照
+- [`USER_AGREEMENT.md`](USER_AGREEMENT.md)：全系統通用服務條款範本
+- [`user-agreement/USER_AGREEMENT.md`](USER_AGREEMENT.md)：模組備份與參考內文
