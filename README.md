@@ -12,10 +12,10 @@
 
 ```text
 .
-├── 📄 USER_AGREEMENT.md             # 系統通用：使用者服務條款與免責聲明全文
-├── 📂 user-agreement/               # 模組：使用者服務條款與授權規範管理
-│   ├── 📄 SKILL.md                  # 條款查詢與發布技能指引
-│   └── 📄 USER_AGREEMENT.md         # 服務條款全文規範
+├── 📄 USER_AGREEMENT.md             # 全系統通用範本：使用者服務條款與免責聲明
+├── 📂 user-agreement/               # 模組：通用服務條款與免責聲明生成器 (Universal Generator)
+│   ├── 📄 SKILL.md                  # 通用條款生成器 Skill 指引與參數規格
+│   └── 📄 USER_AGREEMENT.md         # 服務條款通用範本內文
 ├── 📂 shift-log/                    # 模組：開發工作階段與交接日誌管理
 │   └── 📄 SKILL.md                  # 開工 / 收工日誌自動化技能
 └── 📂 notion-database-design/       # 模組：Notion 架構規劃與系統資料庫設計
@@ -26,8 +26,8 @@
 
 | 分類類別 | 資料夾 / 檔案路徑 | 說明與用途 | 適用場景 / 觸發時機 |
 |---|---|---|---|
-| **系統與規範** | [`USER_AGREEMENT.md`](USER_AGREEMENT.md) | 努豆先生線上排課系統與個人軟體之服務條款、免責聲明與隱私規範 | 使用者註冊同意書查詢、免責與免費聲明參考 |
-| **條款管理模組** | [`user-agreement/`](user-agreement/SKILL.md) | 服務條款 Skill：包含 `SKILL.md` 技能指引與完整同意書檔案 | 檢視、維護或產出註冊同意書與系統聲明時 |
+| **通用條款範本** | [`USER_AGREEMENT.md`](USER_AGREEMENT.md) | 適用於所有個人 / 團隊軟體系統之服務條款、免責聲明與隱私規範通用範本 | 任何新系統需建立註冊同意書或免責宣告時 |
+| **通用條款 Skill** | [`user-agreement/`](user-agreement/SKILL.md) | **通用型服務條款生成器 Skill**：提供 `SKILL.md` 指引、參數化替換與 Markdown / React 彈窗組件輸出規格 | 未來任何系統開發時，觸發「產生服務條款 / 同意書」即自動生成合規文件 |
 | **開發流程模組** | [`shift-log/`](shift-log/SKILL.md) | 開工 / 收工工作階段慣例：開工讀取交接檔，收工自動寫回日誌 | 每日開發階段開始與結束時進行進度記錄與對齊 |
 | **資料庫設計** | [`notion-database-design/`](notion-database-design/SKILL.md) | Notion 系統資料庫規劃與建置流程（含 Page 前綴共存、權限防線與 SQL DDL） | 使用 Notion 作為系統資料庫或規劃資料模型時 |
 
@@ -37,7 +37,7 @@
 
 | Skill | 相關文件 | 用途摘要 |
 |---|---|---|
-| [`user-agreement`](user-agreement/SKILL.md) | [使用者服務條款](USER_AGREEMENT.md) | 檢視與維護系統使用者服務條款、免責聲明與隱私權規範。 |
+| [`user-agreement`](user-agreement/SKILL.md) | [通用服務條款範本](USER_AGREEMENT.md) | **全系統通用服務條款生成器**：未來開發任何新系統（Web/App）時，能自動化填入系統名稱、開發團隊、生效年份與條款規格，一鍵產出合規 Markdown 條款與 React 同意書 Modal 組件。 |
 | [`shift-log`](shift-log/SKILL.md) | [SKILL.md](shift-log/SKILL.md) | 「開工 / 收工」工作階段慣例：開工時讀專案交接文件（HANDOFF.md 等）並驗證狀態；收工時把工作摘要寫回交接文件的進度日誌。適用於任何專案資料夾。 |
 | [`notion-database-design`](notion-database-design/SKILL.md) | [SKILL.md](notion-database-design/SKILL.md) | 用 Notion 當應用系統資料庫時的規劃與建置流程：單一 Page + 前綴詞的多系統共存架構、主鍵格式設計、權限隔離三道防線、敏感個資加密、API 速率限制的因應、以及建表用的 SQL DDL 速查。 |
 
