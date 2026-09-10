@@ -24,6 +24,12 @@
 │   └── 📂 references/
 │       └── 📄 ddl-cookbook.md       # SQL DDL 快速建表語法參考手冊
 │
+├── 📂 vercel-supabase-latency/      # 模組：Vercel + Supabase 效能診斷與機房調校
+│   ├── 📄 SKILL.md                  # 「整站都慢」的診斷流程與修正方式
+│   └── 📂 references/
+│       ├── 📄 diag-route.ts         # 可直接貼上的函式內部量測端點
+│       └── 📄 region-map.md         # Supabase 區域 → Vercel 區域對照表
+│
 └── 📄 README.md                     # 本儲存庫總覽與各 Skill 詳細說明
 ```
 
@@ -36,6 +42,7 @@
 | [`user-agreement`](#1-user-agreement--通用型服務條款與免責聲明生成器) | 系統法務 / 規範模組 | 「產生服務條款」、「新增免責聲明」、「註冊同意書」、「使用者協議」 | 為任何 Web/App 系統一鍵生成客製化服務條款 Markdown 文件、React 同意書 Modal 元件與常數資料。 |
 | [`shift-log`](#2-shift-log--開工--收工-工作階段管理慣例) | 開發流程 / 階段交接 | 「開工」、「收工」、「今天先做到這」、「交接一下」 | 開工時核對並實體驗證專案狀態與機密防線；收工時記錄決策理由並寫回進度日誌。 |
 | [`notion-database-design`](#3-notion-database-design--notion-系統資料庫規劃與建置) | 後端架構 / 資料庫設計 | 「用 Notion 當資料庫」、「幫我在 Notion 建表」、「Notion 資料庫規劃」 | 將 Notion 規劃為多系統共存的後端資料庫（Page 前綴架構、AES-256 加密、限速佇列與 DDL 建表）。 |
+| [`vercel-supabase-latency`](#4-vercel-supabase-latency--vercel--supabase-整站都慢的診斷) | 效能調校 / 部署架構 | 「網站好慢」、「每一頁都要好幾秒」、「換到 Supabase 反而變慢」、「速度優化」 | 分離「網路距離」與「資料庫處理」兩件事，找出函式機房與資料庫不同洲的問題。實測案例快了六倍。 |
 
 ---
 
@@ -105,6 +112,20 @@
 
 ---
 
+### 4. `vercel-supabase-latency` — Vercel + Supabase「整站都慢」的診斷
+- **模組路徑**：[`vercel-supabase-latency/`](vercel-supabase-latency/SKILL.md)
+- **核心定位**：這個組合最常見的效能問題**不是查詢寫得爛，也不是缺索引**，而是 serverless 函式跑的機房跟資料庫隔了半個地球。症狀沒有特色（每頁 2～5 秒、沒有錯誤訊息），很容易一路往「加索引」的方向白忙。
+- **三個關鍵訊號（都是免費且立即可得）**：
+  1. `x-vercel-id` 的**第二段**＝函式實際執行的機房（第一段只是邊界節點，常被搞混）。Vercel 預設是 `iad1` 美國東岸，跟你人在哪、資料庫在哪都無關。
+  2. `x-envoy-upstream-service-time`＝**Supabase 端真正花的毫秒數**。個位數就代表資料庫很快，慢的是距離。
+  3. **404 頁 vs 動態頁的落差**＝分離「使用者端網路」與「伺服器端耗時」。
+- **決定性的一步**：貼一個臨時的 `/api/diag` 端點**從函式內部計時**——外面量不到「函式 → 資料庫」那一段。
+- **修正**：`vercel.json` 設 `regions`，把**函式搬到資料庫旁邊**（不是搬到使用者旁邊——使用者↔函式只有一次來回，函式↔資料庫有 5～10 次）。
+- **附帶的優化清單**：獨立查詢改 `Promise.all`、middleware 的 `auth.getUser()` 是網路呼叫、巢狀 select 解 N+1、`createSignedUrls` 批次簽。
+- **實測成果**：同一份程式碼只改一行機房設定，首頁 3,294 ms → **534 ms**（快六倍）。資料庫本身只佔 2% 的時間，其餘 98% 是網路距離。
+
+---
+
 ## 💻 怎麼在一台新機器上安裝使用
 
 Claude Code 是在每次對話開始時，掃描本機的 `~/.claude/skills/` 資料夾來列出可用的 skill —— 不會即時連線 GitHub 抓取。要在新機器使用：
@@ -131,6 +152,11 @@ Claude Code 是在每次對話開始時，掃描本機的 `~/.claude/skills/` �
    New-Item -ItemType SymbolicLink `
      -Path "$env:USERPROFILE\.claude\skills\notion-database-design" `
      -Target "D:\Claude\skill\notion-database-design"
+
+   # 連結 vercel-supabase-latency skill
+   New-Item -ItemType SymbolicLink `
+     -Path "$env:USERPROFILE\.claude\skills\vercel-supabase-latency" `
+     -Target "D:\Claude\skill\vercel-supabase-latency"
    ```
 
 3. 開啟新的 Claude Code 對話即可自動載入所有 Skill！
