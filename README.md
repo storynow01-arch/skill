@@ -30,6 +30,12 @@
 │       ├── 📄 diag-route.ts         # 可直接貼上的函式內部量測端點
 │       └── 📄 region-map.md         # Supabase 區域 → Vercel 區域對照表
 │
+├── 📂 supabase-key-usage/           # 模組：Supabase 兩把 key 的用法與安全驗證
+│   ├── 📄 SKILL.md                  # publishable / secret 放哪裡、RLS 鎖定、heartbeat 喚醒、外洩處理
+│   └── 📂 references/
+│       ├── 📄 lockdown.sql          # 全表開 RLS＋heartbeat＋私有 bucket 的 SQL 範本
+│       └── 📄 check-keys.mjs        # 驗證兩把 key 沒放錯的腳本（publishable 讀不到、heartbeat 回 200）
+│
 └── 📄 README.md                     # 本儲存庫總覽與各 Skill 詳細說明
 ```
 
@@ -43,6 +49,7 @@
 | [`shift-log`](#2-shift-log--開工--收工-工作階段管理慣例) | 開發流程 / 階段交接 | 「開工」、「收工」、「今天先做到這」、「交接一下」 | 開工時核對並實體驗證專案狀態與機密防線；收工時記錄決策理由並寫回進度日誌。 |
 | [`notion-database-design`](#3-notion-database-design--notion-系統資料庫規劃與建置) | 後端架構 / 資料庫設計 | 「用 Notion 當資料庫」、「幫我在 Notion 建表」、「Notion 資料庫規劃」 | 將 Notion 規劃為多系統共存的後端資料庫（Page 前綴架構、AES-256 加密、限速佇列與 DDL 建表）。 |
 | [`vercel-supabase-latency`](#4-vercel-supabase-latency--vercel--supabase-整站都慢的診斷) | 效能調校 / 部署架構 | 「網站好慢」、「每一頁都要好幾秒」、「換到 Supabase 反而變慢」、「速度優化」 | 分離「網路距離」與「資料庫處理」兩件事，找出函式機房與資料庫不同洲的問題。實測案例快了六倍。 |
+| [`supabase-key-usage`](#5-supabase-key-usage--supabase-兩把-key-的用法與安全驗證) | 資安 / 部署架構 | 「接 Supabase」、「Supabase 的 key」、「RLS 要怎麼設」、「喚醒 Supabase」、「heartbeat」 | 伺服器專用架構：secret key 只在伺服器、publishable key 只給喚醒腳本；全表鎖 RLS 並用程式驗證「公開的 key 什麼都讀不到」。 |
 
 ---
 
@@ -126,6 +133,27 @@
 
 ---
 
+### 5. `supabase-key-usage` — Supabase 兩把 key 的用法與安全驗證
+- **模組路徑**：[`supabase-key-usage/`](supabase-key-usage/SKILL.md)
+- **核心定位**：兩把 key 用錯地方是 Supabase 最常見、也最嚴重的設定錯誤。這份規則採**伺服器專用架構**——瀏覽器完全不直接連 Supabase，一律經過自己的 API，權限規則只寫一次、也最容易驗證。
+- **兩把 key 的分工**：
+
+  | | Publishable（`sb_publishable_`） | Secret（`sb_secret_`） |
+  |---|---|---|
+  | 權限 | 受 RLS 限制 | 不受 RLS 限制，能讀寫全部 |
+  | 用在哪 | **只給喚醒腳本讀 heartbeat** | 伺服器端讀寫所有資料 |
+  | 放在哪 | GAS；網站本身不需要 | `.env.local` 與部署平台，**不加 `NEXT_PUBLIC_`** |
+
+- **全表鎖 RLS**：每張表都開 RLS 且不給 `anon` 任何 policy，只有沒有個資的 `heartbeat` 例外。
+- **用程式驗證，不要用眼睛看**：publishable key 讀**有資料的表**要回 0 筆（RLS 擋讀取時回的是 200＋空陣列，拿空表測什麼都證明不了）、寫入要被拒（`42501`）、heartbeat 要回 200。
+- **免費版 7 天暫停**：外部排程（GAS）每天打 `heartbeat`，只帶 `apikey` 標頭（新版 key 不要加 `Authorization`）。
+- **兩個實際踩過的坑**：
+  1. Node 20 上 `supabase-js` 的 `createClient` 一建立就丟 WebSocket 例外（realtime 需要 Node 22）→ 改用 `postgrest-js`＋`storage-js`。
+  2. 在 Vercel 用 `postgres://` 直連網址會踩 IPv6／連線池／密碼 → 只用 `SUPABASE_URL`＋secret key 走 REST。
+- **secret key 外洩處理**：出現在任何對話、截圖、commit 就當作外洩 → 新增一把、刪掉舊的、重新部署。
+
+---
+
 ## 💻 怎麼在一台新機器上安裝使用
 
 Claude Code 是在每次對話開始時，掃描本機的 `~/.claude/skills/` 資料夾來列出可用的 skill —— 不會即時連線 GitHub 抓取。要在新機器使用：
@@ -157,6 +185,11 @@ Claude Code 是在每次對話開始時，掃描本機的 `~/.claude/skills/` �
    New-Item -ItemType SymbolicLink `
      -Path "$env:USERPROFILE\.claude\skills\vercel-supabase-latency" `
      -Target "D:\Claude\skill\vercel-supabase-latency"
+
+   # 連結 supabase-key-usage skill
+   New-Item -ItemType SymbolicLink `
+     -Path "$env:USERPROFILE\.claude\skills\supabase-key-usage" `
+     -Target "D:\Claude\skill\supabase-key-usage"
    ```
 
 3. 開啟新的 Claude Code 對話即可自動載入所有 Skill！
