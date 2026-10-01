@@ -1,0 +1,33 @@
+{
+  "title": "IP 與封包（1 分鐘重點）",
+  "mode": "teach",
+  "style": "blueprint",
+  "hud": {"left": "網路概論 · 1-1 重點", "right": "IP & PACKET"},
+  "voice": {"name": "zh-TW-YunJheNeural", "rate": "+18%", "pitch": "+4Hz"},
+  "scenes": [
+    {"id": "S1", "type": "title", "impact": true,
+     "props": {"eyebrow": "NETWORK 101 · 60 SEC", "title": "IP 與封包", "subtitle": "資料怎麼找到路？", "en": "IP ADDRESS & PACKET"},
+     "lines": ["一個檔案，要怎麼穿過網路，", "準確送到另一台電腦？"]},
+    {"id": "S2", "type": "packetSplit", "accent": "accent",
+     "props": {"file": "作業.pdf", "size": "8 MB", "heading": "大檔案不會一次送出去", "en": "FILE → PACKETS"},
+     "lines": ["電腦不會把大檔一次塞進網路線。", "它會先切成很多小塊，", "每一塊裝進自己的信封，這就叫封包。"]},
+    {"id": "S3", "type": "packetRoutes",
+     "props": {"heading": "為什麼要切成小箱子？", "en": "WHY PACKETS"},
+     "lines": ["切小有三個好處：路不會塞死，", "掉了一箱，只要補那一箱，", "還能分好幾條路，同時出發。"]},
+    {"id": "S4", "type": "packetAnatomy",
+     "props": {"heading": "每個封包身上帶三樣東西", "en": "ANATOMY OF A PACKET"},
+     "lines": ["所以每個封包身上，都帶著三樣東西：", "一塊資料、一個門牌，還有一個編號。", "有了編號，對方才拼得回原本的檔案。"]},
+    {"id": "S5", "type": "ipBits",
+     "props": {"heading": "門牌 = IP 位址", "en": "IPv4 ADDRESS", "ip": [192, 168, 0, 1]},
+     "lines": ["那個門牌，就是 IP 位址。", "IPv4 長這樣：192.168.0.1。", "四段數字，每段都是八個位元，", "所以每段的範圍，是 0 到 255。"]},
+    {"id": "S6", "type": "ipPrivate",
+     "props": {"heading": "私有 IP vs 公有 IP", "en": "PRIVATE · PUBLIC"},
+     "lines": ["192.168 開頭的是私有 IP，", "只在家裡或學校裡面有效。", "要出門上網，路由器會把它換成公有 IP。"]},
+    {"id": "S7", "type": "cards", "impact": true,
+     "props": {"heading": "今天帶走三句話", "en": "RECAP", "cueOffset": 0,
+               "cards": [{"icon": "01", "title": "協定", "note": "雙方都聽得懂的規則"},
+                         {"icon": "02", "title": "封包", "note": "資料出門的小箱子"},
+                         {"icon": "03", "title": "IP 位址", "note": "箱子上的門牌"}]},
+     "lines": ["記住三句話：協定是規則，", "封包是資料的小箱子，", "IP，就是箱子上的門牌。"]}
+  ]
+}

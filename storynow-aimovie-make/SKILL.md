@@ -1,0 +1,71 @@
+---
+name: storynow-aimovie-make
+description: 「從內容長出影片」的 AI 影片工作流——使用者給一句話＋資料（PDF、講義、純文字稿、活動通知），先理解內容、問三輪定調問題，再從內容產生 3 個完全不同的創意概念（含英文提示詞），經過文本審閱與 10 秒動態試看後，用程式手刻（Remotion 畫面＋numpy 配樂＋edge-tts 旁白）做出成片並自動品檢。適用：宣傳片、招生影片、科系形象片、教學影片、微課、研習／活動說明影片。也在使用者說「做影片」「做一支宣傳片／招生片／教學影片」「手刻影片」「程式做影片」「產生創意概念」「做試看」，或輸入「資訊科範本1」時觸發。
+metadata:
+  tags: video, remotion, numpy-audio, edge-tts, creative-concept, recruitment, lesson, trailer, workflow
+  author: storynow01-arch
+---
+
+# storynow-aimovie-make：從內容長出影片
+
+## 這個 skill 的核心（先讀）
+
+這不是「套模板、換外觀」的工具，是一位**創意總監＋工程師**。讓成品驚喜的是四件事，每一支影片都要做到：
+
+1. **從內容長出畫面**：先讀懂內容的觀念、比喻、衝突，再讓**每一條資訊都變成一個會動的視覺比喻**（數字→計數器、流程→光點沿路、比喻→實景）。
+2. **概念要真的不同**：3 個概念各有自己的世界觀、構圖、鏡頭、剪接、配樂，場景程式**為該概念重新寫**；只換顏色／字型／背景＝換皮，不算不同概念。
+3. **聲音與畫面是同一件事**：切點對齊小節，每個畫面事件都有音效，旁白出現時音樂自動退後。
+4. **人只在關鍵處決定**：四個煞車點（概念、文本、試看、聲音）由使用者決定，其餘自動。
+
+**做錯過的事（不要再犯）**：①把 10 種外觀風格當成「不同風格」（使用者看不出差別）；②直接沿用舊產線的分鏡、跳過「從內容產生概念」；③不問就把個資（手機、Email）放進會轉傳的影片；④照提示詞寫錯事實（提示詞說全國賽包辦，資料是分區賽）。
+
+## 快速指令
+| 使用者說 | 做什麼 |
+|---|---|
+| 「資訊科範本1」 | 照 [`templates/資訊科範本1/README.md`](templates/資訊科範本1/README.md)：活動說明（研習／座談）＋資訊科宣傳片，3 分半成片 |
+| 「做影片」＋資料 | 走完整十步流程（下方） |
+| 「用 XX 概念做這份內容」 | 從第 ② 步開始，第 ④ 步直接採用指定概念，但仍要重新設計分鏡 |
+
+## 十步流程（細節見 [`references/workflow.md`](references/workflow.md)）
+
+| 步驟 | 內容 | 煞車點 |
+|---|---|---|
+| ① 輸入 | 專案資料夾路徑＋一句話＋資料。資料複製到 `00_資料/` | |
+| ② 理解素材 | 產出 `01_事實清單.md`（宣傳類，逐條標來源頁碼）或 `01_內容分析.md`（教學類：觀念、比喻、迷思、**衝突→解答骨架**）。**列出資料衝突與敏感資訊** | |
+| ③ 定調問答 | AskUserQuestion 三輪、每輪 ≤4 題、選擇題＋推薦預設（題庫：[`references/question-bank.md`](references/question-bank.md)） | |
+| ④ 創意概念 | 產出 `02_三種創意概念.md`：3 個**全新**概念，各附英文提示詞（格式同 [`references/prompts/01_…原始提示詞.md`](references/prompts/01_旗艦科技宣傳片_原始提示詞.md)）＋中文對照＋比較表（方法：[`references/concept-design.md`](references/concept-design.md)） | ⛔ |
+| ⑤ 文本 | `03_分鏡文本.md`：每場景的畫面／旁白／大字卡／秒數＋**事實核對表**；多概念時同一旁白對照多種畫面 | ⛔ |
+| ⑥ 動態試看 | 每概念 **10 秒**動態短片（新寫場景程式＋專屬配樂與音效），不是靜態圖 | ⛔ |
+| ⑦ 細節 | 旁白聲音試聽（同一句話三種聲音）、語速、字幕樣式 | ⛔ |
+| ⑧ 製作 | 旁白逐句 TTS → 時間軸（旁白長度補足到整數小節）→ 配樂＋事件音效＋人聲閃避 → Remotion 場景 → 算圖 | |
+| ⑨ 品檢 | 每場景抽一格看重疊／溢出／被字幕遮；響度 −14 LUFS；長度；修正後重算（清單：[`references/production.md`](references/production.md)） | |
+| ⑩ 交付沉澱 | 成片＋把使用者喜歡的概念存進 `references/prompts/`、場景程式存進 `concepts/` | |
+
+使用者回答模糊（例如選項沒有的「1 和 4」）時，**用下一輪問題確認，不要猜**。
+
+## 工具與檔案
+
+```
+engine/
+  template/        Remotion 專案範本（theme／kit／scenes／lesson／motion／custom）—— new_project.py 會複製它
+  scripts/         new_project.py（建專案）、build.py（storyboard→旁白→時間軸→配樂→spec.json）、
+                   make_music.py（13 種曲風 numpy 合成＋音效）、from_ai_pipeline.py（舊產線 .md+plan → storyboard，選用）、
+                   pron_zh-TW.json（唸法：IP 逐字、縮寫拆字母）
+  examples/        storyboard 範例（教學、宣傳、活動說明、舊產線轉換）
+concepts/          做過的概念場景程式（參考實作，新影片要依內容改寫，不要直接套）
+  levelup/ notebook/ kinetic/ lesson-logistics/ lesson-sitcom/ lesson-cable/ audio/
+references/        流程、題庫、概念方法、製作與品檢、教訓、提示詞庫（prompts/）、實作範例（examples/：事實清單、內容分析、三概念分鏡）
+templates/資訊科範本1/   研習說明＋資訊科宣傳片（含宣傳片原始碼）
+```
+
+**建專案**：`python engine/scripts/new_project.py <資料夾> --example teach|promo`（同機已有專案可用 junction 共用 `node_modules`）
+**建置**：`python engine/scripts/build.py storyboard.json [--style X]`
+**算圖**：`npx remotion render src/index.ts <Composition> out/x.mp4 --concurrency=4 --crf=18 --audio-codec=aac`
+**響度**：`ffmpeg -i in.mp4 -c:v copy -af loudnorm=I=-14:TP=-1:LRA=9 -c:a aac out.mp4`
+
+## 硬規則
+- 數字、校名、名次**逐條對資料**；資料與提示詞衝突時照資料，並明講差異。
+- 會轉傳的影片：手機、個人 Email、學生姓名等**先問再放**。
+- 回覆一律繁體中文。
+- 一次只跑一個算圖；長批次寫成 shell 迴圈並把進度寫入 log。
+- 程式／畫面的版面：字幕區在畫面底部約 y>930，內容不要放進去。

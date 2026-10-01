@@ -36,6 +36,15 @@
 │       ├── 📄 lockdown.sql          # 全表開 RLS＋heartbeat＋私有 bucket 的 SQL 範本
 │       └── 📄 check-keys.mjs        # 驗證兩把 key 沒放錯的腳本（publishable 讀不到、heartbeat 回 200）
 │
+├── 📂 storynow-aimovie-make/        # 模組：從內容長出影片的 AI 影片工作流（Remotion＋numpy 配樂＋edge-tts）
+│   ├── 📄 SKILL.md                  # 十步流程、四個煞車點、快速指令（含「資訊科範本1」）
+│   ├── 📂 references/               # 流程細節、定調題庫、概念設計法、製作與品檢、實戰教訓
+│   │   ├── 📂 prompts/              # 創意提示詞庫（#01 原始旗艦宣傳片提示詞、招生三概念、教學三概念）
+│   │   └── 📂 examples/             # 事實清單、內容分析、三概念分鏡的實作範例
+│   ├── 📂 engine/                   # Remotion 範本＋Python 腳本（建專案、旁白→時間軸→配樂、13 種曲風合成）
+│   ├── 📂 concepts/                 # 做過的概念場景程式（闖關遊戲、創客手稿、動態字體、物流中心、小劇場、穿越網路線）
+│   └── 📂 templates/資訊科範本1/     # 活動說明＋資訊科宣傳片（含宣傳片原始碼）
+│
 └── 📄 README.md                     # 本儲存庫總覽與各 Skill 詳細說明
 ```
 
@@ -50,6 +59,7 @@
 | [`notion-database-design`](#3-notion-database-design--notion-系統資料庫規劃與建置) | 後端架構 / 資料庫設計 | 「用 Notion 當資料庫」、「幫我在 Notion 建表」、「Notion 資料庫規劃」 | 將 Notion 規劃為多系統共存的後端資料庫（Page 前綴架構、AES-256 加密、限速佇列與 DDL 建表）。 |
 | [`vercel-supabase-latency`](#4-vercel-supabase-latency--vercel--supabase-整站都慢的診斷) | 效能調校 / 部署架構 | 「網站好慢」、「每一頁都要好幾秒」、「換到 Supabase 反而變慢」、「速度優化」 | 分離「網路距離」與「資料庫處理」兩件事，找出函式機房與資料庫不同洲的問題。實測案例快了六倍。 |
 | [`supabase-key-usage`](#5-supabase-key-usage--supabase-兩把-key-的用法與安全驗證) | 資安 / 部署架構 | 「接 Supabase」、「Supabase 的 key」、「RLS 要怎麼設」、「喚醒 Supabase」、「heartbeat」 | 伺服器專用架構：secret key 只在伺服器、publishable key 只給喚醒腳本；全表鎖 RLS 並用程式驗證「公開的 key 什麼都讀不到」。 |
+| [`storynow-aimovie-make`](#6-storynow-aimovie-make--從內容長出影片的-ai-影片工作流) | 影音製作 / 創意工作流 | 「做影片」、「招生片」、「宣傳片」、「教學影片」、「產生創意概念」、「做試看」、「資訊科範本1」 | 讀懂資料→三輪定調問答→從內容產生 3 個全新創意概念（含英文提示詞）→文本審閱→10 秒動態試看→程式手刻成片（畫面、配樂、旁白全部程式產生）並自動品檢。 |
 
 ---
 
@@ -154,6 +164,22 @@
 
 ---
 
+### 6. `storynow-aimovie-make` — 從內容長出影片的 AI 影片工作流
+- **模組路徑**：[`storynow-aimovie-make/`](storynow-aimovie-make/SKILL.md)
+- **核心定位**：不是套模板換外觀，而是「創意總監＋工程師」。讓成片驚喜的四件事：
+  1. **從內容長出畫面**：每一條資訊都變成會動的視覺比喻（數字→計數器、流程→光點沿路、比喻→實景）。
+  2. **概念要真的不同**：3 個概念在世界觀、構圖、鏡頭、剪接、配樂都不同，場景程式為概念重新寫。
+  3. **聲音與畫面同步**：切點對齊小節、畫面事件配音效、旁白出現時音樂自動退後。
+  4. **人只在關鍵處決定**：概念、文本、試看、聲音四個煞車點，其餘自動。
+- **十步流程**：① 輸入 → ② 理解素材（事實清單／內容分析，抓資料衝突與個資）→ ③ 三輪定調問答 → ④ **3 個創意概念**（英文提示詞＋中文對照）⛔ → ⑤ 文本 ⛔ → ⑥ **10 秒動態試看** ⛔ → ⑦ 聲音試聽 ⛔ → ⑧ 製作 → ⑨ 品檢（逐場景抽格、響度 −14 LUFS）→ ⑩ 交付與沉澱（提示詞庫、場景庫）。
+- **技術堆疊**：Remotion 4（React 畫面）、numpy/scipy 合成配樂（13 種曲風＋音效）、edge-tts 台灣腔旁白（逐句合成→自動字幕與動畫 cue）、ffmpeg 響度校正與串接。
+- **快速指令「資訊科範本1」**：活動／研習說明（賽博霓虹、旁白字幕、9 種說明場景）＋資訊科宣傳片「攜手築夢·智造未來」，約 3 分半成片。
+- **提示詞庫**：#01 為使用者原始的旗艦宣傳片提示詞（逐字保存＋範本化＋為什麼驚喜的設計對照）；另收招生片三概念、教學 1-1 三概念。
+- **環境需求**：Python 3.11（numpy、scipy、edge-tts）、Node 18+、ffmpeg。
+- **隱私**：含個資的分鏡用 `*.local.json`、算好的影片放 `cache/`，皆不進版控。
+
+---
+
 ## 💻 怎麼在一台新機器上安裝使用
 
 Claude Code 是在每次對話開始時，掃描本機的 `~/.claude/skills/` 資料夾來列出可用的 skill —— 不會即時連線 GitHub 抓取。要在新機器使用：
@@ -190,6 +216,11 @@ Claude Code 是在每次對話開始時，掃描本機的 `~/.claude/skills/` �
    New-Item -ItemType SymbolicLink `
      -Path "$env:USERPROFILE\.claude\skills\supabase-key-usage" `
      -Target "D:\Claude\skill\supabase-key-usage"
+
+   # 連結 storynow-aimovie-make skill（另需 Node 18+、ffmpeg、pip install numpy scipy edge-tts）
+   New-Item -ItemType SymbolicLink `
+     -Path "$env:USERPROFILE\.claude\skills\storynow-aimovie-make" `
+     -Target "D:\Claude\skill\storynow-aimovie-make"
    ```
 
 3. 開啟新的 Claude Code 對話即可自動載入所有 Skill！

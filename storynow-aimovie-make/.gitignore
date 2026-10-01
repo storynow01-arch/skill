@@ -1,0 +1,12 @@
+# 本機專用：含個資的分鏡、算好的影片快取
+*.local.json
+templates/*/cache/
+# 建置產物
+node_modules/
+out/
+.tts_cache/
+__pycache__/
+*.mp4
+*.wav
+*.mp3
+src/data/spec.json

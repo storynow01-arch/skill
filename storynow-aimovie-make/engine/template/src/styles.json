@@ -1,0 +1,590 @@
+{
+  "cyber-neon": {
+    "name": "賽博霓虹",
+    "desc": "深藍夜空 + 青色霓虹光暈 + 3D 透視格線，科技旗艦感（海青宣傳片原版）",
+    "bg": "grid3d",
+    "dark": true,
+    "c": {
+      "bg": "#040814",
+      "bg2": "#0A1A36",
+      "fg": "#ECF6FF",
+      "muted": "#7890AA",
+      "panel": "#0A1830",
+      "accent": "#00E5FF",
+      "accent2": "#FFC840",
+      "accent3": "#9664FF",
+      "ok": "#3CFFAA",
+      "bad": "#FF4696"
+    },
+    "fonts": {
+      "tc": [
+        "NotoSansTC",
+        [
+          "500",
+          "700",
+          "900"
+        ]
+      ],
+      "num": [
+        "Orbitron",
+        [
+          "700",
+          "900"
+        ]
+      ],
+      "en": [
+        "Rajdhani",
+        [
+          "600",
+          "700"
+        ]
+      ],
+      "mono": [
+        "JetBrainsMono",
+        [
+          "400",
+          "700"
+        ]
+      ]
+    },
+    "glow": 1.0,
+    "radius": 14,
+    "scanlines": true,
+    "transition": "glitch",
+    "music": {
+      "genre": "techhouse",
+      "bpm": 128,
+      "key": "Am"
+    },
+    "motion": {
+      "title": "glitchDecode",
+      "counter": "slot",
+      "enter": "scanOpen",
+      "fx": "dataBurst"
+    }
+  },
+  "blueprint": {
+    "name": "工程藍圖",
+    "desc": "藍圖紙 + 白色細線製圖、尺規標註，理工教學最清楚",
+    "bg": "blueprint",
+    "dark": true,
+    "c": {
+      "bg": "#0B3A6E",
+      "bg2": "#0E4C8C",
+      "fg": "#F2F8FF",
+      "muted": "#9FC3E8",
+      "panel": "#0D457F",
+      "accent": "#FFFFFF",
+      "accent2": "#FFD166",
+      "accent3": "#7FDBFF",
+      "ok": "#8CF5B8",
+      "bad": "#FF8A80"
+    },
+    "fonts": {
+      "tc": [
+        "NotoSansTC",
+        [
+          "500",
+          "700",
+          "900"
+        ]
+      ],
+      "num": [
+        "ShareTechMono",
+        [
+          "400"
+        ]
+      ],
+      "en": [
+        "ShareTechMono",
+        [
+          "400"
+        ]
+      ],
+      "mono": [
+        "IBMPlexMono",
+        [
+          "400",
+          "600"
+        ]
+      ]
+    },
+    "glow": 0.25,
+    "radius": 4,
+    "scanlines": false,
+    "transition": "wipe",
+    "music": {
+      "genre": "minimal",
+      "bpm": 112,
+      "key": "Dm"
+    }
+  },
+  "clean-light": {
+    "name": "明亮簡潔",
+    "desc": "白底 + 珊瑚橘強調色 + 柔和陰影卡片，適合國中生或家長",
+    "bg": "softlight",
+    "dark": false,
+    "c": {
+      "bg": "#F7F5F0",
+      "bg2": "#FFFFFF",
+      "fg": "#1E2430",
+      "muted": "#6B7280",
+      "panel": "#FFFFFF",
+      "accent": "#FF6B3D",
+      "accent2": "#2B7FFF",
+      "accent3": "#12B886",
+      "ok": "#12B886",
+      "bad": "#E03131"
+    },
+    "fonts": {
+      "tc": [
+        "NotoSansTC",
+        [
+          "500",
+          "700",
+          "900"
+        ]
+      ],
+      "num": [
+        "Montserrat",
+        [
+          "700",
+          "900"
+        ]
+      ],
+      "en": [
+        "Montserrat",
+        [
+          "600",
+          "700"
+        ]
+      ],
+      "mono": [
+        "JetBrainsMono",
+        [
+          "400",
+          "700"
+        ]
+      ]
+    },
+    "glow": 0,
+    "radius": 20,
+    "scanlines": false,
+    "transition": "slide",
+    "music": {
+      "genre": "lofi",
+      "bpm": 88,
+      "key": "F"
+    }
+  },
+  "synthwave": {
+    "name": "80s 合成波",
+    "desc": "紫紅夕陽、霓虹地平線、復古未來，活潑有記憶點",
+    "bg": "synthsun",
+    "dark": true,
+    "c": {
+      "bg": "#12002B",
+      "bg2": "#3A0A5E",
+      "fg": "#FFF1FB",
+      "muted": "#B79ACF",
+      "panel": "#240846",
+      "accent": "#FF3CAC",
+      "accent2": "#FFD23F",
+      "accent3": "#2DE2E6",
+      "ok": "#2DE2E6",
+      "bad": "#FF5E5B"
+    },
+    "fonts": {
+      "tc": [
+        "NotoSansTC",
+        [
+          "500",
+          "700",
+          "900"
+        ]
+      ],
+      "num": [
+        "Audiowide",
+        [
+          "400"
+        ]
+      ],
+      "en": [
+        "Audiowide",
+        [
+          "400"
+        ]
+      ],
+      "mono": [
+        "JetBrainsMono",
+        [
+          "400",
+          "700"
+        ]
+      ]
+    },
+    "glow": 1.2,
+    "radius": 10,
+    "scanlines": true,
+    "transition": "glitch",
+    "music": {
+      "genre": "synthwave",
+      "bpm": 108,
+      "key": "Em"
+    },
+    "motion": {
+      "title": "neonFlicker",
+      "counter": "chrome",
+      "enter": "roadSlide",
+      "fx": "laserSweep"
+    }
+  },
+  "terminal": {
+    "name": "駭客終端",
+    "desc": "全黑 + 螢光綠等寬字、矩陣雨，資安與程式課首選",
+    "bg": "matrix",
+    "dark": true,
+    "c": {
+      "bg": "#000400",
+      "bg2": "#001A08",
+      "fg": "#C8FFD4",
+      "muted": "#3F8F55",
+      "panel": "#001205",
+      "accent": "#00FF66",
+      "accent2": "#E8FF3A",
+      "accent3": "#00D9FF",
+      "ok": "#00FF66",
+      "bad": "#FF3355"
+    },
+    "fonts": {
+      "tc": [
+        "NotoSansTC",
+        [
+          "500",
+          "700",
+          "900"
+        ]
+      ],
+      "num": [
+        "VT323",
+        [
+          "400"
+        ]
+      ],
+      "en": [
+        "VT323",
+        [
+          "400"
+        ]
+      ],
+      "mono": [
+        "IBMPlexMono",
+        [
+          "400",
+          "600"
+        ]
+      ]
+    },
+    "glow": 0.8,
+    "radius": 0,
+    "scanlines": true,
+    "transition": "glitch",
+    "music": {
+      "genre": "dnb",
+      "bpm": 172,
+      "key": "Fm"
+    }
+  },
+  "glass": {
+    "name": "玻璃擬態",
+    "desc": "流動漸層光斑 + 毛玻璃卡片，App 發表會般的現代質感",
+    "bg": "blobs",
+    "dark": true,
+    "c": {
+      "bg": "#0B1020",
+      "bg2": "#1B2450",
+      "fg": "#FFFFFF",
+      "muted": "#A9B4D6",
+      "panel": "#FFFFFF1A",
+      "accent": "#7C9CFF",
+      "accent2": "#FF9ECD",
+      "accent3": "#6EF3D6",
+      "ok": "#6EF3D6",
+      "bad": "#FF7A90"
+    },
+    "fonts": {
+      "tc": [
+        "NotoSansTC",
+        [
+          "500",
+          "700",
+          "900"
+        ]
+      ],
+      "num": [
+        "Poppins",
+        [
+          "600",
+          "800"
+        ]
+      ],
+      "en": [
+        "Poppins",
+        [
+          "500",
+          "600"
+        ]
+      ],
+      "mono": [
+        "JetBrainsMono",
+        [
+          "400",
+          "700"
+        ]
+      ]
+    },
+    "glow": 0.4,
+    "radius": 28,
+    "scanlines": false,
+    "transition": "blur",
+    "music": {
+      "genre": "futurebass",
+      "bpm": 150,
+      "key": "Bb"
+    }
+  },
+  "swiss": {
+    "name": "瑞士極簡",
+    "desc": "米白 + 黑 + 紅，粗黑大字與網格排版，理性俐落",
+    "bg": "swissgrid",
+    "dark": false,
+    "c": {
+      "bg": "#F2EFE8",
+      "bg2": "#FFFFFF",
+      "fg": "#111111",
+      "muted": "#707070",
+      "panel": "#FFFFFF",
+      "accent": "#E4002B",
+      "accent2": "#111111",
+      "accent3": "#0057B8",
+      "ok": "#0A7D3B",
+      "bad": "#E4002B"
+    },
+    "fonts": {
+      "tc": [
+        "NotoSansTC",
+        [
+          "500",
+          "700",
+          "900"
+        ]
+      ],
+      "num": [
+        "Inter",
+        [
+          "800",
+          "900"
+        ]
+      ],
+      "en": [
+        "Inter",
+        [
+          "600",
+          "800"
+        ]
+      ],
+      "mono": [
+        "IBMPlexMono",
+        [
+          "400",
+          "600"
+        ]
+      ]
+    },
+    "glow": 0,
+    "radius": 0,
+    "scanlines": false,
+    "transition": "wipe",
+    "music": {
+      "genre": "pianopulse",
+      "bpm": 96,
+      "key": "C"
+    }
+  },
+  "chalkboard": {
+    "name": "黑板手寫",
+    "desc": "墨綠黑板 + 粉筆手寫字（霞鶩文楷），像老師在台上畫給你看",
+    "bg": "chalk",
+    "dark": true,
+    "c": {
+      "bg": "#1F3A2E",
+      "bg2": "#27493A",
+      "fg": "#F4F1E6",
+      "muted": "#AFC2B4",
+      "panel": "#264536",
+      "accent": "#FFE680",
+      "accent2": "#FF9E9E",
+      "accent3": "#9ED8FF",
+      "ok": "#B5F2A1",
+      "bad": "#FF9E9E"
+    },
+    "fonts": {
+      "tc": [
+        "LXGWWenKaiTC",
+        [
+          "400",
+          "700"
+        ]
+      ],
+      "num": [
+        "Caveat",
+        [
+          "600",
+          "700"
+        ]
+      ],
+      "en": [
+        "Caveat",
+        [
+          "600",
+          "700"
+        ]
+      ],
+      "mono": [
+        "IBMPlexMono",
+        [
+          "400",
+          "600"
+        ]
+      ]
+    },
+    "glow": 0,
+    "radius": 8,
+    "scanlines": false,
+    "transition": "wipe",
+    "music": {
+      "genre": "acoustic",
+      "bpm": 84,
+      "key": "G"
+    }
+  },
+  "pixel": {
+    "name": "像素遊戲",
+    "desc": "8-bit 星空、像素字與方塊 UI，把課程包裝成闖關遊戲",
+    "bg": "pixelstars",
+    "dark": true,
+    "c": {
+      "bg": "#1A1C2C",
+      "bg2": "#29366F",
+      "fg": "#F4F4F4",
+      "muted": "#94B0C2",
+      "panel": "#333C57",
+      "accent": "#41A6F6",
+      "accent2": "#FFCD75",
+      "accent3": "#A7F070",
+      "ok": "#A7F070",
+      "bad": "#EF7D57"
+    },
+    "fonts": {
+      "tc": [
+        "NotoSansTC",
+        [
+          "700",
+          "900"
+        ]
+      ],
+      "num": [
+        "PressStart2P",
+        [
+          "400"
+        ]
+      ],
+      "en": [
+        "PressStart2P",
+        [
+          "400"
+        ]
+      ],
+      "mono": [
+        "VT323",
+        [
+          "400"
+        ]
+      ]
+    },
+    "glow": 0,
+    "radius": 0,
+    "scanlines": true,
+    "transition": "pixel",
+    "music": {
+      "genre": "chiptune",
+      "bpm": 140,
+      "key": "C"
+    },
+    "motion": {
+      "title": "pixelDrop",
+      "counter": "coin",
+      "enter": "itemBounce",
+      "fx": "pixelConfetti"
+    }
+  },
+  "cinematic": {
+    "name": "電影金色",
+    "desc": "黑底 + 香檳金、宋體標題、上下遮幅與光束，典禮與榮譽感",
+    "bg": "rays",
+    "dark": true,
+    "c": {
+      "bg": "#050505",
+      "bg2": "#1A1409",
+      "fg": "#F7F0E1",
+      "muted": "#9C8F77",
+      "panel": "#15110A",
+      "accent": "#D4AF37",
+      "accent2": "#F7E7B4",
+      "accent3": "#8FA8C8",
+      "ok": "#C9E4A6",
+      "bad": "#E08A6D"
+    },
+    "fonts": {
+      "tc": [
+        "NotoSerifTC",
+        [
+          "500",
+          "700",
+          "900"
+        ]
+      ],
+      "num": [
+        "Cinzel",
+        [
+          "700",
+          "900"
+        ]
+      ],
+      "en": [
+        "Cinzel",
+        [
+          "600",
+          "700"
+        ]
+      ],
+      "mono": [
+        "IBMPlexMono",
+        [
+          "400",
+          "600"
+        ]
+      ]
+    },
+    "glow": 0.6,
+    "radius": 2,
+    "scanlines": false,
+    "transition": "fade",
+    "letterbox": true,
+    "music": {
+      "genre": "cinematic",
+      "bpm": 90,
+      "key": "Dm"
+    }
+  }
+}
