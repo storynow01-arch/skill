@@ -34,7 +34,7 @@ export const Captions: React.FC<{caps: {text: string; from: number; to: number}[
   if (!cur) return null;
   const a = Math.min(1, (frame - cur.from) / 4, (cur.to - frame) / 4);
   return (
-    <div style={abs({left: 0, right: 0, bottom: t.letterbox ? 108 : 64, display: 'flex', justifyContent: 'center', opacity: a})}>
+    <div data-qa="caption" style={abs({left: 0, right: 0, bottom: t.letterbox ? 108 : 64, display: 'flex', justifyContent: 'center', opacity: a})}>
       <div style={{fontFamily: t.f.tc, fontWeight: t.w.tc >= 700 ? 700 : t.w.tc, fontSize: 40, color: t.dark ? '#fff' : t.c.fg, padding: '10px 34px',
         borderRadius: Math.min(t.radius, 14), background: t.dark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.85)',
         boxShadow: t.dark ? 'none' : '0 4px 18px rgba(0,0,0,0.12)', letterSpacing: 1}}>{cur.text}</div>

@@ -439,6 +439,44 @@ def arrange(genre, bpm, key, dur, bed, sections):
     return L, R, add, beat, bar
 
 
+
+# ───────────────────────── 母帶處理（混音升級） ─────────────────────────
+def reverb(x, wet=0.16, room=0.82, damp=3800):
+    """Schroeder 殘響：4 組並聯梳狀＋2 組串聯全通；送出前先高通，低頻不糊。"""
+    from scipy.signal import lfilter
+    send = hp(x, 300)
+    out = np.zeros_like(send)
+    for d_ms, g in [(29.7, room), (37.1, room * 0.98), (41.1, room * 0.96), (43.7, room * 0.94)]:
+        d = int(d_ms / 1000 * SR); a = np.zeros(d + 1); a[0] = 1; a[d] = -g
+        out += lfilter([1], a, send, axis=-1)
+    for d_ms, g in [(5.0, 0.7), (1.7, 0.7)]:
+        d = int(d_ms / 1000 * SR); b = np.zeros(d + 1); a = np.zeros(d + 1)
+        b[0] = -g; b[d] = 1; a[0] = 1; a[d] = -g
+        out = lfilter(b, a, out, axis=-1)
+    return x + lp(out, damp) * wet / 4
+
+
+def env_follow(x, att=0.005, rel=0.12):
+    """包絡追蹤（RMS 近似），回傳 0~1 的振幅包絡"""
+    from scipy.signal import lfilter
+    r = np.abs(x)
+    a_r = np.exp(-1 / (rel * SR))
+    return lfilter([1 - a_r], [1, -a_r], r)
+
+
+def compress(x, thresh=0.35, ratio=3.0, makeup=1.25):
+    """匯流排壓縮：超過門檻的部分依比例壓下"""
+    lvl = env_follow(np.max(np.abs(x), axis=0) if x.ndim == 2 else x, rel=0.15) + 1e-6
+    gain = np.where(lvl > thresh, (thresh + (lvl - thresh) / ratio) / lvl, 1.0)
+    return x * gain * makeup
+
+
+def master_chain(mix):
+    mix = reverb(mix)
+    mix = compress(mix)
+    return np.tanh(mix * 1.1) / np.tanh(1.1)   # 柔性限幅
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--style'); ap.add_argument('--genre'); ap.add_argument('--bpm', type=float); ap.add_argument('--key')
@@ -447,6 +485,7 @@ def main():
     ap.add_argument('--whooshes', type=float, nargs='*', default=[])
     ap.add_argument('--blips', type=float, nargs='*', default=[])
     ap.add_argument('--bed', action='store_true')
+    ap.add_argument('--no-master', action='store_true')
     ap.add_argument('--out', required=True)
     a = ap.parse_args()
 
@@ -475,7 +514,7 @@ def main():
         crackle = (rng.random(mix.shape[1]) > 0.9994) * rng.standard_normal(mix.shape[1]) * 0.25 + noise(mix.shape[1]) * 0.004
         mix += lp(crackle, 5000)
     mix = hp(mix, 28)
-    mix = np.tanh(mix * 0.9)[:, :int(dur * SR)]
+    mix = (np.tanh(mix * 0.9) if a.no_master else master_chain(mix))[:, :int(dur * SR)]
     fade = int(min(2.5, dur * 0.1) * SR)
     mix[:, -fade:] *= np.linspace(1, 0, fade) ** 1.5
     fi = int(0.02 * SR); mix[:, :fi] *= np.linspace(0, 1, fi)

@@ -1,0 +1,155 @@
+{
+  "title": "增強功能測試",
+  "mode": "teach",
+  "style": "cyber-neon",
+  "mediaDir": "./素材",
+  "hud": {
+    "left": "QA TEST",
+    "right": "ENHANCEMENTS"
+  },
+  "voice": {
+    "name": "zh-TW-HsiaoChenNeural",
+    "rate": "+12%",
+    "pitch": "+0Hz"
+  },
+  "voices": {
+    "小A": {
+      "name": "zh-TW-YunJheNeural",
+      "rate": "+15%",
+      "pitch": "+25Hz"
+    },
+    "小B": {
+      "name": "zh-TW-HsiaoYuNeural",
+      "rate": "+15%",
+      "pitch": "+15Hz"
+    }
+  },
+  "lineGap": 0.35,
+  "tail": 0.8,
+  "scenes": [
+    {
+      "id": "S1",
+      "type": "photo",
+      "impact": true,
+      "props": {
+        "media": "機械手臂",
+        "heading": "親手寫程式\n指揮機械手臂",
+        "en": "REAL PHOTO + KEN BURNS",
+        "kb": "in",
+        "points": [
+          "真實照片緩慢推近",
+          "沒有照片會自動改用插畫"
+        ],
+        "fallback": {
+          "icon": "🦾",
+          "label": "機械手臂實作"
+        }
+      },
+      "lines": [
+        "這是真實照片場景，鏡頭會緩慢推近。",
+        {
+          "text": "沒有照片也沒關係！",
+          "rate": "+22%",
+          "pitch": "+8Hz"
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "type": "gallery",
+      "props": {
+        "heading": "照片牆",
+        "en": "GALLERY",
+        "cueMap": [
+          0,
+          1,
+          2
+        ],
+        "items": [
+          {
+            "media": "實習工場",
+            "caption": "實習工場",
+            "fallback": {
+              "icon": "🏭",
+              "label": "實習工場"
+            }
+          },
+          {
+            "media": "國手合照",
+            "caption": "國手合照",
+            "fallback": {
+              "icon": "🏅",
+              "label": "國手合照（示意）"
+            }
+          },
+          {
+            "media": "機械手臂實作.jpg",
+            "caption": "專題實作",
+            "fallback": {
+              "icon": "🤖",
+              "label": "專題實作"
+            }
+          }
+        ]
+      },
+      "lines": [
+        "第一張是實習工場，",
+        "第二張找不到照片，會自動改用插畫，",
+        "第三張是專題實作。"
+      ]
+    },
+    {
+      "id": "S3",
+      "type": "split",
+      "props": {
+        "media": "學生上課",
+        "heading": "半照片版面",
+        "en": "SPLIT",
+        "points": [
+          "左邊照片",
+          "右邊重點",
+          "缺照片自動插畫"
+        ],
+        "fallback": {
+          "icon": "🧑‍💻",
+          "label": "學生上課",
+          "colors": [
+            "#3a1c71",
+            "#d76d77"
+          ]
+        }
+      },
+      "lines": [
+        "這一格的照片也不存在，",
+        "右邊的重點，依旁白一條條出現。"
+      ]
+    },
+    {
+      "id": "S4",
+      "type": "showcase",
+      "props": {},
+      "lines": [
+        {
+          "text": "嗨，收到了嗎？",
+          "voice": "小A"
+        },
+        {
+          "text": "收到第一箱了！",
+          "voice": "小B"
+        }
+      ]
+    },
+    {
+      "id": "S5",
+      "type": "statement",
+      "props": {
+        "heading": "品檢抓到的問題，修好再出片",
+        "size": 84,
+        "en": "FIXED AFTER QA"
+      },
+      "lines": [
+        "品檢抓到問題，修好之後才出片。"
+      ]
+    }
+  ]
+}

@@ -38,7 +38,7 @@ metadata:
 | ⑥ 動態試看 | 每概念 **10 秒**動態短片（新寫場景程式＋專屬配樂與音效），不是靜態圖 | ⛔ |
 | ⑦ 細節 | 旁白聲音試聽（同一句話三種聲音）、語速、字幕樣式 | ⛔ |
 | ⑧ 製作 | 旁白逐句 TTS → 時間軸（旁白長度補足到整數小節）→ 配樂＋事件音效＋人聲閃避 → Remotion 場景 → 算圖 | |
-| ⑨ 品檢 | 每場景抽一格看重疊／溢出／被字幕遮；響度 −14 LUFS；長度；修正後重算（清單：[`references/production.md`](references/production.md)） | |
+| ⑨ 品檢 | **`qa.py` 自動品檢**：版面（瀏覽器內量測重疊／超出畫面／闖進字幕區）、旁白回聽（whisper 比對稿子）、黑畫面／無聲／響度／長度、總覽圖＋`qa_report.md`；有「必修」就修正重算（[`references/production.md`](references/production.md)） | |
 | ⑩ 交付沉澱 | 成片＋把使用者喜歡的概念存進 `references/prompts/`、場景程式存進 `concepts/` | |
 
 使用者回答模糊（例如選項沒有的「1 和 4」）時，**用下一輪問題確認，不要猜**。
@@ -47,8 +47,8 @@ metadata:
 
 ```
 engine/
-  template/        Remotion 專案範本（theme／kit／scenes／lesson／motion／custom）—— new_project.py 會複製它
-  scripts/         new_project.py（建專案）、build.py（storyboard→旁白→時間軸→配樂→spec.json）、
+  template/        Remotion 專案範本（theme／kit／scenes／lesson／mediaScenes／motion／lib 元件庫／custom／QaProbe）—— new_project.py 會複製它
+  scripts/         new_project.py（建專案）、build.py（storyboard→照片解析→旁白→時間軸→配樂→側鏈閃避→spec.json）、qa.py＋qa_layout.mjs（自動品檢）、
                    make_music.py（13 種曲風 numpy 合成＋音效）、from_ai_pipeline.py（舊產線 .md+plan → storyboard，選用）、
                    pron_zh-TW.json（唸法：IP 逐字、縮寫拆字母）
   examples/        storyboard 範例（教學、宣傳、活動說明、舊產線轉換）
@@ -57,6 +57,14 @@ concepts/          做過的概念場景程式（參考實作，新影片要依�
 references/        流程、題庫、概念方法、製作與品檢、教訓、提示詞庫（prompts/）、實作範例（examples/：事實清單、內容分析、三概念分鏡）
 templates/資訊科範本1/   研習說明＋資訊科宣傳片（含宣傳片原始碼）
 ```
+
+## 四項增強（2026-10-01）
+| 功能 | 怎麼用 | 沒有素材時 |
+|---|---|---|
+| **真實照片／影片** | storyboard 設 `"mediaDir": "./素材"`；場景 props 寫 `"media": "檔名或關鍵字"`；場景型別 `photo`／`gallery`／`split`，或在自訂場景用 `lib/media` 的 `<Photo>` | **自動退回插畫**（`fallback: {icon, label, colors}`），build 會列出缺哪幾張，影片照常產出 |
+| **概念元件庫** | `engine/template/src/lib/`：camera（一鏡到底）、iso（等角世界）、character（角色劇）、kinetic（動態字體）、pixel（像素遊戲）、tunnel（縱深隧道）、draw（手繪描線）、media | — |
+| **自動品檢** | `python engine/scripts/qa.py [--video out/x.mp4]` | — |
+| **聲音升級** | 逐句覆寫 `{"text", "voice", "rate", "pitch", "volume"}`；`"voices"` 定義角色聲音；旁白自動 EQ＋壓縮；音樂用旁白包絡做側鏈閃避；配樂母帶（殘響＋匯流排壓縮＋限幅）；選用 Azure（`"provider": "azure"`＋環境變數） | — |
 
 **建專案**：`python engine/scripts/new_project.py <資料夾> --example teach|promo`（同機已有專案可用 junction 共用 `node_modules`）
 **建置**：`python engine/scripts/build.py storyboard.json [--style X]`

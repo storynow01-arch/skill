@@ -5,7 +5,9 @@ import {Captions, CutFx, Hud, TransitionIn} from './kit';
 import {GENERIC} from './scenes';
 import {CUSTOM} from './custom';
 import {LESSON} from './lesson';
+import {MEDIA_SCENES} from './mediaScenes';
 import {ImpactFx} from './motion';
+import {QaProbe} from './QaProbe';
 import {ThemeProvider, makeTheme} from './theme';
 
 export type Spec = {
@@ -18,7 +20,7 @@ export type Spec = {
   scenes: {id: string; type: string; from: number; dur: number; accent?: string; code?: number; hud?: string; props: any; cues: number[]}[];
 };
 
-const ALL = {...GENERIC, ...LESSON, ...CUSTOM};
+const ALL = {...GENERIC, ...LESSON, ...MEDIA_SCENES, ...CUSTOM};
 
 export const Video: React.FC<Spec> = (spec) => {
   const f = useCurrentFrame();
@@ -56,6 +58,7 @@ export const Video: React.FC<Spec> = (spec) => {
         <Captions caps={spec.captions} frame={f} />
         <ImpactFx t={t} frame={f} impacts={spec.impacts} />
         <CutFx t={t} g={g} frame={f} />
+        {(spec as Spec & {qa?: boolean}).qa && <QaProbe w={spec.width} h={spec.height} />}
         <Finish t={t} />
         <AbsoluteFill style={{background: t.dark ? '#fff' : t.c.accent, opacity: flash * (t.dark ? 0.8 : 0.35), pointerEvents: 'none'}} />
         <AbsoluteFill style={{background: '#000', opacity: Math.min(1, fade), pointerEvents: 'none'}} />

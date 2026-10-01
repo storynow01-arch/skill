@@ -7,7 +7,7 @@
   mode = "teach"  場景長度由旁白決定（每句單獨合成 → 精準字幕與動畫 cue），配樂為底樂並自動閃避人聲
   mode = "promo"  場景長度由 bars（小節數）決定，所有切點對齊音樂節拍，無旁白
 """
-import argparse, asyncio, hashlib, json, os, re, subprocess, sys, wave
+import argparse, asyncio, hashlib, json, os, re, shutil, subprocess, sys, wave
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -29,31 +29,105 @@ def to_speech(text):
     return text
 
 
-async def _tts(text, mp3, voice, rate, pitch):
+async def _tts(text, mp3, voice, rate, pitch, volume='+0%'):
     import edge_tts
-    await edge_tts.Communicate(text, voice, rate=rate, pitch=pitch).save(mp3)
+    await edge_tts.Communicate(text, voice, rate=rate, pitch=pitch, volume=volume).save(mp3)
+
+
+def _tts_azure(text, wav, v):
+    """選用：Azure 語音（需環境變數 AZURE_SPEECH_KEY、AZURE_SPEECH_REGION）。
+    支援 SSML 的 style（僅部分聲音有，例如 zh-CN-XiaoxiaoNeural；zh-TW 聲音沒有情緒風格）。"""
+    import urllib.request
+    key, region = os.environ['AZURE_SPEECH_KEY'], os.environ['AZURE_SPEECH_REGION']
+    lang = '-'.join(v['name'].split('-')[:2])
+    inner = f"<prosody rate='{v.get('rate', '+0%')}' pitch='{v.get('pitch', '+0Hz')}' volume='{v.get('volume', '+0%')}'>{text}</prosody>"
+    if v.get('style'):
+        inner = f"<mstts:express-as style='{v['style']}' styledegree='{v.get('styledegree', 1)}'>{inner}</mstts:express-as>"
+    ssml = (f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='https://www.w3.org/2001/mstts' xml:lang='{lang}'>"
+            f"<voice name='{v['name']}'>{inner}</voice></speak>")
+    req = urllib.request.Request(f'https://{region}.tts.speech.microsoft.com/cognitiveservices/v1', data=ssml.encode('utf-8'),
+                                 headers={'Ocp-Apim-Subscription-Key': key, 'Content-Type': 'application/ssml+xml',
+                                          'X-Microsoft-OutputFormat': 'riff-48khz-16bit-mono-pcm', 'User-Agent': 'storynow-aimovie'})
+    open(wav, 'wb').write(urllib.request.urlopen(req, timeout=60).read())
 
 
 def synth_line(text, cache, voice):
     """一句 → 48k mono float32。以內容 hash 快取，改稿只重錄改過的句子。"""
     say = to_speech(text)
-    h = hashlib.md5(f"{say}|{voice['name']}|{voice['rate']}|{voice['pitch']}".encode()).hexdigest()[:12]
+    use_azure = voice.get('provider') == 'azure' and os.environ.get('AZURE_SPEECH_KEY') and os.environ.get('AZURE_SPEECH_REGION')
+    if voice.get('provider') == 'azure' and not use_azure:
+        print('  ⚠ 未設定 AZURE_SPEECH_KEY／AZURE_SPEECH_REGION，改用 edge-tts')
+    tag = f"{say}|{voice['name']}|{voice['rate']}|{voice['pitch']}|{voice.get('volume', '+0%')}|{voice.get('style', '')}|{'az' if use_azure else 'edge'}"
+    h = hashlib.md5(tag.encode()).hexdigest()[:12]
     wav = os.path.join(cache, f'{h}.wav')
     if not os.path.exists(wav):
-        mp3 = wav[:-4] + '.mp3'
-        for attempt in range(3):
-            try:
-                asyncio.run(_tts(say, mp3, voice['name'], voice['rate'], voice['pitch'])); break
-            except Exception as e:  # 網路偶發失敗重試
-                if attempt == 2: raise
-                print('  tts retry', e)
-        subprocess.check_call(['ffmpeg', '-v', 'error', '-y', '-i', mp3, '-ac', '1', '-ar', str(SR), wav])
+        if use_azure:
+            raw = wav[:-4] + '_az.wav'
+            _tts_azure(say, raw, voice)
+            subprocess.check_call(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-ac', '1', '-ar', str(SR), wav])
+        else:
+            mp3 = wav[:-4] + '.mp3'
+            for attempt in range(3):
+                try:
+                    asyncio.run(_tts(say, mp3, voice['name'], voice['rate'], voice['pitch'], voice.get('volume', '+0%'))); break
+                except Exception as e:  # 網路偶發失敗重試
+                    if attempt == 2: raise
+                    print('  tts retry', e)
+            subprocess.check_call(['ffmpeg', '-v', 'error', '-y', '-i', mp3, '-ac', '1', '-ar', str(SR), wav])
     with wave.open(wav) as w:
         x = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
     # 修掉 TTS 前後的靜音，讓節奏由我們控制
     idx = np.where(np.abs(x) > 0.01)[0]
     if len(idx): x = x[max(0, idx[0] - int(0.03 * SR)): idx[-1] + int(0.08 * SR)]
     return x, say
+
+
+def _biquad_peak(f0, gain_db, q=0.9):
+    import math
+    A = 10 ** (gain_db / 40); w = 2 * math.pi * f0 / SR; al = math.sin(w) / (2 * q)
+    b = [1 + al * A, -2 * math.cos(w), 1 - al * A]; a = [1 + al / A, -2 * math.cos(w), 1 - al / A]
+    return [x / a[0] for x in b], [x / a[0] for x in a]
+
+
+def voice_chain(v):
+    """旁白處理：高通 80Hz（去低頻轟聲）→ 3.5kHz 臨場感 +3dB → 輕壓縮 → 正規化"""
+    from scipy.signal import butter, sosfilt, lfilter
+    v = sosfilt(butter(2, 80 / (SR / 2), 'high', output='sos'), v)
+    b, a = _biquad_peak(3500, 3.0); v = lfilter(b, a, v)
+    k = np.exp(-1 / (0.08 * SR))
+    env = lfilter([1 - k], [1, -k], np.abs(v)) + 1e-6
+    th = 0.12; v = v * np.where(env > th, (th + (env - th) / 2.5) / env, 1.0)
+    return (v / (np.max(np.abs(v)) + 1e-9) * 0.95).astype(np.float32)
+
+
+def sidechain_duck(music_path, voice, out_path, depth=0.3):
+    """依旁白音量包絡壓低音樂（真正的側鏈閃避：起音 40ms、釋放 400ms），輸出新的音樂檔。"""
+    from scipy.signal import lfilter
+    with wave.open(music_path) as w:
+        ch = w.getnchannels(); m = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
+    m = m.reshape(-1, ch).T.copy()
+    n = min(m.shape[1], len(voice))
+    env = np.abs(voice[:n])
+    att, rel = np.exp(-1 / (0.04 * SR)), np.exp(-1 / (0.4 * SR))
+    e = np.maximum(lfilter([1 - rel], [1, -rel], env), lfilter([1 - att], [1, -att], env))
+    k = np.clip(e / 0.04, 0, 1)
+    m[:, :n] *= 1 - (1 - depth) * k
+    with wave.open(out_path, 'wb') as w:
+        w.setnchannels(ch); w.setsampwidth(2); w.setframerate(SR)
+        w.writeframes((np.clip(m.T, -1, 1) * 32767).astype(np.int16).tobytes())
+
+
+def line_voice(raw, base, voices):
+    """逐句聲音：字串＝預設聲音；物件可指定角色（voices 裡的名字）或覆寫 rate／pitch／volume／style／provider。"""
+    if isinstance(raw, str):
+        return raw, base
+    v = dict(base)
+    who = raw.get('voice')
+    if who in voices: v.update(voices[who])
+    elif who: v['name'] = who
+    for k in ('rate', 'pitch', 'volume', 'style', 'styledegree', 'provider'):
+        if k in raw: v[k] = raw[k]
+    return raw['text'], v
 
 
 def split_caption(text, mx=24):
@@ -74,6 +148,65 @@ def split_caption(text, mx=24):
     return out
 
 
+IMG_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.bmp'}
+VID_EXT = {'.mp4', '.mov', '.webm', '.m4v'}
+
+
+def resolve_media(ref, media_dir, pub, missing, where):
+    """把 storyboard 裡的 media 參照解析成 {src, ok, kind, focus}。
+    ref 可以是：檔名、相對／絕對路徑、關鍵字（在 mediaDir 檔名裡搜尋），或 {file, focus, start}。
+    找不到 → ok=False，場景會自動畫退回插畫，影片照常產出。"""
+    if ref is None or ref == '':
+        return {'ok': False}
+    meta = ref if isinstance(ref, dict) else {'file': ref}
+    key = str(meta.get('file', ''))
+    cand = None
+    for p in [key, os.path.join(media_dir or '', key)]:
+        if key and os.path.isfile(p):
+            cand = p; break
+    if cand is None and media_dir and os.path.isdir(media_dir):
+        kw = key.lower()
+        for root, _, files in os.walk(media_dir):
+            for fn in sorted(files):
+                if kw and kw in fn.lower() and os.path.splitext(fn)[1].lower() in IMG_EXT | VID_EXT:
+                    cand = os.path.join(root, fn); break
+            if cand: break
+    if cand is None:
+        missing.append(f'{where}：「{key}」')
+        return {'ok': False}
+    ext = os.path.splitext(cand)[1].lower()
+    os.makedirs(os.path.join(pub, 'media'), exist_ok=True)
+    h = hashlib.md5(os.path.abspath(cand).encode()).hexdigest()[:10]
+    if ext in VID_EXT:
+        dst = f'media/{h}{ext}'
+        if not os.path.exists(os.path.join(pub, dst)): shutil.copy(cand, os.path.join(pub, dst))
+        kind = 'video'
+    else:
+        dst = f'media/{h}.jpg'
+        if not os.path.exists(os.path.join(pub, dst)):
+            try:
+                from PIL import Image, ImageOps
+                im = ImageOps.exif_transpose(Image.open(cand)).convert('RGB')
+                im.thumbnail((2400, 2400)); im.save(os.path.join(pub, dst), quality=88)
+            except Exception as e:   # Pillow 不在或圖壞掉 → 視為缺圖
+                missing.append(f'{where}：「{key}」讀取失敗 {e}'); return {'ok': False}
+        kind = 'image'
+    return {'src': dst, 'ok': True, 'kind': kind, 'focus': meta.get('focus', [0.5, 0.5]), 'start': meta.get('start', 0)}
+
+
+def walk_media(obj, media_dir, pub, missing, where):
+    """遞迴處理 props 裡所有名為 media 的欄位"""
+    if isinstance(obj, dict):
+        for k, v in list(obj.items()):
+            if k == 'media':
+                obj[k] = resolve_media(v, media_dir, pub, missing, where)
+            else:
+                walk_media(v, media_dir, pub, missing, where)
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            walk_media(v, media_dir, pub, missing, f'{where}[{i}]')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('storyboard'); ap.add_argument('--style'); ap.add_argument('--no-tts', action='store_true')
@@ -92,7 +225,11 @@ def main():
     pub = os.path.join(proj, 'public'); cache = os.path.join(proj, '.tts_cache')
     os.makedirs(pub, exist_ok=True); os.makedirs(cache, exist_ok=True)
 
-    t = 0.0; scenes = []; caps = []; duck = []; voice_parts = []; impacts = []; whooshes = []; blips = []
+    media_dir = sb.get('mediaDir')
+    if media_dir and not os.path.isabs(media_dir):
+        media_dir = os.path.join(os.path.dirname(os.path.abspath(a.storyboard)), media_dir)
+    missing = []
+    t = 0.0; scenes = []; caps = []; duck = []; voice_parts = []; impacts = []; whooshes = []; blips = []; vlines = []
     for i, sc in enumerate(sb['scenes']):
         start = t; cues = []
         lines = sc.get('lines', []) if mode == 'teach' and not a.no_tts else []
@@ -103,18 +240,21 @@ def main():
             if lines == [] and mode == 'teach' and sc.get('lines') and a.no_tts:  # 無 TTS 預覽：用字數估時
                 tt = start + lead
                 for ln in sc['lines']:
+                    ln = ln if isinstance(ln, str) else ln['text']
                     d = len(ln) / 5.2
                     cues.append(round((tt - start) * fps)); caps.append({'text': ln, 'from': round(tt * fps), 'to': round((tt + d) * fps)})
                     tt += d + gap
                 dur = max(dur, tt - start + tail)
         else:
             tt = start + lead
-            for ln in lines:
+            for raw in lines:
+                ln, lv = line_voice(raw, voice, sb.get('voices', {}))
                 if re.fullmatch(r'[.…。\s]+', ln):   # 「……」＝停頓（讓學生想），不發音、不上字幕
                     cues.append(round((tt - start) * fps)); tt += sb.get('pauseSec', 2.0); continue
-                x, say = synth_line(ln, cache, voice)
+                x, say = synth_line(ln, cache, lv)
                 d = len(x) / SR
                 voice_parts.append((tt, x))
+                vlines.append({'scene': sc['id'], 'text': ln, 'say': say, 'from': round(tt, 3), 'to': round(tt + d, 3)})
                 cues.append(round((tt - start) * fps))
                 pages = split_caption(ln, sb.get('capMax', 24))
                 n_all = sum(len(x) for x in pages); t0 = tt
@@ -128,8 +268,10 @@ def main():
         if sc.get('impact'): impacts.append(start)
         elif i > 0: whooshes.append(start)
         for b in sc.get('blips', []): blips.append(start + b)
+        props = json.loads(json.dumps(sc.get('props', {})))
+        walk_media(props, media_dir, pub, missing, sc['id'])
         scenes.append({'id': sc['id'], 'type': sc['type'], 'from': round(start * fps), 'dur': 0, 'accent': sc.get('accent'),
-                       'code': sc.get('code', 0), 'hud': sc.get('hud'), 'props': sc.get('props', {}), 'cues': cues})
+                       'code': sc.get('code', 0), 'hud': sc.get('hud'), 'props': props, 'cues': cues})
         t = start + dur
     total = t
     # 以整數 frame 重算每段長度，避免累積誤差
@@ -144,7 +286,7 @@ def main():
         for st, x in voice_parts:
             i0 = int(st * SR); v[i0:i0 + len(x)] += x
         v = v[: int(total * SR)]
-        v = v / (np.max(np.abs(v)) + 1e-9) * 0.95
+        v = voice_chain(v)
         with wave.open(os.path.join(pub, 'voice.wav'), 'wb') as w:
             w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((v * 32767).astype(np.int16).tobytes())
         voice_file = 'voice.wav'
@@ -159,14 +301,21 @@ def main():
         if mode == 'teach': cmd.append('--bed')
         subprocess.check_call(cmd)
         music_file = 'music.wav'
+        if voice_file and sb.get('sidechain', True):   # 用旁白包絡做側鏈閃避，取代逐格音量
+            sidechain_duck(os.path.join(pub, 'music.wav'), v, os.path.join(pub, 'music_ducked.wav'), sb.get('duckDepth', 0.3))
+            music_file = 'music_ducked.wav'
+            duck = []
 
     spec = {'style': style, 'mode': mode, 'fps': fps, 'width': 1920, 'height': 1080, 'totalFrames': total_frames,
             'hud': sb.get('hud'), 'music': music_file, 'voice': voice_file,
             'musicVolume': sb.get('musicVolume', 0.5 if mode == 'teach' else 1.0), 'duckTo': sb.get('duckTo', 0.14),
             'duck': duck, 'impacts': [round(x * fps) for x in impacts], 'captions': caps if sb.get('captions', True) else [],
-            'scenes': scenes}
+            'scenes': scenes, 'voiceLines': vlines}
     os.makedirs(os.path.join(proj, 'src', 'data'), exist_ok=True)
     json.dump(spec, open(os.path.join(proj, 'src', 'data', 'spec.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    if missing:
+        print('\n⚠ 缺照片（這些位置會自動改用插畫，影片照常產出）：')
+        for m in missing: print('   ', m)
     print(f'\nspec → src/data/spec.json   style={style}  mode={mode}  {total:.2f}s ({total_frames}f)  scenes={len(scenes)}')
     for s in scenes:
         print(f'  {s["id"]:<4} {s["type"]:<14} {s["from"] / fps:6.2f}s  +{s["dur"] / fps:5.2f}s')
