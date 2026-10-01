@@ -219,7 +219,7 @@ def main():
     fps = sb.get('fps', 30); mode = sb.get('mode', 'teach')
     voice = {'name': 'zh-TW-YunJheNeural', 'rate': '+18%', 'pitch': '+4Hz', **sb.get('voice', {})}
     gap = sb.get('lineGap', 0.28); lead = sb.get('lead', 0.35); tail = sb.get('tail', 0.55)
-    bpm = sb.get('bpm') or STYLES[style]['music']['bpm']
+    bpm = sb.get('bpm') or (sb.get('music') or {}).get('bpm') or STYLES[style]['music']['bpm']
     bar = 60 / bpm * 4
 
     pub = os.path.join(proj, 'public'); cache = os.path.join(proj, '.tts_cache')
@@ -265,6 +265,9 @@ def main():
                 print(f'  {sc["id"]}  {d:5.2f}s  {ln}')
                 tt += d + gap
             dur = max(sc.get('minSec', 0), tt - start - gap + tail)
+            if sb.get('snapBars'):   # 範本：場景長度補足到整數小節，切點對拍
+                import math
+                dur = math.ceil(dur / bar - 0.05) * bar
         if sc.get('impact'): impacts.append(start)
         elif i > 0: whooshes.append(start)
         for b in sc.get('blips', []): blips.append(start + b)
@@ -295,6 +298,9 @@ def main():
     if not a.no_music:
         cmd = [sys.executable, os.path.join(HERE, 'make_music.py'), '--style', style, '--duration', f'{total:.3f}',
                '--out', os.path.join(pub, 'music.wav'), '--bpm', str(bpm)]
+        mus = sb.get('music') or {}          # 範本可覆寫曲風：{"genre": "phonk", "bpm": 145, "key": "Em"}
+        if mus.get('genre'): cmd += ['--genre', mus['genre']]
+        if mus.get('key'): cmd += ['--key', mus['key']]
         if impacts: cmd += ['--impacts'] + [f'{x:.3f}' for x in impacts]
         if whooshes: cmd += ['--whooshes'] + [f'{x:.3f}' for x in whooshes]
         if blips: cmd += ['--blips'] + [f'{x:.3f}' for x in blips]
@@ -310,7 +316,7 @@ def main():
             'hud': sb.get('hud'), 'music': music_file, 'voice': voice_file,
             'musicVolume': sb.get('musicVolume', 0.5 if mode == 'teach' else 1.0), 'duckTo': sb.get('duckTo', 0.14),
             'duck': duck, 'impacts': [round(x * fps) for x in impacts], 'captions': caps if sb.get('captions', True) else [],
-            'scenes': scenes, 'voiceLines': vlines}
+            'scenes': scenes, 'voiceLines': vlines, 'bpm': bpm, 'narrator': sb.get('narrator')}
     os.makedirs(os.path.join(proj, 'src', 'data'), exist_ok=True)
     json.dump(spec, open(os.path.join(proj, 'src', 'data', 'spec.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     if missing:

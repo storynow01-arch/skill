@@ -14,8 +14,11 @@ sys.path.insert(0, HERE)
 SR = 48000
 
 
-def run(cmd, **kw):
-    return subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace', **kw)
+def run(cmd, timeout=1800, **kw):
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=timeout, **kw)
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(cmd, 124, '', f'逾時 {timeout}s')
 
 
 # ───────────── 1. 版面 ─────────────
@@ -64,7 +67,12 @@ def asr_check(spec, threshold):
         v = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
     model = WhisperModel('base', device='cpu', compute_type='int8')
     cc = OpenCC('t2s')
-    norm = lambda s: [p for p in lazy_pinyin(cc.convert(re.sub(r'[^\w]', '', s))) if p.strip()]
+    NUM = re.compile(r'[0-9０-９.．\-~～零〇一二三四五六七八九十百千萬万億亿兩两點点到至]+')
+    def norm(s):
+        # 數字兩邊寫法不同（稿：一九二點一六八／四十二億；聽：192.168／42）→ 比對前一律拿掉，數字唸法由唸法規則保證
+        s = cc.convert(s).lower()
+        s = NUM.sub('', s)
+        return [p for p in lazy_pinyin(re.sub(r'[^\w]', '', s)) if p.strip()]
     from build import to_speech
     out = []
     for ln in lines:

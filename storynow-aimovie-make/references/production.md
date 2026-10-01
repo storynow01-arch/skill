@@ -65,6 +65,8 @@ python <skill>/engine/scripts/qa.py --video out/x.mp4     # 算圖後：再加�
 | 黑畫面、無聲、響度、長度 | ffmpeg blackdetect／silencedetect／ebur128 | 必修／建議 |
 - 結果寫在 `qa_report.md`＋`qa_contact.jpg`；有必修項目時結束碼為 1
 - 拼音比對抓的是「聲音唸錯」；同音字（工場／工廠）聽起來一樣，不會被當成錯
+- **數字不比對**（兩邊都先拿掉）：whisper 會寫成阿拉伯數字，稿子常是國字；數字唸法靠 `pron_zh-TW.json` 的規則保證
+- 每一格量測有逾時保護，不會因為字型或某個場景卡住整批流程
 - 自動品檢管不到美感（例如標題斷在奇怪的地方），交付前仍要看一眼總覽圖
 
 ## 品檢清單（人工補看）

@@ -3,7 +3,7 @@
 import React, {useLayoutEffect, useState} from 'react';
 import {continueRender, delayRender, useCurrentFrame} from 'remotion';
 
-type Box = {text: string; x: number; y: number; w: number; h: number};
+type Box = {text: string; x: number; y: number; w: number; h: number; el: Element};
 
 const visible = (el: Element) => {
   let e: Element | null = el, op = 1;
@@ -29,15 +29,18 @@ const measure = (W: number, H: number) => {
     if (visible(el) < 0.35) continue;
     const r = el.getBoundingClientRect();
     if (r.width < 2 || r.height < 2) continue;
-    const b = {text: own.slice(0, 24), x: r.left, y: r.top, w: r.width, h: r.height};
+    if (r.right < 0 || r.bottom < 0 || r.left > W || r.top > H) continue;   // 完全在畫面外＝觀眾看不到，不算
+    const inCanvas = !!el.closest('[data-qa="canvas"]');                      // 一鏡到底大畫布：邊緣被鏡頭切掉是正常的
+    const b = {text: own.slice(0, 24), x: r.left, y: r.top, w: r.width, h: r.height, el};
     leaves.push(b);
-    if (r.left < -4 || r.top < -4 || r.right > W + 4 || r.bottom > H + 4) issues.push({kind: '超出畫面', detail: `「${b.text}」(${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.right)},${Math.round(r.bottom)})`});
+    if (!inCanvas && (r.left < -4 || r.top < -4 || r.right > W + 4 || r.bottom > H + 4)) issues.push({kind: '超出畫面', detail: `「${b.text}」(${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.right)},${Math.round(r.bottom)})`});
     const he = el as HTMLElement;
     if (he.scrollWidth && he.clientWidth && he.scrollWidth > he.clientWidth + 6 && getComputedStyle(he).overflow !== 'visible')
       issues.push({kind: '內容溢出', detail: `「${b.text}」 scroll ${he.scrollWidth} > ${he.clientWidth}`});
   }
   for (let i = 0; i < leaves.length; i++) for (let j = i + 1; j < leaves.length; j++) {
     const a = leaves[i], c = leaves[j];
+    if (a.el.contains(c.el) || c.el.contains(a.el)) continue;   // 同一段文字裡的標亮片段，不算重疊
     const ix = Math.max(0, Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x));
     const iy = Math.max(0, Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y));
     const inter = ix * iy, small = Math.min(a.w * a.h, c.w * c.h);
@@ -56,11 +59,16 @@ export const QaProbe: React.FC<{w: number; h: number}> = ({w, h}) => {
   const f = useCurrentFrame();
   const [handle] = useState(() => delayRender('qa-measure'));
   useLayoutEffect(() => {
-    (document as Document & {fonts: FontFaceSet}).fonts.ready.then(() => setTimeout(() => {
+    let done = false;
+    const go = () => {
+      if (done) return; done = true;
       const r = measure(w, h);
       console.log('QA:' + JSON.stringify({frame: f, ...r}));
       continueRender(handle);
-    }, 60));
+    };
+    (document as Document & {fonts: FontFaceSet}).fonts.ready.then(() => setTimeout(go, 60));
+    const t = setTimeout(go, 2500);   // 字型一直沒載完也照樣量測，避免卡死
+    return () => clearTimeout(t);
   }, [f, handle, w, h]);
   return null;
 };

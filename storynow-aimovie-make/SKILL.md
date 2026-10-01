@@ -23,8 +23,18 @@ metadata:
 | 使用者說 | 做什麼 |
 |---|---|
 | 「資訊科範本1」 | 照 [`templates/資訊科範本1/README.md`](templates/資訊科範本1/README.md)：活動說明（研習／座談）＋資訊科宣傳片，3 分半成片 |
+| 「範本A」「闖關遊戲範本」 | 照 [`templates/範本A_闖關遊戲/README.md`](templates/範本A_闖關遊戲/README.md)：任何文本 → 遊戲畫面 |
+| 「範本B」「手稿範本」 | 照 [`templates/範本B_創客手稿/README.md`](templates/範本B_創客手稿/README.md)：任何文本 → 一鏡到底筆記本 |
+| 「範本C」「快剪範本」 | 照 [`templates/範本C_動態字體快剪/README.md`](templates/範本C_動態字體快剪/README.md)：任何文本 → 動態字體快剪 |
+| 「用範本做」＋文本（沒指定哪個） | AskUserQuestion 讓使用者選 A／B／C（附一句特色），或「三個都做」 |
 | 「做影片」＋資料 | 走完整十步流程（下方） |
 | 「用 XX 概念做這份內容」 | 從第 ② 步開始，第 ④ 步直接採用指定概念，但仍要重新設計分鏡 |
+
+## 範本流程（使用者丟文本、選範本時用；比十步流程快）
+1. 讀文本 → 依 [`templates/範本風格_場景語彙.md`](templates/範本風格_場景語彙.md) 拆成 9 種場景（title／scenario／definition／cards／vs／stat／quiz／recap／qaEnd），寫 `storyboard.json`
+2. 給使用者審文本 ⛔（事實、旁白、場景型別）
+3. 照範本 README 的配樂與聲音設定建置 → `tpl_sfx.py A|B|C` → `qa.py --comp TemplateX` → 算圖 → 響度 → 成片品檢
+4. 同一份 storyboard 可以換範本重算，分鏡與旁白不用改（`snapBars` 依範本曲速重新對拍）
 
 ## 十步流程（細節見 [`references/workflow.md`](references/workflow.md)）
 

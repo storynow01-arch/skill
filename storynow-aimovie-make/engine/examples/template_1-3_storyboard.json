@@ -1,0 +1,223 @@
+{
+  "title": "1-3 IP 位址（範本測試）",
+  "mode": "teach",
+  "style": "cyber-neon",
+  "snapBars": true,
+  "narrator": "學長",
+  "hud": {
+    "left": "WORLD 1-3",
+    "right": "IP 位址"
+  },
+  "voice": {
+    "name": "zh-TW-YunJheNeural",
+    "rate": "+18%",
+    "pitch": "+4Hz"
+  },
+  "lineGap": 0.3,
+  "lead": 0.4,
+  "tail": 0.6,
+  "scenes": [
+    {
+      "id": "S1",
+      "type": "title",
+      "props": {
+        "eyebrow": "1-3",
+        "title": "IP 位址",
+        "en": "IP ADDRESS"
+      },
+      "lines": [
+        "上一節說，每個封包身上都要帶一個門牌。",
+        "那個門牌長什麼樣子？誰決定它？"
+      ]
+    },
+    {
+      "id": "S2",
+      "type": "scenario",
+      "props": {
+        "heading": "信寫好了，卻沒寫地址",
+        "icon": "📮",
+        "pills": [
+          "信封寫好了",
+          "郵票貼了",
+          "沒寫地址"
+        ],
+        "cueMap": [
+          0,
+          0,
+          1
+        ]
+      },
+      "lines": [
+        "想像你把信封寫好、郵票貼好，投進郵筒。",
+        "但你忘了寫地址。",
+        "郵差完全不知道要送去哪裡。"
+      ]
+    },
+    {
+      "id": "S3",
+      "type": "definition",
+      "props": {
+        "label": "IP 位址 · IP ADDRESS",
+        "bigText": "網路世界的門牌",
+        "highlight": "門牌",
+        "sideNotes": [
+          "每台裝置一個",
+          "不能重複"
+        ],
+        "cueMap": [
+          0,
+          1
+        ],
+        "noteCues": [
+          1,
+          2
+        ]
+      },
+      "lines": [
+        "每一台連上網路的裝置，都會拿到一個號碼。",
+        "它就是 IP 位址，網路世界的門牌。",
+        "不同的裝置，不能用同一個門牌。"
+      ]
+    },
+    {
+      "id": "S4",
+      "type": "cards",
+      "props": {
+        "heading": "IPv4 長這樣：192.168.0.1",
+        "cueMap": [
+          0,
+          1,
+          2
+        ],
+        "cards": [
+          {
+            "icon": "🔢",
+            "title": "四段數字",
+            "note": "中間用點隔開"
+          },
+          {
+            "icon": "📏",
+            "title": "每段 0–255",
+            "note": "超過就不合法"
+          },
+          {
+            "icon": "🧮",
+            "title": "8 個位元",
+            "note": "2⁸ = 256 種"
+          }
+        ]
+      },
+      "lines": [
+        "IPv4 長這樣：192.168.0.1，四段數字。",
+        "每一段的範圍，是 0 到 255。",
+        "因為每段是 8 個位元，最多 256 種。"
+      ]
+    },
+    {
+      "id": "S5",
+      "type": "vs",
+      "props": {
+        "left": {
+          "frame": "primary",
+          "icon": "🏠",
+          "text": "私有 IP：大樓房號"
+        },
+        "right": {
+          "frame": "success",
+          "icon": "🌐",
+          "text": "公有 IP：完整地址"
+        },
+        "mid": "+",
+        "footerPill": "192.168 開頭的是私有 IP",
+        "cueMap": [
+          0,
+          1
+        ]
+      },
+      "lines": [
+        "門牌分兩種。私有 IP，像大樓裡的房號；",
+        "公有 IP，像城市裡的完整地址。",
+        "192.168 開頭的，就是私有 IP。"
+      ]
+    },
+    {
+      "id": "S6",
+      "type": "stat",
+      "props": {
+        "value": 42,
+        "suffix": "億",
+        "label": "IPv4 位址總數",
+        "sub": "裝置早就超過，所以有了 IPv6"
+      },
+      "lines": [
+        "IPv4 總共大約四十二億個位址，",
+        "裝置早就超過這個數字，所以才有了 IPv6。"
+      ]
+    },
+    {
+      "id": "S7",
+      "type": "quiz",
+      "props": {
+        "question": "192.168.0.300 合法嗎？",
+        "options": [
+          "合法",
+          "不合法"
+        ],
+        "answerIndex": 1,
+        "revealCue": 2,
+        "afterNote": "每一段最大只到 255"
+      },
+      "lines": [
+        "來個小檢查：192.168.0.300 合法嗎？",
+        "……",
+        "答案是不合法，因為每一段最大只到 255。"
+      ]
+    },
+    {
+      "id": "S8",
+      "type": "recap",
+      "props": {
+        "takeaway": [
+          "IP 位址＝網路世界的門牌",
+          "IPv4：四段、每段 0–255"
+        ],
+        "recap": [
+          "私有 IP 像房號",
+          "公有 IP 像地址"
+        ],
+        "nextTeaser": "DNS",
+        "takeCues": [
+          0,
+          1
+        ],
+        "nextCue": 2
+      },
+      "lines": [
+        "今天帶走兩句：IP 位址，就是網路世界的門牌。",
+        "IPv4 有四段，每段 0 到 255。",
+        "下一節，我們講 DNS。"
+      ]
+    },
+    {
+      "id": "S9",
+      "type": "qaEnd",
+      "sec": 6,
+      "props": {
+        "question": "IPv4 每一段的範圍是？",
+        "options": [
+          "0–100",
+          "0–255",
+          "1–256",
+          "0–999"
+        ],
+        "answerIndex": 1,
+        "answerSec": 4
+      }
+    }
+  ],
+  "music": {
+    "genre": "chiptune",
+    "bpm": 140,
+    "key": "C"
+  }
+}

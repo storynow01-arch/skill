@@ -19,12 +19,18 @@ const composition = await selectComposition({serveUrl, id: compId, inputProps, p
 const out = [];
 for (const frame of frames) {
   let found = null;
-  await renderStill({
-    composition, serveUrl, frame, inputProps, puppeteerInstance: browser, scale: 0.25,
-    output: path.join(os.tmpdir(), `qa_${frame}.png`),
-    onBrowserLog: (log) => { if (log.text.startsWith('QA:')) found = JSON.parse(log.text.slice(3)); },
-  });
-  out.push(found ?? {frame, error: '沒有收到量測結果'});
+  const t0 = Date.now();
+  try {
+    await renderStill({
+      composition, serveUrl, frame, inputProps, puppeteerInstance: browser, scale: 0.25, timeoutInMilliseconds: 45000,
+      output: path.join(os.tmpdir(), `qa_${frame}.png`),
+      onBrowserLog: (log) => { if (log.text.startsWith('QA:')) found = JSON.parse(log.text.slice(3)); },
+    });
+  } catch (e) {
+    found = {frame, error: `算圖失敗：${String(e.message ?? e).slice(0, 200)}`, issues: []};
+  }
+  out.push(found ?? {frame, error: '沒有收到量測結果', issues: []});
+  process.stdout.write(`  (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
   process.stdout.write(`  frame ${frame}: ${found ? found.issues.length + ' 個問題' : '無結果'}\n`);
 }
 await browser.close({silent: true});
