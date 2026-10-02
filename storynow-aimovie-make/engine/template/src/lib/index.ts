@@ -7,7 +7,9 @@
    | pixel      | 闖關遊戲       | 像素精靈、像素字與框、金幣、RPG 對話框、像素溶解               |
    | tunnel     | 穿越網路線     | 縱深隧道、3D 投影、發光膠囊、全息標籤                          |
    | draw       | 創客手稿       | 逐筆描字／描線、鉛筆、方格紙                                  |
-   | media      | （新）         | 真實照片／影片＋Ken Burns，沒素材自動退回插畫                 | */
+   | media      | （新）         | 真實照片／影片＋Ken Burns，沒素材自動退回插畫                 |
+   | sketches   | 創客手稿       | 手繪線稿圖示庫（emoji→線稿對照），畫完會活起來                 |
+   | penkit     | 創客手稿       | 筆跟著筆跡：登記每一筆，筆尖停在正在畫的那一筆 | */
 export * from './camera';
 export * from './iso';
 export * from './character';
@@ -16,3 +18,5 @@ export * from './pixel';
 export * from './tunnel';
 export * from './draw';
 export * from './media';
+export * from './sketches';
+export * from './penkit';
