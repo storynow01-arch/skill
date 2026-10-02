@@ -6,12 +6,12 @@ import {AbsoluteFill, Audio, random, Sequence, spring, staticFile, useCurrentFra
 import {loadFont as loadPixel} from '@remotion/google-fonts/PressStart2P';
 import {loadFont as loadTC} from '@remotion/google-fonts/NotoSansTC';
 import {QaProbe} from '../QaProbe';
-import {TplSpec, captionAt, cue, fit, sceneIndex, wrap} from './common';
+import {PixelIcon} from '../lib/iconkit';
+import {TplSpec, captionAt, cue, fit, wrap} from './common';
 
 const PX = loadPixel('normal', {weights: ['400']}).fontFamily;
 const TC = loadTC('normal', {weights: ['900'], ignoreTooManyRequestsWarning: true}).fontFamily;
 const C = {sky1: '#1A1C2C', sky2: '#3B5DC9', gold: '#FFCD75', white: '#F4F4F4', blue: '#41A6F6', green: '#A7F070', red: '#EF7D57', dark: '#333C57', ink: '#1A1C2C'};
-const EMOJI = '"Segoe UI Emoji", "Noto Color Emoji", sans-serif';
 const step = (f: number, n = 2) => Math.floor(f / n) * n;
 const q8 = (v: number) => Math.round(v / 8) * 8;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,9 +23,10 @@ const T: React.FC<{children: React.ReactNode; size: number; color?: string; styl
 const SPRITE = ['...11111....', '..1111111...', '..2222222...', '..2262262...', '..2222222...', '...22222....', '..3333333...',
   '.333333333..', '.2.33333.2..', '...33333....', '...44.44....', '...44.44....', '..55..55....'];
 const PAL: Record<string, string> = {'1': '#5A3A2E', '2': '#FFD2A8', '3': C.blue, '4': '#29366F', '5': C.ink, '6': C.ink};
-const Sprite: React.FC<{x: number; y: number; s?: number}> = ({x, y, s = 10}) => (
+const SPRITE_WALK = [...SPRITE.slice(0, 10), '...44.44....', '..44...44...', '.55.....55..'];
+const Sprite: React.FC<{x: number; y: number; s?: number; walk?: boolean}> = ({x, y, s = 10, walk}) => (
   <div style={{position: 'absolute', left: x, top: y}}>
-    {SPRITE.map((row, r) => row.split('').map((ch, c) => ch === '.' ? null : <div key={`${r}-${c}`} style={{position: 'absolute', left: c * s, top: r * s, width: s, height: s, background: PAL[ch]}} />))}
+    {(walk ? SPRITE_WALK : SPRITE).map((row, r) => row.split('').map((ch, c) => ch === '.' ? null : <div key={`${r}-${c}`} style={{position: 'absolute', left: c * s, top: r * s, width: s, height: s, background: PAL[ch]}} />))}
   </div>
 );
 const Stars: React.FC<{f: number}> = ({f}) => <>{Array.from({length: 70}, (_, i) => (
@@ -68,6 +69,8 @@ const Title: React.FC<P> = ({p}) => {
       </div>
       {p.en && <T px size={26} color={C.blue} style={{marginTop: 30, letterSpacing: 6}}>{p.en}</T>}
       <T px size={30} style={{marginTop: 60, opacity: Math.floor(f / 15) % 2 ? 1 : 0.2}}>▶ PRESS START</T>
+      <div style={{position: 'absolute', left: 200, top: 770, width: 200, height: 24, background: C.green, borderBottom: '8px solid #3E1F3E'}} />
+      <Sprite x={240} y={q8(640 - (1 - Math.max(0, spring({frame: step(f) - 24, fps, config: {damping: 9, stiffness: 140}}))) * 900)} />
     </AbsoluteFill>
   );
 };
@@ -80,7 +83,7 @@ const Scenario: React.FC<P> = ({p, cues}) => {
       <Banner text="★ QUEST ★" />
       <T size={fit(p.heading, 1500, 58)} style={{position: 'absolute', top: 250, width: '100%', textAlign: 'center'}}>{p.heading}</T>
       <Box style={{position: 'absolute', left: 220, top: 380, width: 380, height: 380, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-        <span style={{fontFamily: EMOJI, fontSize: 210, transform: `translateY(${Math.floor(f / 12) % 2 ? -10 : 0}px) rotate(${p.spin ? step(f, 3) * 8 : 0}deg)`}}>{p.icon ?? '❓'}</span>
+        <PixelIcon name={p.sketch ?? p.icon} size={260} f={f} at={4} fill={C.red} />
       </Box>
       <div style={{position: 'absolute', left: 720, top: 400, display: 'flex', flexDirection: 'column', gap: 34}}>
         {pills.map((x, i) => {
@@ -133,7 +136,7 @@ const Definition: React.FC<P> = ({p, cues}) => {
 
 const Cards: React.FC<P> = ({p, cues}) => {
   const f = useCurrentFrame();
-  const cards: {icon?: string; title: string; note?: string}[] = p.cards ?? [];
+  const cards: {icon?: string; sketch?: string; title: string; note?: string}[] = p.cards ?? [];
   const w = cards.length <= 2 ? 620 : cards.length === 3 ? 480 : 380;
   return (
     <AbsoluteFill>
@@ -148,7 +151,7 @@ const Cards: React.FC<P> = ({p, cues}) => {
               <Box color={on ? C.gold : '#666'} style={{width: w, height: 380, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 transform: on && f - at < 8 ? `translateY(${-q8(Math.sin(((f - at) / 8) * Math.PI) * 30)}px)` : undefined}}>
                 {on ? <>
-                  <span style={{fontFamily: EMOJI, fontSize: 110}}>{c.icon ?? '⭐'}</span>
+                  <PixelIcon name={c.sketch ?? c.icon} size={130} f={f} at={at} fill={C.gold} />
                   <T size={fit(c.title, w - 60, 48)} style={{marginTop: 18}}>{c.title}</T>
                   {c.note && <T size={fit(c.note, (w - 40) * 1.8, 28)} color={C.blue} style={{marginTop: 12, textAlign: 'center', padding: '0 20px'}}>{c.note}</T>}
                 </> : <T px size={120} color="#666">?</T>}
@@ -170,14 +173,14 @@ const Cards: React.FC<P> = ({p, cues}) => {
 
 const Vs: React.FC<P> = ({p, cues}) => {
   const f = useCurrentFrame();
-  const side = (s: {frame: string; icon: string; text: string}, i: number) => {
+  const side = (s: {frame: string; icon: string; sketch?: string; text: string}, i: number) => {
     const at = cue(cues, p.cueMap?.[i], i ? 40 : 6);
     const col = s.frame === 'danger' ? C.red : s.frame === 'success' ? C.green : C.blue;
     return (
       <Pop at={at}>
         <Box color={col} style={{width: 640, height: 470, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 30px'}}>
           <T px size={24} color={col}>{s.frame === 'danger' ? 'ENEMY' : s.frame === 'success' ? 'HERO' : 'PLAYER'}</T>
-          <span style={{fontFamily: EMOJI, fontSize: 130, color: col, marginTop: 10}}>{s.icon}</span>
+          <PixelIcon name={s.sketch ?? s.icon} size={150} f={f} at={at} fill={col} style={{marginTop: 14}} />
           <T size={fit(s.text, 1100, 44)} style={{marginTop: 20, textAlign: 'center', lineHeight: 1.4}}>{s.text}</T>
         </Box>
       </Pop>
@@ -296,15 +299,87 @@ const QaEnd: React.FC<P> = ({p}) => {
   );
 };
 
+
+/* ---------- 世界地圖：關卡之間主角走過去（招牌特徵）。每個場景＝地圖上的一關。 ---------- */
+const GAME: Record<string, string> = {title: 'START', scenario: 'QUEST', definition: 'ITEM', cards: 'SHOP', vs: 'VS', stat: 'STATUS', quiz: 'BATTLE', recap: 'CLEAR', qaEnd: 'BOSS'};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const shortOf = (p: any) => Array.from(String(p.label ?? p.heading ?? p.title ?? p.question ?? p.bigText ?? '')).slice(0, 7).join('');
+const NODE = (k: number) => 360 + k * 620;
+const GROUND = 780;
+type Win = {start: number; end: number} | null;
+/** 走地圖的時段：上一關旁白講完後 → 下一關第一句之前（最長 2 秒） */
+export const walkWindows = (spec: TplSpec): Win[] => spec.scenes.map((s, i) => {
+  if (i === 0) return null;
+  const prev = spec.scenes[i - 1];
+  const capEnd = Math.max(prev.from, ...spec.captions.filter((c) => c.from >= prev.from && c.from < prev.from + prev.dur).map((c) => c.to));
+  const end = s.from + Math.min(Math.max(8, (s.cues?.[0] ?? 10) - 2), 14);
+  let start = Math.max(capEnd + 6, prev.from + Math.round(prev.dur * 0.5));
+  start = Math.min(start, s.from - 12);
+  return {start: Math.max(start, end - 60), end};
+});
+const WorldMap: React.FC<{f: number; spec: TplSpec; i: number; w: {start: number; end: number}}> = ({f, spec, i, w}) => {
+  const len = w.end - 8 - w.start, t = (f - w.start) / Math.max(1, len);
+  const walkT = Math.max(0, Math.min(1, (t - 0.3) / 0.55));
+  const x0 = NODE(i - 1) + 120, x1 = NODE(i) - 40;
+  const hx = x0 + (x1 - x0) * walkT;
+  const walking = t > 0.3 && t < 0.85;
+  const hop = t >= 0.85 ? Math.sin(Math.min(1, (t - 0.85) / 0.15) * Math.PI) * 60 : 0;
+  const cam = Math.max(0, hx - 760);
+  const d = f - w.start;
+  const shake = d < 6 ? (random(`ms${f}`) - 0.5) * 18 : 0;
+  const rise = Math.min(1, d / Math.max(1, len * 0.3));
+  const worldW = NODE(spec.scenes.length) + 800;
+  return (
+    <AbsoluteFill data-qa="canvas" style={{background: `linear-gradient(${C.sky1}, ${C.sky2})`, overflow: 'hidden'}}>
+      <Stars f={f} />
+      {Array.from({length: 14}, (_, k) => <div key={k} style={{position: 'absolute', left: q8(k * 300 - ((cam * 0.4) % 300) - 150), top: GROUND - 160 - (k % 3) * 60, width: 0, height: 0,
+        borderLeft: '170px solid transparent', borderRight: '170px solid transparent', borderBottom: `${160 + (k % 3) * 60}px solid #29366F`}} />)}
+      <div style={{position: 'absolute', left: 0, top: 0, width: worldW, height: 1080, transform: `translate(${-q8(cam) + shake}px, ${shake / 2}px)`}}>
+        {Array.from({length: Math.ceil(worldW / 64)}, (_, k) => (
+          <div key={k} style={{position: 'absolute', left: k * 64, top: GROUND, width: 64, height: 300, background: '#73464C', borderTop: `16px solid ${C.green}`,
+            boxShadow: 'inset -6px -6px 0 #3E1F3E, inset 6px 6px 0 #AB5236'}} />))}
+        {spec.scenes.map((s, k) => {
+          const done = k < i - 1 || (k === i - 1 && rise > 0);
+          const fy = k === i - 1 ? 260 - 240 * rise : done ? 20 : 260;
+          return (
+            <div key={s.id} style={{position: 'absolute', left: NODE(k) + 100, top: GROUND - 300}}>
+              <div style={{position: 'absolute', left: 0, top: 0, width: 10, height: 300, background: C.white}} />
+              <div style={{position: 'absolute', left: 10, top: q8(fy), width: 80, height: 54, background: done ? C.green : C.red, clipPath: 'polygon(0 0,100% 50%,0 100%)'}} />
+              <div style={{position: 'absolute', left: -120, top: -150, width: 250, padding: '8px 0', textAlign: 'center', background: C.dark, border: `6px solid ${done ? C.green : k === i ? C.gold : C.white}`}}>
+                <T px size={14} color={done ? C.green : C.white}>{`STAGE ${k + 1}`}</T>
+                <T px size={14} color={C.gold} style={{marginTop: 6}}>{GAME[s.type] ?? ''}</T>
+                <T size={fit(shortOf(s.props), 220, 28)} style={{marginTop: 4}}>{shortOf(s.props)}</T>
+              </div>
+            </div>
+          );
+        })}
+        <Coins at={w.start} x={NODE(i - 1) + 100} y={GROUND - 320} />
+        <Sprite x={q8(hx)} y={GROUND - 130 - q8(hop) + (walking && Math.floor(f / 4) % 2 ? -8 : 0)} walk={walking && Math.floor(f / 4) % 2 === 1} />
+      </div>
+      {t < 0.5 && (
+        <div style={{position: 'absolute', left: 0, right: 0, top: 150, display: 'flex', justifyContent: 'center', transform: `scale(${Math.min(1, d / 5)})`}}>
+          <Box color={C.gold} style={{padding: '14px 44px', textAlign: 'center'}}>
+            <T px size={36} color={C.gold}>SKILL UNLOCKED!</T>
+            <T size={30} style={{marginTop: 8}}>{shortOf(spec.scenes[i - 1].props)}</T>
+          </Box>
+        </div>
+      )}
+    </AbsoluteFill>
+  );
+};
+
 const SCENES: Record<string, React.FC<P>> = {title: Title, scenario: Scenario, definition: Definition, cards: Cards, vs: Vs, quiz: Quiz, stat: Stat, recap: Recap, qaEnd: QaEnd};
 
 export const TemplateA: React.FC<TplSpec & {narrator?: string}> = (spec) => {
   const f = useCurrentFrame();
   const total = spec.totalFrames;
-  const idx = sceneIndex(spec, f);
-  const cur = spec.scenes[idx];
-  const lf = f - cur.from;
-  const wipe = lf < 10 ? lf / 10 : 1;
+  const wins = walkWindows(spec);
+  const wi = wins.findIndex((w) => w && f >= w.start && f < w.end);
+  const win = wi > 0 ? wins[wi] : null;
+  const onMap = !!win && f < win.end - 8;
+  const dissolve = win && !onMap ? (f - (win.end - 8)) / 8 : 1;
+  const cleared = wins.filter((w) => w && f >= w.start + 4).length;
+  const nClear = Math.max(1, spec.scenes.length - 1);
   const fade = Math.max(0, 1 - f / 8, (f - (total - 24)) / 24);
   const cap = captionAt(spec, f, 8);
   const lines = cap ? wrap(cap.text, 30) : [];
@@ -313,21 +388,22 @@ export const TemplateA: React.FC<TplSpec & {narrator?: string}> = (spec) => {
       <Stars f={f} />
       {Array.from({length: 10}, (_, i) => <div key={i} style={{position: 'absolute', left: i * 220 - 60, bottom: 0, width: 0, height: 0, opacity: 0.55,
         borderLeft: '150px solid transparent', borderRight: '150px solid transparent', borderBottom: `${130 + (i % 3) * 50}px solid #29366F`}} />)}
-      {spec.scenes.map((s) => {
+      {!onMap && spec.scenes.map((s) => {
         const Comp = SCENES[s.type];
         return Comp ? <Sequence key={s.id} from={s.from} durationInFrames={s.dur}><Comp p={s.props} cues={s.cues} dur={s.dur} /></Sequence> : null;
       })}
+      {onMap && win && <WorldMap f={f} spec={spec} i={wi} w={win} />}
       <div style={{position: 'absolute', left: 40, top: 30, right: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
         <div style={{display: 'flex', alignItems: 'center', gap: 18}}>
-          <T size={24} color={C.gold}>{spec.hud?.left ?? 'WORLD 1'}</T>
-          <div style={{width: 320, height: 24, border: `5px solid ${C.white}`, background: C.dark}}><div style={{width: `${(f / total) * 100}%`, height: '100%', background: C.green}} /></div>
+          <T px size={22} color={C.gold}>{`LV.${1 + cleared}`}</T>
+          <div style={{width: 320, height: 24, border: `5px solid ${C.white}`, background: C.dark}}><div style={{width: `${(cleared / nClear) * 100}%`, height: '100%', background: C.green}} /></div>
           <T px size={16}>XP</T>
         </div>
-        <T px size={22}>SCORE {String(idx * 1000).padStart(6, '0')}</T>
+        <T px size={22}>SCORE {String(cleared * 1000).padStart(6, '0')}</T>
       </div>
-      {wipe < 1 && idx > 0 && (
+      {dissolve < 1 && (
         <AbsoluteFill style={{display: 'grid', gridTemplateColumns: 'repeat(24, 1fr)'}}>
-          {Array.from({length: 24 * 14}, (_, i) => <div key={i} style={{background: C.ink, opacity: random(`w${i}`) > wipe ? 1 : 0}} />)}
+          {Array.from({length: 24 * 14}, (_, i) => <div key={i} style={{background: C.ink, opacity: random(`w${i}`) > dissolve ? 1 : 0}} />)}
         </AbsoluteFill>
       )}
       {cap && (() => {

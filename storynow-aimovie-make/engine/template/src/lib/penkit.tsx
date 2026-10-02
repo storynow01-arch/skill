@@ -13,9 +13,38 @@ type Pt = [number, number];
 export type Stroke = {start: number; dur: number; pts: Pt[]};
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 
+/** SVG 橢圓弧（端點參數）→ 折線點（不含起點） */
+const arcPts = (x1: number, y1: number, rx: number, ry: number, phiDeg: number, fA: number, fS: number, x2: number, y2: number): Pt[] => {
+  rx = Math.abs(rx); ry = Math.abs(ry);
+  if (!rx || !ry) return [[x2, y2]];
+  const phi = (phiDeg * Math.PI) / 180, cp = Math.cos(phi), sp = Math.sin(phi);
+  const dx = (x1 - x2) / 2, dy = (y1 - y2) / 2;
+  const x1p = cp * dx + sp * dy, y1p = -sp * dx + cp * dy;
+  const lam = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
+  if (lam > 1) { rx *= Math.sqrt(lam); ry *= Math.sqrt(lam); }
+  const num = rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p;
+  const co = (fA === fS ? -1 : 1) * Math.sqrt(Math.max(0, num / (rx * rx * y1p * y1p + ry * ry * x1p * x1p)));
+  const cxp = (co * rx * y1p) / ry, cyp = (-co * ry * x1p) / rx;
+  const ccx = cp * cxp - sp * cyp + (x1 + x2) / 2, ccy = sp * cxp + cp * cyp + (y1 + y2) / 2;
+  const ang = (ux: number, uy: number, vx: number, vy: number) => Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
+  const t1 = ang(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry);
+  let dt = ang((x1p - cxp) / rx, (y1p - cyp) / ry, (-x1p - cxp) / rx, (-y1p - cyp) / ry);
+  if (!fS && dt > 0) dt -= Math.PI * 2;
+  if (fS && dt < 0) dt += Math.PI * 2;
+  const n = Math.max(4, Math.ceil(Math.abs(dt) / (Math.PI / 12)));
+  return Array.from({length: n}, (_, k) => {
+    const t = t1 + (dt * (k + 1)) / n, ex = rx * Math.cos(t), ey = ry * Math.sin(t);
+    return [cp * ex - sp * ey + ccx, sp * ex + cp * ey + ccy] as Pt;
+  });
+};
+
 /** 把 SVG 路徑近似成折線（M L H V C Q A Z，大小寫皆可）。整圈的 a 弧（終點≈起點）當成圓，圓心在起點正下方 r。 */
-export const pathPoints = (d: string): Pt[] => {
-  const pts: Pt[] = [];
+export const pathPoints = (d: string): Pt[] => pathPolys(d).flat();
+
+/** 同上，但每個 M 開一段新折線（點陣化、填色要用） */
+export const pathPolys = (d: string): Pt[][] => {
+  const polys: Pt[][] = [];
+  let pts: Pt[] = [];
   let cx = 0, cy = 0, sx = 0, sy = 0;
   const re = /([MmLlHhVvCcQqAaZz])([^MmLlHhVvCcQqAaZz]*)/g;
   let m: RegExpExecArray | null;
@@ -27,7 +56,7 @@ export const pathPoints = (d: string): Pt[] => {
     if (C === 'M') {
       for (let i = 0; i + 1 < n.length; i += 2) {
         cx = (rel ? cx : 0) + n[i]; cy = (rel ? cy : 0) + n[i + 1];
-        if (i === 0) { sx = cx; sy = cy; }
+        if (i === 0) { sx = cx; sy = cy; if (pts.length) polys.push(pts); pts = []; }
         pts.push([cx, cy]);
       }
     } else if (C === 'L') {
@@ -57,12 +86,13 @@ export const pathPoints = (d: string): Pt[] => {
         if (Math.hypot(ex - cx, ey - cy) < 2) {           // 整圈
           const ox = cx, oy = cy + r;
           for (let s = 1; s <= 24; s++) { const a = -Math.PI / 2 - (s / 24) * Math.PI * 2; pts.push([ox + Math.cos(a) * r, oy + Math.sin(a) * r]); }
-        } else pts.push([ex, ey]);
+        } else pts.push(...arcPts(cx, cy, n[i], n[i + 1], n[i + 2], n[i + 3], n[i + 4], ex, ey));
         cx = ex; cy = ey;
       }
     }
   }
-  return pts;
+  if (pts.length) polys.push(pts);
+  return polys;
 };
 
 const lengthOf = (pts: Pt[]) => pts.reduce((L, p, i) => (i ? L + Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0), 0);

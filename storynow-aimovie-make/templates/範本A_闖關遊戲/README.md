@@ -32,9 +32,10 @@ Narration: a friendly senior student, like a game guide talking to the new playe
 | # | 招牌特徵（來自原始提示詞） | 怎麼驗 | 通用版現況 |
 |---|---|---|---|
 | 1 | 整支影片就是一款復古遊戲：像素畫、HUD（HP／XP 條）、分數彈出 | 總覽圖 | ✅ |
-| 2 | 世界地圖：主角在關卡節點之間**走過去**（橫向捲動、視差） | 場景交界抽連續格，要看到移動 | ⚠ 待逐格核對（通用版各場景為獨立畫面，可能缺「走地圖」） |
+| 2 | 世界地圖：主角在關卡節點之間**走過去**（橫向捲動、視差） | 場景交界抽連續格，要看到移動 | ✅ 2026-10-02 補上：每個場景＝地圖上一關，上一關旁白講完→插旗變綠＋金幣→主角走到下一關→像素溶解進場（`walkWindows`） |
 | 3 | 每個事件都有音效（金幣、跳、升級） | 聽 | ✅ `tpl_sfx.py A` |
-| 4 | SKILL UNLOCKED／XP 條填滿／升級、打擊時畫面震動 | 連續格 | ⚠ 待逐格核對 |
+| 4 | SKILL UNLOCKED／XP 條填滿／升級、打擊時畫面震動 | 連續格 | ✅ 2026-10-02 補上：過關跳 SKILL UNLOCKED、LV／XP／SCORE 依過關數成長（之前 XP 只是時間進度條） |
+| 6 | 像素畫：圖示是**像素圖**、主角開場掉進畫面 | 總覽圖 | ✅ 2026-10-02 修正：圖示改 `PixelIcon`（線稿點陣化），之前是彩色 emoji |
 | 5 | 字幕＝RPG 對話框 | 總覽圖 | ✅ |
 
 ## 範本設定
@@ -63,17 +64,14 @@ Narration: a friendly senior student, like a game guide talking to the new playe
 ## 執行步驟
 1. **拿到文本**（講義、旁白稿、活動資料）→ 依 [`../範本風格_場景語彙.md`](../範本風格_場景語彙.md) 拆成 9 種場景，寫出 `storyboard.json`（旁白一行一句）。
 2. **給使用者審文本** ⛔（場景表：型別、畫面重點、旁白）。
-3. 建專案並建置：
+3. 建專案並一行做完：
    ```bash
    python <skill>/engine/scripts/new_project.py <專案> --no-install   # 再 npm install 或 junction 共用 node_modules
-   python <skill>/engine/scripts/build.py storyboard.json
-   python <skill>/engine/scripts/tpl_sfx.py A
-   python <skill>/engine/scripts/qa.py --comp TemplateA          # 版面＋旁白品檢
-   npx remotion render src/index.ts TemplateA out/x.mp4 --concurrency=4 --crf=18 --audio-codec=aac
-   ffmpeg -i out/x.mp4 -c:v copy -af loudnorm=I=-14:TP=-1:LRA=9 -c:a aac out/成片.mp4
-   python <skill>/engine/scripts/qa.py --comp TemplateA --skip-layout --skip-asr --video out/成片.mp4
+   cd <專案> && cp <你的分鏡>.json storyboard.json
+   python <skill>/engine/scripts/make_video.py storyboard.json --template A --name <片名>
    ```
-4. 看 `qa_report.md` 與總覽圖，有必修項目就修正重算。
+   `make_video.py` 會：同步 skill 最新範本程式 → 檢查圖示都有線稿 → 建置 → 範本音效 → 版面＋旁白品檢（有必修就停）→ 算圖 → 響度 −14 → 成片品檢，最後印出本範本的概念忠實度清單。
+4. 看 `qa/pre_A.md`、`qa/post_A.md` 與總覽圖；**再用連續格逐項核對下面的「概念忠實度檢查」**。
 
 ## 參考實作
 - 招生片完整版（為那支片客製的場景）：`concepts/levelup/（招生片完整版 LevelUpFull、1-1 教學 LessonLevelUp）`

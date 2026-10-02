@@ -20,3 +20,4 @@ export * from './draw';
 export * from './media';
 export * from './sketches';
 export * from './penkit';
+export * from './iconkit';

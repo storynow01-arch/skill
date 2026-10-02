@@ -33,8 +33,9 @@ metadata:
 ## 範本流程（使用者丟文本、選範本時用；比十步流程快）
 1. 讀文本 → 依 [`templates/範本風格_場景語彙.md`](templates/範本風格_場景語彙.md) 拆成 9 種場景（title／scenario／definition／cards／vs／stat／quiz／recap／qaEnd），寫 `storyboard.json`
 2. 給使用者審文本 ⛔（事實、旁白、場景型別）
-3. 照範本 README 的配樂與聲音設定建置 → `tpl_sfx.py A|B|C` → `qa.py --comp TemplateX` → 算圖 → 響度 → 成片品檢
-4. 同一份 storyboard 可以換範本重算，分鏡與旁白不用改（`snapBars` 依範本曲速重新對拍）
+3. `new_project.py <專案>` → **`make_video.py storyboard.json --template A|B|C`**（一行：同步範本程式→檢查圖示→建置→音效→品檢→算圖→響度→成片品檢）
+4. **概念忠實度**：照 make_video 最後印出的清單，用連續格逐項核對招牌特徵（技術品檢管不到這個）
+5. 同一份 storyboard 可以換範本重算，分鏡與旁白不用改（`snapBars` 依範本曲速重新對拍）；圖示欄位寫 emoji 或線稿名都可（見 `lib/sketches.ts`）
 
 ## 十步流程（細節見 [`references/workflow.md`](references/workflow.md)）
 

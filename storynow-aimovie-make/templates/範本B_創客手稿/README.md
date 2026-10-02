@@ -64,17 +64,14 @@ Narration: a senior student, calm and encouraging, like showing you their own no
 ## 執行步驟
 1. **拿到文本**（講義、旁白稿、活動資料）→ 依 [`../範本風格_場景語彙.md`](../範本風格_場景語彙.md) 拆成 9 種場景，寫出 `storyboard.json`（旁白一行一句）。
 2. **給使用者審文本** ⛔（場景表：型別、畫面重點、旁白）。
-3. 建專案並建置：
+3. 建專案並一行做完：
    ```bash
    python <skill>/engine/scripts/new_project.py <專案> --no-install   # 再 npm install 或 junction 共用 node_modules
-   python <skill>/engine/scripts/build.py storyboard.json
-   python <skill>/engine/scripts/tpl_sfx.py B
-   python <skill>/engine/scripts/qa.py --comp TemplateB          # 版面＋旁白品檢
-   npx remotion render src/index.ts TemplateB out/x.mp4 --concurrency=4 --crf=18 --audio-codec=aac
-   ffmpeg -i out/x.mp4 -c:v copy -af loudnorm=I=-14:TP=-1:LRA=9 -c:a aac out/成片.mp4
-   python <skill>/engine/scripts/qa.py --comp TemplateB --skip-layout --skip-asr --video out/成片.mp4
+   cd <專案> && cp <你的分鏡>.json storyboard.json
+   python <skill>/engine/scripts/make_video.py storyboard.json --template B --name <片名>
    ```
-4. 看 `qa_report.md` 與總覽圖，有必修項目就修正重算。
+   `make_video.py` 會：同步 skill 最新範本程式 → 檢查圖示都有線稿 → 建置 → 範本音效 → 版面＋旁白品檢（有必修就停）→ 算圖 → 響度 −14 → 成片品檢，最後印出本範本的概念忠實度清單。
+4. 看 `qa/pre_B.md`、`qa/post_B.md` 與總覽圖；**再用連續格逐項核對下面的「概念忠實度檢查」**。
 
 ## 參考實作
 - 招生片完整版（為那支片客製的場景）：`concepts/notebook/（招生片完整版 NotebookFull）`

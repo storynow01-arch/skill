@@ -1,19 +1,23 @@
 /* 範本 C：動態字體快剪 Kinetic Type —— 文字就是畫面，重點在拍點上砸入，場景之間硬切。
-   黑白＋單一螢光強調色；字幕＝小黑條（大螢幕／靜音 YouTube 都看得懂）。 */
+   黑白＋單一螢光強調色；字幕＝小黑條（大螢幕／靜音 YouTube 都看得懂）。
+   招牌特徵（概念忠實度）：①一拍一個字砸入、硬切 ②**字變成東西**：卡片標題碎開飛成它的線稿圖示、數字裡面塞滿內容、
+   重點字碎裂 ③速度坡道隧道（情境逐條從隧道衝出）④分割畫面 ⑤最後所有字收成一句停在最後一拍。圖示一律用 NeonIcon（不用彩色 emoji）。 */
 import React from 'react';
 import {AbsoluteFill, Audio, Easing, interpolate, random, Sequence, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {loadFont as loadTC} from '@remotion/google-fonts/NotoSansTC';
 import {loadFont as loadInter} from '@remotion/google-fonts/Inter';
 import {QaProbe} from '../QaProbe';
+import {NeonIcon} from '../lib/iconkit';
+import {Shatter} from '../lib/kinetic';
+import {Tunnel} from '../lib/tunnel';
 import {TplSpec, captionAt, cue, fit, sceneIndex, wrap} from './common';
 
 const TC = loadTC('normal', {weights: ['700', '900'], ignoreTooManyRequestsWarning: true}).fontFamily;
 const EN = loadInter('normal', {weights: ['900']}).fontFamily;
 const BK = '#000', WH = '#fff', AC = '#D4FF00', RED = '#FF3B4E', GOLD = '#FFC23D';
-const EMOJI = '"Segoe UI Emoji", "Noto Color Emoji", sans-serif';
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type P = {p: any; cues: number[]; dur: number; bf: number};
+type P = {p: any; cues: number[]; dur: number; bf: number; title?: string};
 
 /** 第 at 格砸入 */
 const slam = (lf: number, at: number): React.CSSProperties => {
@@ -65,16 +69,29 @@ const Scenario: React.FC<P> = ({p, cues}) => {
   const last = k === pills.length - 1 && p.lastIsProblem !== false;
   if (k < 0) return (
     <Full bg={BK}>
-      <span style={{fontFamily: EMOJI, fontSize: 360, ...slam(lf, 0)}}>{p.icon ?? '❓'}</span>
+      <NeonIcon name={p.sketch ?? p.icon} size={380} f={lf} at={0} style={{marginTop: -120}} />
       <Big c={WH} size={fit(p.heading ?? '', 1600, 80)} style={{position: 'absolute', bottom: 200, ...slam(lf, 6)}}>{p.heading}</Big>
     </Full>
   );
   const at = cue(cues, p.cueMap?.[k], 20 + k * 30);
-  return (
-    <Full bg={last ? RED : k % 2 ? WH : BK}>
-      <Big c={last ? WH : k % 2 ? BK : WH} size={fit(pills[k], 1600, 300)} style={slam(lf, at)}>{pills[k]}{last ? '?!' : ''}</Big>
+  if (last) return (
+    <Full bg={RED}>
+      <Big c={WH} size={fit(pills[k] + '?!', 1600, 300)} style={slam(lf, at)}>{pills[k]}?!</Big>
       <div style={{position: 'absolute', top: 150, display: 'flex', gap: 16}}>
-        {pills.slice(0, k).map((x) => <Tag key={x} text={'✓ ' + x} bg={k % 2 ? BK : WH} c={k % 2 ? WH : BK} />)}
+        {pills.slice(0, k).map((x) => <Tag key={x} text={'✓ ' + x} bg={WH} c={BK} />)}
+      </div>
+    </Full>
+  );
+  // 速度坡道：字從隧道深處衝到眼前（前 8 格加速），之後隧道慢下來
+  const d = lf - at;
+  const z = interpolate(d, [0, 8], [0.04, 1], {...clamp, easing: Easing.in(Easing.exp)});
+  const speed = interpolate(d, [0, 8, 20], [0.9, 0.5, 0.08], clamp);
+  return (
+    <Full bg={BK}>
+      <Tunnel f={lf * 1.0} speed={speed} color="#666" accent={AC} />
+      <Big c={WH} size={fit(pills[k], 1600, 260)} style={{transform: `scale(${z})`, filter: d < 8 ? `blur(${(1 - z) * 12}px)` : undefined, textShadow: `0 0 30px ${BK}`}}>{pills[k]}</Big>
+      <div style={{position: 'absolute', top: 150, display: 'flex', gap: 16}}>
+        {pills.slice(0, k).map((x) => <Tag key={x} text={'✓ ' + x} bg={WH} c={BK} />)}
       </div>
     </Full>
   );
@@ -95,6 +112,7 @@ const Definition: React.FC<P> = ({p, cues}) => {
         {k < 0 ? big : <>{big.slice(0, k)}<span style={{color: bar > 0 ? AC : WH, position: 'relative'}}>{hl}
           <span style={{position: 'absolute', left: 0, bottom: -size * 0.12, height: size * 0.1, width: `${bar * 100}%`, background: AC}} /></span>{big.slice(k + hl.length)}</>}
       </Big>
+      {hl && <Shatter lf={lf} at={hlAt} items={[...Array.from(hl), hl, ...notes]} color={WH} accent={AC} font={TC} n={36} life={30} />}
       <div style={{position: 'absolute', bottom: 190, display: 'flex', gap: 24}}>
         {notes.map((n, i) => <div key={n} style={slam(lf, cue(cues, p.noteCues?.[i], 50 + i * 15))}><Tag text={n} bg={WH} /></div>)}
       </div>
@@ -102,21 +120,41 @@ const Definition: React.FC<P> = ({p, cues}) => {
   );
 };
 
-const Cards: React.FC<P> = ({p, cues}) => {
+const Cards: React.FC<P> = ({p, cues, bf}) => {
   const lf = useCurrentFrame();
-  const cards: {icon?: string; title: string; note?: string}[] = p.cards ?? [];
+  const cards: {icon?: string; sketch?: string; title: string; note?: string}[] = p.cards ?? [];
   const k = cards.reduce((acc, _, i) => (lf >= cue(cues, p.cueMap?.[i], 20 + i * 30) ? i : acc), -1);
   if (k < 0) return <Full bg={BK}><Big c={WH} size={fit(p.heading ?? '', 1700, 150)} style={slam(lf, 0)}>{p.heading}</Big></Full>;
   const at = cue(cues, p.cueMap?.[k], 20 + k * 30);
   const c = cards[k];
   const inv = k % 2 === 1;
+  const b = Math.max(8, Math.round(bf));
+  const d = lf - at;
+  // 字變成東西：第 1 拍標題巨大砸入 → 第 2 拍每個字飛向圖示位置縮小消失、圖示同時描出 → 版面定格
+  if (d < b * 2) {
+    const chars = Array.from(c.title);
+    const size = fit(c.title, 1600, 300);
+    const m = interpolate(d, [b, b * 2], [0, 1], {...clamp, easing: Easing.in(Easing.cubic)});
+    return (
+      <Full bg={inv ? WH : BK}>
+        <div style={{display: 'flex', ...(d < b ? slam(lf, at) : {})}}>
+          {chars.map((ch, i) => {
+            const dx = (-560 - (i - chars.length / 2) * size) * m, dy = -40 * m;
+            return <Big key={i} c={inv ? BK : WH} size={size} style={{transform: `translate(${dx}px, ${dy}px) scale(${1 - 0.85 * m}) rotate(${(i % 2 ? 1 : -1) * 90 * m}deg)`,
+              opacity: 1 - m * 0.9}}>{ch}</Big>;
+          })}
+        </div>
+        {d >= b && <NeonIcon name={c.sketch ?? c.icon} size={300} f={lf} at={at + b} beat={b} stroke={inv ? BK : WH} style={{position: 'absolute', left: 260, top: 360}} />}
+      </Full>
+    );
+  }
   return (
     <Full bg={inv ? WH : BK}>
       <div style={{position: 'absolute', top: 140, display: 'flex', gap: 14}}>
         {cards.map((x, i) => <Tag key={i} text={`${i + 1} ${x.title}`} bg={i === k ? AC : inv ? '#ddd' : '#222'} c={i === k ? BK : inv ? '#999' : '#777'} />)}
       </div>
-      <div style={{display: 'flex', alignItems: 'center', gap: 60, ...slam(lf, at)}}>
-        <span style={{fontFamily: EMOJI, fontSize: 260}}>{c.icon ?? '⭐'}</span>
+      <div style={{display: 'flex', alignItems: 'center', gap: 60}}>
+        <NeonIcon name={c.sketch ?? c.icon} size={300} f={lf} at={at + b} beat={b} stroke={inv ? BK : WH} />
         <div>
           <Big c={inv ? BK : WH} size={fit(c.title, 1000, 200)}>{c.title}</Big>
           {c.note && <Big c={inv ? '#333' : AC} size={fit(c.note, 1000, 64)} style={{marginTop: 24, whiteSpace: 'normal', maxWidth: 1000}}>{c.note}</Big>}
@@ -129,13 +167,16 @@ const Cards: React.FC<P> = ({p, cues}) => {
 
 const Vs: React.FC<P> = ({p, cues}) => {
   const lf = useCurrentFrame();
-  const half = (s: {frame: string; icon: string; text: string}, i: number) => {
+  const half = (s: {frame: string; icon: string; sketch?: string; text: string}, i: number) => {
     const at = cue(cues, p.cueMap?.[i], i ? 40 : 6);
     const y = interpolate(lf, [at, at + 6], [i ? 1080 : -1080, 0], {...clamp, easing: Easing.out(Easing.cubic)});
     const bad = s.frame === 'danger';
     return (
       <div style={{flex: 1, background: i ? WH : BK, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', transform: `translateY(${y}px)`, padding: 40}}>
-        <Big c={bad ? RED : s.frame === 'success' ? '#18A957' : AC} size={200}>{bad ? '✕' : s.frame === 'success' ? '✓' : '●'}</Big>
+        <div style={{position: 'relative'}}>
+          <NeonIcon name={s.sketch ?? s.icon} size={230} f={lf} at={at + 4} beat={10} stroke={i ? BK : WH} accent={i ? '#9BB800' : AC} />
+          {s.frame !== 'primary' && <Big c={bad ? RED : '#18A957'} size={130} style={{position: 'absolute', right: -90, top: -40, ...slam(lf, at + 16)}}>{bad ? '✕' : '✓'}</Big>}
+        </div>
         {wrap(s.text, 9).slice(0, 3).map((ln, k) => <Big key={k} c={i ? BK : WH} size={fit(ln, 820, 90)} style={{marginTop: 10}}>{ln}</Big>)}
       </div>
     );
@@ -174,6 +215,13 @@ const Quiz: React.FC<P> = ({p, cues, dur}) => {
   );
 };
 
+/** 數字裡面塞滿內容：把標籤文字排成斜向重複的圖樣（SVG data URI），用 background-clip:text 填進數字 */
+const fillSvg = (a: string, b: string) => {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const rows = [a, b || a, a].map((s, i) => `<text x="${i * 60}" y="${60 + i * 70}" font-family="Microsoft JhengHei, Noto Sans TC, sans-serif" font-weight="900" font-size="54" fill="${i === 1 ? WH : AC}">${esc(s)}　${esc(s)}　${esc(s)}</text>`).join('');
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="760" height="220"><rect width="760" height="220" fill="#111"/>${rows}</svg>`);
+};
+
 const Stat: React.FC<P> = ({p, cues}) => {
   const lf = useCurrentFrame();
   const at = cue(cues, 0, 6);
@@ -182,7 +230,8 @@ const Stat: React.FC<P> = ({p, cues}) => {
   return (
     <Full bg={BK}>
       <div style={{fontFamily: EN, fontWeight: 900, fontSize: fit(String(p.value) + (p.suffix ?? ''), 1250, 520), lineHeight: 0.85, letterSpacing: -20,
-        backgroundImage: `radial-gradient(${AC} 3.5px, transparent 4px)`, backgroundSize: '22px 22px', WebkitBackgroundClip: 'text', backgroundClip: 'text',
+        backgroundImage: `url("${fillSvg(p.label ?? '', p.sub ?? '')}")`, backgroundSize: '760px 220px', backgroundPosition: `${-lf * 6}px ${lf * 2}px`,
+        WebkitBackgroundClip: 'text', backgroundClip: 'text',
         color: 'transparent', WebkitTextStroke: `6px ${AC}`, ...slam(lf, at)}}>{txt}</div>
       <Big c={WH} size={fit(p.label ?? '', 1600, 90)} style={{position: 'absolute', bottom: 210, background: BK, padding: '0 30px', ...slam(lf, at + 12)}}>{p.label}</Big>
       {p.sub && <Big c={AC} size={fit(p.sub, 1600, 44)} style={{position: 'absolute', top: 130, ...slam(lf, at + 18)}}>{p.sub}</Big>}
@@ -198,9 +247,11 @@ const Recap: React.FC<P> = ({p, cues}) => {
     <Full bg={AC}><Big c={BK} size={60} font={EN} style={{position: 'absolute', top: 300, letterSpacing: 14, ...slam(lf, nAt)}}>NEXT ▶</Big>
       <Big c={BK} size={fit(p.nextTeaser, 1600, 200)} style={slam(lf, nAt + 4)}>{p.nextTeaser}</Big></Full>
   );
+  // 收束：NEXT 之前 6 格，所有句子往中線壓扁收成一條線
+  const col = p.nextTeaser ? interpolate(lf, [nAt - 6, nAt], [0, 1], {...clamp, easing: Easing.in(Easing.cubic)}) : 0;
   return (
     <Full bg={BK}>
-      <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 34}}>
+      <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 34 * (1 - col), transform: `scaleY(${1 - col * 0.97})`}}>
         {take.map((t, i) => {
           const at = cue(cues, p.takeCues?.[i], 20 + i * 40);
           return <Big key={t} c={i % 2 ? AC : WH} size={fit(t, 1700, 110)} style={slam(lf, at)}>{t}</Big>;
@@ -210,11 +261,22 @@ const Recap: React.FC<P> = ({p, cues}) => {
   );
 };
 
-const QaEnd: React.FC<P> = ({p}) => {
+const QaEnd: React.FC<P> = ({p, dur, bf, title}) => {
   const lf = useCurrentFrame(); const {fps} = useVideoConfig();
   const ans = Math.round((p.answerSec ?? 4) * fps);
   const r = lf >= ans;
   const opts: string[] = p.options ?? [];
+  // 最後一拍：全部收成一句（影片標題），停住、切黑
+  const endAt = Math.max(ans + Math.round(fps * 0.8), dur - Math.round(Math.max(bf * 3, fps * 1.2)));
+  if (title && lf >= endAt) {
+    const col = interpolate(lf, [endAt, endAt + 5], [0, 1], {...clamp, easing: Easing.out(Easing.cubic)});
+    return (
+      <Full bg={BK}>
+        <div style={{position: 'absolute', left: 0, right: 0, top: 538, height: 4, background: AC, transform: `scaleX(${1 - col})`}} />
+        <Big c={WH} size={fit(title, 1600, 170)} style={{transform: `scaleY(${col})`}}>{title}</Big>
+      </Full>
+    );
+  }
   return (
     <Full bg={BK}>
       <Big c={WH} size={fit(p.question, 1700, 80)} style={{position: 'absolute', top: 150, ...slam(lf, 0)}}>{p.question}</Big>
@@ -235,6 +297,7 @@ const SCENES: Record<string, React.FC<P>> = {title: Title, scenario: Scenario, d
 export const TemplateC: React.FC<TplSpec & {bpm?: number}> = (spec) => {
   const f = useCurrentFrame();
   const bf = (60 / (spec.bpm ?? 145)) * spec.fps;
+  const title: string | undefined = spec.scenes.find((s) => s.type === 'title')?.props?.title;
   const idx = sceneIndex(spec, f);
   const cur = spec.scenes[idx];
   const flash = idx > 0 && f - cur.from < 3;
@@ -244,7 +307,7 @@ export const TemplateC: React.FC<TplSpec & {bpm?: number}> = (spec) => {
     <AbsoluteFill style={{background: BK}}>
       {spec.scenes.map((s) => {
         const Comp = SCENES[s.type];
-        return Comp ? <Sequence key={s.id} from={s.from} durationInFrames={s.dur}><Comp p={s.props} cues={s.cues} dur={s.dur} bf={bf} /></Sequence> : null;
+        return Comp ? <Sequence key={s.id} from={s.from} durationInFrames={s.dur}><Comp p={s.props} cues={s.cues} dur={s.dur} bf={bf} title={title} /></Sequence> : null;
       })}
       {flash && <AbsoluteFill style={{background: AC, opacity: 1 - (f - cur.from) / 3}} />}
       {cap && <div data-qa="caption" style={{position: 'absolute', left: 0, right: 0, bottom: 40, display: 'flex', justifyContent: 'center'}}>

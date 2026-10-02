@@ -34,9 +34,10 @@ Narration: a senior student, punchy and short, almost like a rapper's ad-libs be
 |---|---|---|---|
 | 1 | 字就是畫面：黑白＋單一螢光強調色、巨大字 | 總覽圖 | ✅ |
 | 2 | 每個拍點砸入一個字、硬切 | 對拍抽格 | ✅ |
-| 3 | **字變成東西**：依內容變形（寫→碎成程式碼、AI→眼睛掃描、數字裡遮罩出畫面） | 連續格看變形過程 | ⚠ 待逐格核對（通用版多為統一的砸入動畫，可能缺「依內容變形」） |
-| 4 | 速度坡道隧道、分割畫面 | 連續格 | ⚠ 待逐格核對 |
-| 5 | 靜音也看得懂；最後收成一句停在最後一拍 | 靜音看一次 | ✅ |
+| 3 | **字變成東西**：依內容變形（寫→碎成程式碼、AI→眼睛掃描、數字裡遮罩出畫面） | 連續格看變形過程 | ✅ 2026-10-02 補上：卡片標題砸入→字飛散變成它的線稿圖示；數字裡塞滿標籤文字並流動；重點字碎裂噴出 |
+| 4 | 速度坡道隧道、分割畫面 | 連續格 | ✅ 情境逐條從隧道深處衝出（速度坡道）；對比用左右分割 |
+| 5 | 靜音也看得懂；最後收成一句停在最後一拍 | 靜音看一次 | ✅ 2026-10-02 補上：結尾所有字收成一條線→影片標題停住→切黑；回顧在 NEXT 前壓扁收束 |
+| 6 | 黑白＋**單一**螢光色 | 總覽圖 | ✅ 2026-10-02 修正：圖示改 `NeonIcon` 線條，之前是彩色 emoji 破壞配色 |
 
 ## 範本設定
 | 項目 | 設定 |
@@ -64,17 +65,14 @@ Narration: a senior student, punchy and short, almost like a rapper's ad-libs be
 ## 執行步驟
 1. **拿到文本**（講義、旁白稿、活動資料）→ 依 [`../範本風格_場景語彙.md`](../範本風格_場景語彙.md) 拆成 9 種場景，寫出 `storyboard.json`（旁白一行一句）。
 2. **給使用者審文本** ⛔（場景表：型別、畫面重點、旁白）。
-3. 建專案並建置：
+3. 建專案並一行做完：
    ```bash
    python <skill>/engine/scripts/new_project.py <專案> --no-install   # 再 npm install 或 junction 共用 node_modules
-   python <skill>/engine/scripts/build.py storyboard.json
-   python <skill>/engine/scripts/tpl_sfx.py C
-   python <skill>/engine/scripts/qa.py --comp TemplateC          # 版面＋旁白品檢
-   npx remotion render src/index.ts TemplateC out/x.mp4 --concurrency=4 --crf=18 --audio-codec=aac
-   ffmpeg -i out/x.mp4 -c:v copy -af loudnorm=I=-14:TP=-1:LRA=9 -c:a aac out/成片.mp4
-   python <skill>/engine/scripts/qa.py --comp TemplateC --skip-layout --skip-asr --video out/成片.mp4
+   cd <專案> && cp <你的分鏡>.json storyboard.json
+   python <skill>/engine/scripts/make_video.py storyboard.json --template C --name <片名>
    ```
-4. 看 `qa_report.md` 與總覽圖，有必修項目就修正重算。
+   `make_video.py` 會：同步 skill 最新範本程式 → 檢查圖示都有線稿 → 建置 → 範本音效 → 版面＋旁白品檢（有必修就停）→ 算圖 → 響度 −14 → 成片品檢，最後印出本範本的概念忠實度清單。
+4. 看 `qa/pre_C.md`、`qa/post_C.md` 與總覽圖；**再用連續格逐項核對下面的「概念忠實度檢查」**。
 
 ## 參考實作
 - 招生片完整版（為那支片客製的場景）：`concepts/kinetic/（招生片完整版 KineticFull）`
