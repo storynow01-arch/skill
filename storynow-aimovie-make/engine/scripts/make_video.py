@@ -76,13 +76,15 @@ def main():
         raise SystemExit('專案裡沒有 node_modules：先 npm install（或 junction 到共用的 node_modules）')
     if not a.no_sync: sync_engine()
     sb = json.load(open(a.storyboard, encoding='utf-8'))
-    if not sb.get('music'):
+    build_sb = a.storyboard
+    if not sb.get('music'):                       # 不改使用者的分鏡：寫一份暫存副本（同資料夾，mediaDir 相對路徑才對）
         sb['music'] = info['music']
-        json.dump(sb, open(a.storyboard, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+        build_sb = os.path.join(os.path.dirname(os.path.abspath(a.storyboard)), f'.build_{T}.json')
+        json.dump(sb, open(build_sb, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
         print('✓ 配樂用範本預設：', info['music'])
     check_icons(sb)
     py = sys.executable
-    sh([py, os.path.join(HERE, 'build.py'), a.storyboard])
+    sh([py, os.path.join(HERE, 'build.py'), build_sb])
     sh([py, os.path.join(HERE, 'tpl_sfx.py'), T])
     os.makedirs('out', exist_ok=True); os.makedirs('qa', exist_ok=True)
     comp = f'Template{T}'
