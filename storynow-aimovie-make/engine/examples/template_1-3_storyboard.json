@@ -214,10 +214,5 @@
         "answerSec": 4
       }
     }
-  ],
-  "music": {
-    "genre": "chiptune",
-    "bpm": 140,
-    "key": "C"
-  }
+  ]
 }

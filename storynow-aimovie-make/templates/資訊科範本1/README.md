@@ -33,35 +33,19 @@
 把每段「畫面＋旁白」整理成 Markdown 給使用者確認。
 **隱私預設**：手機號碼不放（影片會被轉傳），只放分機與公務 Email；需要確認時要問。
 
-### 4. 製作說明段
+### 4. 一行出片（說明段＋宣傳片＋串接）
 ```bash
 python <skill>/engine/scripts/new_project.py <專案>/notice --no-install     # 再 npm install 或 junction 共用 node_modules
-cp storyboard.json <專案>/notice/
-python <skill>/engine/scripts/build.py storyboard.json
-npx remotion still src/index.ts Video out/s.png --frame=<n> --scale=0.5     # 抽 A2、A3、A5、A7、A8 檢查
-npx remotion render src/index.ts Video out/notice.mp4 --concurrency=4 --crf=18 --audio-codec=aac
+cp storyboard.json <專案>/notice/ && cd <專案>/notice
+python <skill>/engine/scripts/make_info1.py storyboard.json --name <活動簡稱>
 ```
-（notice 場景元件在 engine/template/src/custom/notice.tsx，已內建）
+`make_info1.py` 會：同步引擎程式 → 建置說明段（旁白、配樂、字幕）→ 版面＋旁白品檢（有必修就停）→ 算圖 →
+宣傳片（有快取 `cache/trailer_remotion.mp4` 直接用；**新電腦／剛 clone 沒有快取**時自動複製 `trailer/` 到 `<專案>/trailer`、共用 node_modules、合成配樂、算圖並存回快取）→
+兩段各自 loudnorm −14 串接 → `out/<活動簡稱>_說明+資訊科宣傳片.mp4`。
+- 改了宣傳片事實（下表）後加 `--rebuild-trailer`
+- Python 版宣傳片：`--trailer python`（需 moviepy、Pillow；路徑在 `trailer/python_trailer.py` 檔頭）
 
-### 5. 宣傳片
-有本機快取（`cache/trailer_remotion.mp4`，不進 git）就直接用；沒有就重算一次：
-```bash
-cp -r <skill>/templates/資訊科範本1/trailer <專案>/trailer && cd <專案>/trailer && npm install
-python audio/make_music.py && mkdir -p public && cp audio/soundtrack.wav public/
-npx remotion render src/index.ts Trailer out/trailer.mp4 --concurrency=4 --crf=16 --audio-codec=aac
-mkdir -p <skill>/templates/資訊科範本1/cache && cp out/trailer.mp4 <skill>/templates/資訊科範本1/cache/trailer_remotion.mp4
-```
-Python 版：`python python_trailer.py`（需 moviepy、Pillow；路徑在檔頭）。
-
-### 6. 串接（兩段各自 loudnorm 到 −14）
-```bash
-ffmpeg -i notice.mp4 -i trailer.mp4 -filter_complex \
- "[0:a]loudnorm=I=-14:TP=-1:LRA=9,aresample=48000[a0];[1:a]loudnorm=I=-14:TP=-1:LRA=9,aresample=48000[a1];\
-  [0:v]fps=30,format=yuv420p[v0];[1:v]fps=30,format=yuv420p[v1];[v0][a0][v1][a1]concat=n=2:v=1:a=1[v][a]" \
- -map "[v]" -map "[a]" -c:v libx264 -crf 18 -preset veryfast -c:a aac -b:a 256k -movflags +faststart <活動>_說明+資訊科宣傳片.mp4
-```
-
-### 7. 品檢
+### 5. 品檢
 抽 12 格（說明段每段一格＋宣傳片 3 格）、確認長度與響度 −14 LUFS、確認 34% 等數字正確。
 
 ## 宣傳片內的事實（要更新時改這裡）

@@ -41,7 +41,7 @@ def sync_engine():
 def known_icons():
     t = open(os.path.join(SRC, 'lib', 'sketches.ts'), encoding='utf-8').read()
     sk = set(re.findall(r'^\s{2}(\w+): \{paths', t, re.M))
-    emo = dict(re.findall(r"'([^']+)': '(\w+)'", t.split('EMOJI_TO_SKETCH')[1]))
+    emo = dict(re.findall(r"'([^']+)': '(\w+)'", t.split('export const EMOJI_TO_SKETCH')[1]))
     return sk, emo
 
 

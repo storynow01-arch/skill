@@ -112,7 +112,7 @@ const Definition: React.FC<P> = ({p, cues}) => {
         {k < 0 ? big : <>{big.slice(0, k)}<span style={{color: bar > 0 ? AC : WH, position: 'relative'}}>{hl}
           <span style={{position: 'absolute', left: 0, bottom: -size * 0.12, height: size * 0.1, width: `${bar * 100}%`, background: AC}} /></span>{big.slice(k + hl.length)}</>}
       </Big>
-      {hl && <Shatter lf={lf} at={hlAt} items={[...Array.from(hl), hl, ...notes]} color={WH} accent={AC} font={TC} n={36} life={30} />}
+      {hl && <AbsoluteFill data-qa="ignore"><Shatter lf={lf} at={hlAt} items={[...Array.from(hl), hl, ...notes]} color={WH} accent={AC} font={TC} n={36} life={30} /></AbsoluteFill>}
       <div style={{position: 'absolute', bottom: 190, display: 'flex', gap: 24}}>
         {notes.map((n, i) => <div key={n} style={slam(lf, cue(cues, p.noteCues?.[i], 50 + i * 15))}><Tag text={n} bg={WH} /></div>)}
       </div>
