@@ -1,0 +1,123 @@
+# 風格 Playbook — 教學課程產線
+# 格式沿用 OpenMontage styles/*.yaml
+# 全部數值逆向自實測，非估計。來源見 _evidence
+
+identity:
+  name: "GaryChen Dark — 教學課程版"
+  category: motion-graphics
+  mood: 沉穩、科技感、高對比、不喧鬧
+  pace: 中速穩定（非快剪）
+  best_for: "技術教學長片、觀念解說、高中職數位課程"
+
+_evidence:
+  sources:
+    - "GaryChen_部署教學.mp4 — 1213s, 全片 4fps 密集取樣 (4852 幀) + 4 段 1024px 拉片 (180 幀)"
+    - "GaryChen_Make_n8n.mp4 — 824s, 全片 4fps 密集取樣 (3298 幀) + 2 段取樣拉片 (60 幀)"
+  method: "像素量化分析 + 影格差分 + 人工判讀接觸表"
+  cross_validated: true   # 兩支影片獨立測得，數值一致者才寫入
+
+visual_language:
+  color_palette:
+    background: "#181818"      # 96.2% 影格主色；純中性灰，無藍調
+    surface:    "#282828"      # 卡片/面板
+    border:     "#383838"
+    primary:    "#F89800"      # 強調像素 49.7% 落在 hue 30-45°
+    success:    "#20C058"      # hue 141°, 10.8% — 安全/正確/完成
+    secondary:  "#604098"      # hue 262°, 14.3% — 次要區分
+    text:       "#FFFFFF"
+    text_muted: "#8A8A8A"
+  composition: 置中為主、大量留白、單一焦點；資訊密度低
+  texture: 扁平色塊；橘色元素帶柔和外發光 (glow)，無漸層背景
+
+typography:
+  headings:
+    font: "Noto Sans TC"
+    weight: 700
+  body:
+    font: "Noto Sans TC"
+    weight: 400
+    line_height: 1.6
+  code:
+    font: "JetBrains Mono"
+    weight: 400
+  scale_system: "1080p 基準：hero 132 / h1 76 / h2 54 / h3 40 / body 34 / subtitle 40"
+  decoration: "主標題下方置中短橘線（寬約 80px，高 3px）"
+
+motion:
+  # ⚠️ 這一段是本次拉片最重要的發現，與坊間說法相反
+  golden_rule: "畫面可以停留很久，但絕不靜止超過 4 秒"
+
+  measured:
+    static_ratio: 0.74          # 73.9% / 73.4% — 兩片一致
+    micro_animation_ratio: 0.23 # 23.0% / 23.6%
+    hard_cut_ratio: 0.03        # 3.0% / 3.0%
+    max_static_run_seconds: 4.0 # 3.8s / 4.0s ← 鐵律
+    cut_interval_median: 10.2   # 部署教學；n8n 為 7.0
+    cut_interval_p75: 17.8
+    cut_interval_max: 40.0
+
+  pacing_rules:
+    min_scene_hold_seconds: 4
+    max_scene_hold_seconds: 20        # 實測可到 40s，我方保守收斂至 20s
+    micro_beat_interval_seconds: 3.5  # 每 3.5 秒必須有一個微動作
+    max_still_seconds: 4.0            # 硬上限
+    transition_duration_seconds: 0.4
+
+  # ── 執行機制（訂了規則沒強制執行等於沒訂）────────────────
+  enforcement:
+    schedule: |
+      節拍不是手寫時間點，而是依場景長度自動均分：
+      span = durSec - 1.6；n = ceil(span / 3.5)；gap = span / n
+      beats = [1.6 + i*gap for i in 0..n-1]
+      如此首拍、拍間、尾端三種間隔都保證 ≤ 3.5s。
+    implemented_in:
+      - remotion/src/beats.ts            # 組件端排程
+      - 04_引擎/build_data.py            # 建置期驗算，未通過即中止
+      - 04_引擎/verify_motion.py         # 成品端回測（4fps 影格差分）
+    components_cycle:
+      concept_cards: 卡片焦點循環輪播
+      comparison:    兩邊都亮 → 左 → 右 循環
+      scenario:      膠囊標籤循環高亮
+      definition:    註解標籤循環亮起 + 高亮塊光暈脈動
+      title / closing: 短橘線寬度與光暈脈動
+      quiz:          揭曉前選項輪流微亮，揭曉後正解持續脈動
+      qa_endcard:    倒數條逐幀連續變化，本質不靜止
+
+  entrance: "上浮 24px + 淡入，spring(damping=14, stiffness=110)，約 0.45s"
+  exit: "淡出 0.25s，不縮放"
+  stagger: "多卡片依序進場，間隔 0.15s"
+  emphasis: "關鍵詞橘色高亮標籤自左向右擦出 0.3s；與旁白該詞的時間戳對齊"
+  transitions: [cut, fade, push-left]
+  avoid:
+    - "旋轉、翻轉、彈跳過衝 — 原片完全沒有"
+    - "背景漸層流動 — 原片背景為純色靜止"
+    - "快速閃切 <1s — 僅佔 5%，非常態"
+
+layout:
+  progress_bar:       { y: 0, height: 4, color: primary }     # 實測 y0-4
+  chapter_indicator:  { x: 40, y: 30, format: "NN / NN  章節名" }
+  logo:               { corner: top-right, x: 40, y: 26, width: 220 }
+  subtitle_band:      { y: 954, height: 38, align: center }   # 實測 y954-992
+  content_area:       { top: 120, bottom: 900 }
+  safe_margin_x: 120
+
+recurring_components:
+  # 人工判讀 240 張影格歸納，依出現頻率排序
+  - title_card:      "大標題置中 + 下方短橘線 + 英文副標"
+  - concept_cards:   "2-4 張並排卡片；左上角編號、emoji icon、標題、灰色註解；橘色細邊框"
+  - comparison:      "左右對照，一邊綠框（正確/安全）一邊橘框（注意/風險），中間 ≠ 或 vs"
+  - flow_arrows:     "膠囊標籤以橘色箭頭串接，由左至右"
+  - tab_strip:       "① ② ③ ④ 分頁列，當前項橘框高亮，其餘灰框"
+  - terminal:        "macOS 三圓點視窗，#0C0C0C 底，等寬字，橘色 prompt"
+  - screenshot_frame:"圓角 14px + 細邊框 + 陰影，常配橘色箭頭指向重點"
+  - layer_stack:     "分層堆疊圖，逐層淡入（如前端/後端、三層協定）"
+  - pill_tags:       "灰框圓角膠囊，用於補充說明與限定條件"
+  - quote_bubble:    "深色圓角氣泡，模擬對話/提問"
+
+audio:
+  voice_style: "男聲、開朗、熱情、語速偏快（台灣腔）"
+  tts_voice: "zh-TW-YunJheNeural"
+  tts_rate: "+18%"
+  tts_pitch: "+4%"
+  music_mood: "低調電子墊底，音量 0.10~0.14，不搶旁白"
+  subtitle: "同步逐字時間戳，燒入畫面，置中底部"

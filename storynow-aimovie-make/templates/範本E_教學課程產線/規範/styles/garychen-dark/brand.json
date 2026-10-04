@@ -1,0 +1,185 @@
+{
+  "name": "haiching-dark",
+  "description": "教學課程產線。深色科技風，逆向自 Gary Chen 教學影片（240 影格量化分析）",
+  "version": "1.0.0",
+  "_source": "GaryChen_部署教學.mp4 (20:13, 4 段) + GaryChen_Make_n8n.mp4 (13:44, 2 段取樣)",
+  "format": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30
+  },
+  "colors": {
+    "bgDark": "#181818",
+    "surface": "#202020",
+    "surfaceRaised": "#282828",
+    "surfaceHigh": "#303030",
+    "border": "#383838",
+    "primary": "#F89800",
+    "primaryDim": "#A06810",
+    "primaryGlow": "rgba(248, 152, 0, 0.18)",
+    "success": "#20C058",
+    "secondary": "#604098",
+    "danger": "#E05252",
+    "textPrimary": "#FFFFFF",
+    "textBody": "#D8D8D8",
+    "textMuted": "#8A8A8A",
+    "textFaint": "#606060",
+    "subtitleBg": "rgba(24, 24, 24, 0.88)",
+    "shadow": "rgba(0, 0, 0, 0.45)"
+  },
+  "_colorNotes": {
+    "bgDark": "240 張影格中 96.2% 的主色，佔總像素 72.8%。純中性灰 R=G=B，無藍調",
+    "primary": "強調像素的 49.7% 落在 hue 30-45°。兩支影片一致 = 固定規則而非單片特例",
+    "success": "hue 141°，佔 10.8%。用於『安全/正確/完成』",
+    "secondary": "hue 262°，佔 14.3%。用於次要區分，不與主色搶焦點"
+  },
+  "fonts": {
+    "primary": "'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif",
+    "mono": "'JetBrains Mono', 'Fira Code', ui-monospace, monospace"
+  },
+  "typography": {
+    "hero": {
+      "size": 148,
+      "weight": 700,
+      "letterSpacing": 2
+    },
+    "eyebrow": {
+      "size": 74,
+      "weight": 500,
+      "letterSpacing": 6,
+      "_rule": "節編號字級 = hero 標題的一半（148 / 2 = 74）"
+    },
+    "h1": {
+      "size": 84,
+      "weight": 700
+    },
+    "h2": {
+      "size": 64,
+      "weight": 700
+    },
+    "h3": {
+      "size": 46,
+      "weight": 600
+    },
+    "body": {
+      "size": 38,
+      "weight": 400,
+      "lineHeight": 1.6
+    },
+    "cardTitle": {
+      "size": 44,
+      "weight": 600
+    },
+    "cardNote": {
+      "size": 30,
+      "weight": 400
+    },
+    "label": {
+      "size": 26,
+      "weight": 500,
+      "letterSpacing": 2
+    },
+    "chapter": {
+      "size": 24,
+      "weight": 400,
+      "letterSpacing": 1
+    },
+    "subtitle": {
+      "size": 44,
+      "weight": 500
+    },
+    "code": {
+      "size": 30,
+      "weight": 400
+    }
+  },
+  "spacing": {
+    "xs": 8,
+    "sm": 16,
+    "md": 28,
+    "lg": 48,
+    "xl": 80,
+    "xxl": 132
+  },
+  "borderRadius": {
+    "sm": 8,
+    "md": 14,
+    "lg": 20,
+    "pill": 999
+  },
+  "layout": {
+    "_note": "量測自原片，換算至 1920x1080",
+    "safeMarginX": 120,
+    "progressBar": {
+      "y": 0,
+      "height": 4,
+      "color": "primary"
+    },
+    "chapterIndicator": {
+      "x": 40,
+      "y": 30,
+      "align": "left"
+    },
+    "logo": {
+      "corner": "top-right",
+      "x": 40,
+      "y": 26,
+      "width": 220,
+      "opacity": 1.0
+    },
+    "subtitleBand": {
+      "y": 954,
+      "height": 38,
+      "align": "center",
+      "bottomOffset": 88
+    },
+    "contentArea": {
+      "top": 120,
+      "bottom": 900
+    }
+  },
+  "_logoNote": "實測：LOGO 內的黑色筆畫皆帶白色描邊，在 #181818 上完全清晰，不需底板。原檔直接疊加。",
+  "components": {
+    "card": {
+      "bg": "surfaceRaised",
+      "border": "1px solid primary",
+      "radius": "md",
+      "padding": 32
+    },
+    "cardMuted": {
+      "bg": "surfaceRaised",
+      "border": "1px solid border",
+      "radius": "md",
+      "padding": 32
+    },
+    "pill": {
+      "bg": "surface",
+      "border": "1px solid border",
+      "radius": "pill",
+      "paddingX": 24,
+      "paddingY": 10
+    },
+    "pillActive": {
+      "bg": "surface",
+      "border": "1px solid primary",
+      "radius": "pill",
+      "textColor": "primary"
+    },
+    "terminal": {
+      "bg": "#0C0C0C",
+      "radius": "md",
+      "chrome": "macos-dots",
+      "promptColor": "primary"
+    },
+    "screenshot": {
+      "radius": "md",
+      "border": "1px solid border",
+      "shadow": "shadow"
+    }
+  },
+  "_layoutRules": [
+    "Grid 一律用 minmax(0,1fr)：1fr 預設不會縮到小於 min-content，會撐破版面",
+    "長度不定的文字用 @remotion/layout-utils 的 fitText() 自動收字級，不要手動猜",
+    "同一組並列項目共用同一個字級（取最長者算出的值），版面才整齊"
+  ]
+}
