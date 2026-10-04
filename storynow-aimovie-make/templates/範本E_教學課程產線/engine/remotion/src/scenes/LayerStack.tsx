@@ -57,7 +57,7 @@ export const LayerStack: React.FC<{
           return (
             <div key={i} style={{
               ...enter,
-              opacity: (enter.opacity as number) * (hot || active === -1 ? 1 : 0.45),
+              opacity: (enter.opacity as number) * (0.45 + 0.55 * n.weight(i)),
               transform: `${enter.transform} translateX(${hot ? p * 6 : 0}px)`,
               width: 1320, height: ROW_H,
               background: C.card,
@@ -90,7 +90,7 @@ export const LayerStack: React.FC<{
         })}
       </div>
 
-      {footer && t >= fAt && (
+      {footer && (
         <div style={{...rise(f, fps, fAt), color: C.body, fontSize: T.h3, marginTop: 48}}>
           <Phrases text={footer} />
         </div>

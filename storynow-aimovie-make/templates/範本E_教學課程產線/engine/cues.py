@@ -167,6 +167,11 @@ def resolve(scene: dict, timeline: list[tuple[str, float, float]]
             times.append(t)
             continue
         t = find(timeline, c, after=last)
+        # 手寫 cue 指到的句子跟物件文字對不上（例如物件是「突然轉圈」，cue 卻指到後面另一句）→ 改用物件文字自動找
+        if t is not None and k < len(texts) and texts[k] and not _said_at(texts[k], timeline, t):
+            alt = auto_find(timeline, texts[k], after=last)
+            if alt is not None and _said_at(texts[k], timeline, alt):
+                t = alt
         if t is None:
             # 可能真的沒這句，也可能是 cue 的順序跟旁白不一致
             # （項目要依序亮起，所以只往後找）
@@ -255,3 +260,48 @@ def extra_timings(scene: dict, timeline: list[tuple[str, float, float]], items_e
             if t is not None:
                 out["teaserAt"] = t
     return out
+
+
+STOP = set("的了是有在和與跟也都就要會不一個這那你我他它們之")
+
+
+def _said(item: str, sentence: str) -> bool:
+    """物件文字有沒有被這句旁白講到：英數詞相同，或（去掉虛字後）共用 2 個字以上、或物件一半以上的字出現在句子裡"""
+    lat = lambda t: {m.lower() for m in re.findall(r"[A-Za-z0-9]{2,}", t or "")}
+    if lat(item) & lat(sentence):
+        return True
+    chars = [c for c in re.sub(r"[^㐀-鿿]", "", item or "") if c not in STOP]
+    if not chars:
+        return False
+    hit = sum(1 for c in set(chars) if c in sentence)
+    return hit >= 2 or hit / len(set(chars)) >= 0.5
+
+
+def narration_matches(scene: dict, timeline: list[tuple[str, float, float]],
+                      times: list[float] | None) -> tuple[bool, list[str]]:
+    """每個物件出場時，旁白正在唸的那一句（加下一句）跟物件文字至少要有一組相同的兩字詞或英數詞。
+    有物件對不上（旁白根本沒唸到它），回傳 False 與對不上的清單。
+    2026-10-04 使用者回報：1-1「不是軟體／不是設備」旁白沒唸，掛在別的詞上一起突然跳出來。"""
+    texts = item_texts(scene)
+    if not times or not texts:
+        return True, []
+    bad = []
+    for k, (tx, t) in enumerate(zip(texts, times)):
+        idx = next((j for j, (_, a, b) in enumerate(timeline) if a - 0.05 <= t <= b + 0.05), None)
+        if idx is None:
+            bad.append(tx); continue
+        said = "".join(x for x, _, _ in timeline[max(0, idx - 1):idx + 2])   # 前一句、當句、下一句
+        if not _said(tx, said):
+            bad.append(tx)
+    # 多個物件擠在同一個時間點（cue 寫成同一句），也視為沒有逐項唸到
+    if len(times) >= 2 and len({round(t, 1) for t in times}) == 1:
+        bad = list(texts)
+    # 一半以上對不上才整組改靜態；少數對不上的，夾在前後已對上的物件之間出現就好
+    return len(bad) * 2 < len(texts), bad
+
+
+def _said_at(item: str, timeline: list[tuple[str, float, float]], t: float) -> bool:
+    idx = next((j for j, (_, a, b) in enumerate(timeline) if a - 0.05 <= t <= b + 0.05), None)
+    if idx is None:
+        return False
+    return _said(item, "".join(x for x, _, _ in timeline[max(0, idx - 1):idx + 2]))

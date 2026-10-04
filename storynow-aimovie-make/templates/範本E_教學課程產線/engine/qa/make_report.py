@@ -232,12 +232,12 @@ def build(label: str, title: str, changes: Path | None) -> Path:
         lo = av["A1"]
         rows.append([sid, f"{lo['I']}", f"{lo['LRA']}", f"{lo['TP']}", mark(av["A2"]["ok"]), len(av["A3"]),
                      f"{av['A4']['diff']:+.2f}s", av["V1"]["size"], av["V1"]["fps"], len(av["V2"]),
-                     f"{av['V3']['max_still']:.1f}s", f"{av['V3']['static_ratio'] * 100:.0f}%",
+                     f"{av['V3']['max_still']:.1f}s", f"{av['V3']['static_ratio'] * 100:.0f}%", len(av.get("V5", [])),
                      mark(av["V4"]["mp4_newer_than_data"], "新", "舊檔")])
     out.append("<p class='sub'>單節響度只看各節是否一致；是否達標看整集（E 區），整集合併時統一正規化。</p>")
     out.append(table(["節", "A1 響度 LUFS", "響度範圍 LU", "峰值 dBTP", f"A2 ≤{th['true_peak']}",
-                      "A3 中段無聲", "A4 聲畫差", "V1 尺寸", "fps", "V2 黑畫面", "V3 最長靜止", "靜止比例", "V4 檔案"],
-                     rows, {1, 3, 5, 6, 9, 10, 11}))
+                      "A3 中段無聲", "A4 聲畫差", "V1 尺寸", "fps", "V2 黑畫面", "V3 最長靜止", "靜止比例", "V5 畫面突跳", "V4 檔案"],
+                     rows, {1, 3, 5, 6, 9, 10, 11, 12}))
 
     # ── E 整集 ──
     if rep["episodes"]:

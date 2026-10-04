@@ -88,7 +88,7 @@ export const FlowArrows: React.FC<{
         })}
       </div>
 
-      {footer && t >= fAt && (
+      {footer && (
         <div style={{...rise(f, fps, fAt), color: C.body, fontSize: T.h3, marginTop: 60}}>
           <Phrases text={footer} />
         </div>

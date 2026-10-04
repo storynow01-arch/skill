@@ -6,7 +6,8 @@
 建出的結構（引擎各支程式都以這個結構找檔案，不要改名）：
   00_規範\\     發音規範、多音字清單、品檢規範、styles\\garychen-dark
   01_腳本\\     雙軌稿 <id>_<標題>.md ＋ 分鏡 <id>_plan.json（附 1-1 範例）
-  02_語音\\     tts.py 產出
+  02_語音\\     tts_gemini.py 產出（預設 Gemini 3.8 Flash TTS；tts.py＝edge-tts 備用）
+  .env.local    GEMINI_API_KEY（只在本機，.gitignore 已排除）
   03_素材\\brand\\  cover.jpg、intro.mp4、logo.png ← 需自備（業主素材不隨範本散布）
   04_引擎\\     Python 管線＋qa＋remotion
   05_輸出_節\\  06_輸出_集\\  11_品檢\\
@@ -27,13 +28,19 @@ def main(dst: Path):
     shutil.copytree(TPL / "engine", dst / "04_引擎", ignore=shutil.ignore_patterns("new_course.py", "export_template.py"))
     for f in (TPL / "examples").iterdir():
         shutil.copy2(f, dst / "01_腳本" / f.name)
+    # Gemini 金鑰只放本機：.env.local（附 .gitignore 防止誤傳）
+    (dst / ".env.local").write_text("# Gemini API 金鑰（只放本機，不要上傳）\nGEMINI_API_KEY=請貼上你的key\n",
+                                    encoding="utf-8")
+    (dst / ".gitignore").write_text(".env.local\n.env*\n02_語音/*/_gemini_cache/\nnode_modules/\n", encoding="utf-8")
     print(f"→ {dst}")
     print("  安裝 Remotion 套件…")
     npm = shutil.which("npm") or shutil.which("npm.cmd")
     r = subprocess.run([npm, "install"], cwd=dst / "04_引擎" / "remotion") if npm else None
     if r is None or r.returncode:
         print("  ⚠ npm install 失敗，請手動到 04_引擎\\remotion 執行")
-    print("\n還需要：把 cover.jpg（封面）、intro.mp4（片頭）、logo.png（右上角 LOGO）放進 03_素材\\brand\\")
+    print("\n還需要：")
+    print("  1. 把 cover.jpg（封面）、intro.mp4（片頭）、logo.png（右上角 LOGO）放進 03_素材\\brand\\")
+    print("  2. 打開 .env.local 填入 GEMINI_API_KEY（配音用 Gemini 3.8 Flash TTS；沒有 key 可改用 tts.py＝edge-tts）")
 
 
 if __name__ == "__main__":

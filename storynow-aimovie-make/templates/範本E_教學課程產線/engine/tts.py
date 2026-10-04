@@ -35,14 +35,26 @@ def _digits(s: str) -> str:
     return "".join(_ZH[int(c)] for c in s)
 
 
-def to_speech(text: str) -> str:
-    """把專業寫法轉成 TTS 唸得對的形式。"""
+def to_speech(text: str, skip: set | frozenset = frozenset()) -> str:
+    """把專業寫法轉成 TTS 唸得對的形式。
+    skip：要略過的規則（tts_gemini.py 用）——"多音詞替換" 整組，或 詞典 裡的單一詞（例如 ping、about）"""
     text = _IPV4.sub(lambda m: "點".join(_digits(g) for g in m.groups()), text)
     text = _DOT2.sub(lambda m: f"{_digits(m.group(1))}點{_digits(m.group(2))}", text)
+    # 規範裡 handler 為「literal:替換文字」的規則（例如單獨唸的 com → c o m）
+    for r in _SPEC.get("regex_rules", []):
+        h = r.get("handler", "")
+        if h.startswith("literal:"):
+            text = re.sub(r["pattern"], h[len("literal:"):], text)
     for num, say in _SPEC.get("數字詞典", {}).items():
         if not num.startswith("_"):
             text = re.sub(rf"(?<![\d.]){re.escape(num)}(?![\d.])", say, text)
+    # 多音詞換成只有一種讀音的同音字（字幕仍用原字）
+    for term, say in _SPEC.get("多音詞替換", {}).items():
+        if not term.startswith("_") and "多音詞替換" not in skip:
+            text = text.replace(term, say)
     for term, say in _SPEC["詞典"].items():
+        if term in skip:
+            continue
         text = re.sub(rf"(?<![A-Za-z]){re.escape(term)}(?![A-Za-z0-9])", say, text)
     return text
 

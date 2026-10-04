@@ -32,6 +32,7 @@ sys.path.insert(0, str(ENGINE))
 from subtitles import original_sentences          # noqa: E402
 from cues import scene_timeline, resolve, collect_cues, item_texts   # noqa: E402
 from tts import to_speech                         # noqa: E402
+from final_qa import jumps                        # noqa: E402
 
 FPS = 30
 DATA = ENGINE / "remotion" / "src" / "data"
@@ -246,7 +247,8 @@ def check_sync(sid: str, data: dict) -> dict:
             continue
         plan = props.get("focusPlan") or []
         row = {"scene": sc["id"], "type": sc["type"], "items": len(items), "dur": sc["durSec"],
-               "start": sc["startSec"], "driven": bool(plan), "cues": 0, "content_pts": 0,
+               "start": sc["startSec"], "driven": bool(plan), "static": bool(props.get("staticItems")),
+               "cues": 0, "content_pts": 0,
                "loop_pts": 0, "repeat_pts": 0, "late": [], "misses": []}
         cues = collect_cues(props)
         row["cues"] = sum(1 for c in cues if c)
@@ -285,9 +287,11 @@ def check_sync(sid: str, data: dict) -> dict:
                     row.setdefault("detail", []).append(
                         {"item": tx if isinstance(tx, str) else str(tx), "at": round(at, 1), "src": src, "said": said})
         rows.append(row)
-    undriven = [r for r in rows if not r["driven"]]
+    static = [r for r in rows if r.get("static")]
+    undriven = [r for r in rows if not r["driven"] and not r.get("static")]
     return {
-        "S1": {"item_scenes": len(rows), "driven": len(rows) - len(undriven),
+        "S5": {"static": [f"{r['scene']} {r['type']}（{r['items']} 項）" for r in static]},
+        "S1": {"item_scenes": len(rows), "driven": len(rows) - len(undriven) - len(static),
                "undriven": [f"{r['scene']} {r['type']}（{r['items']} 項，{r['dur']:.0f}s）" for r in undriven]},
         "S2": {"scenes_looping": sum(1 for r in rows if r["loop_pts"]),
                "loop_points": sum(r["loop_pts"] for r in rows),
@@ -419,6 +423,7 @@ def check_av(sid: str, data: dict, mp4: Path) -> dict:
         "V2": blacks(mp4),
         "V3": {"max_still": mo["max_still"], "at": mo["max_still_at"], "static_ratio": round(mo["static_ratio"], 3)},
         "V4": {"mp4_newer_than_data": mp4.stat().st_mtime > dj.stat().st_mtime},
+        "V5": jumps(mp4),
     }
 
 

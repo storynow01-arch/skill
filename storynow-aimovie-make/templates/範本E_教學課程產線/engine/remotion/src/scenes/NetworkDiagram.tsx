@@ -101,7 +101,7 @@ export const NetworkDiagram: React.FC<{
         })}
       </div>
 
-      {footer && t >= fAt && (
+      {footer && (
         <div style={{...rise(f, fps, fAt), color: C.body, fontSize: T.h3, marginTop: 64}}>
           <Phrases text={footer} />
         </div>

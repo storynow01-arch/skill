@@ -28,12 +28,12 @@ export const Comparison: React.FC<{
   const col = (k: Side['frame']) =>
     k === 'danger' ? C.danger : k === 'success' ? C.success : C.primary;
 
-  const box = (s: Side, delay: number, hot: boolean, dim: boolean) => {
+  const box = (s: Side, delay: number, hot: boolean, w: number) => {
     const e = rise(f, fps, delay);
     return (
       <div style={{
         ...e,
-        opacity: (e.opacity as number) * (dim ? 0.35 : 1),
+        opacity: (e.opacity as number) * (0.35 + 0.65 * w),
         transform: `${e.transform} scale(${hot ? 1 + p * 0.015 : 1})`,
         background: C.card,
         border: `1px solid ${col(s.frame)}`,
@@ -58,13 +58,13 @@ export const Comparison: React.FC<{
         </div>
       )}
       <div style={{display: 'flex', alignItems: 'center', gap: 44}}>
-        {box(left, n.appear(0), phase === 1, phase === 2)}
+        {box(left, n.appear(0), phase === 1, n.weight(0))}
         <div style={{...rise(f, fps, n.appear(1) - 0.3), color: C.muted, fontSize: 64, fontWeight: 300}}>
           {mid}
         </div>
-        {box(right, n.appear(1), phase === 2, phase === 1)}
+        {box(right, n.appear(1), phase === 2, n.weight(1))}
       </div>
-      {footerPill && t >= fAt && (
+      {footerPill && (
         <div style={{...rise(f, fps, fAt), color: C.muted, fontSize: T.cardNote, marginTop: 56,
                      border: `1px solid ${C.border}`, borderRadius: R.pill, padding: '12px 28px'}}>
           <Phrases text={footerPill} />

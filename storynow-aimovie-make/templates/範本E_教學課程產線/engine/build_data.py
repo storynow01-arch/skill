@@ -10,7 +10,7 @@ import json, math, re, shutil, sys
 from pathlib import Path
 
 from subtitles import original_sentences, restore
-from cues import scene_timeline, resolve, build_plan, extra_timings, item_texts
+from cues import scene_timeline, resolve, build_plan, extra_timings, item_texts, narration_matches
 
 ROOT = Path(__file__).resolve().parent.parent
 FPS = 30
@@ -334,6 +334,7 @@ def main(sid: str, dry: bool = False):
     # 用旁白內容決定畫面何時反應，而不是照計時器輪播。
     # 時間來自 edge-tts 的句級邊界（精確），句內依字元位置內插。
     cue_misses, cued = [], 0
+    static_scenes = []
     for sc in scenes:
         opt = originals.get(sc["id"])
         if not opt:
@@ -346,6 +347,12 @@ def main(sid: str, dry: bool = False):
         times, ms = resolve(sc, tl)
         cue_misses += ms
         items_end = 0.0
+        ok_sem, unsaid = narration_matches(sc, tl, times)
+        if times and not ok_sem:
+            # 旁白沒有逐項唸到這些物件：不要硬掛在別的詞上突然跳出來，改成場景一開始就依序出現、全亮
+            sc.setdefault("props", {})["staticItems"] = True
+            static_scenes.append(f'{sc["id"]}（{"、".join(unsaid[:3])}）')
+            times = None
         if times:
             n = len(times)
             plan_pts = build_plan(times, n, sc["durSec"])
@@ -355,6 +362,8 @@ def main(sid: str, dry: bool = False):
                 cued += 1
         # footer、測驗揭曉、結語逐句等「非項目」元素也對齊旁白
         sc.setdefault("props", {}).update(extra_timings(sc, tl, items_end))
+    if static_scenes:
+        print(f"  ℹ 旁白沒逐項唸到的物件，改為一開場就出現：{'；'.join(static_scenes)}")
     if cued or cue_misses:
         print(f"  ✓ 內容驅動焦點：{cued} 個場景依旁白時間點對齊"
               + (f"，{len(cue_misses)} 個 cue 查無" if cue_misses else ""))
@@ -412,7 +421,8 @@ def main(sid: str, dry: bool = False):
     # 使用者要求物件跟著旁白動、唸完就固定，不要為了湊動態而循環；
     # 所以改成檢查「有項目的場景是不是都對上了旁白」，對不上就擋下來。
     with_items = [s for s in scenes if item_texts(s)]
-    unsynced = [s["id"] for s in with_items if not s.get("props", {}).get("focusPlan")]
+    unsynced = [s["id"] for s in with_items
+                if not s.get("props", {}).get("focusPlan") and not s.get("props", {}).get("staticItems")]
     if unsynced:
         raise SystemExit(f"  ✗ 這些場景的項目沒有對上旁白（請在 plan 補 cue）：{', '.join(unsynced)}")
     print(f"  ✓ 同步檢查通過：{len(with_items)} 個有項目的場景全部依旁白出場")

@@ -43,7 +43,7 @@ export const ConceptCards: React.FC<{
           return (
             <div key={i} style={{
               ...enter,
-              opacity: (enter.opacity as number) * (on ? 1 : 0.38),
+              opacity: (enter.opacity as number) * (0.38 + 0.62 * n.weight(i)),
               transform: `${enter.transform} scale(${hot ? 1 + p * 0.018 : 1})`,
               background: C.card,
               border: `1px solid ${hot ? C.primary : C.border}`,
@@ -68,7 +68,7 @@ export const ConceptCards: React.FC<{
         })}
       </div>
 
-      {footer && t >= fAt && (
+      {footer && (
         <div style={{...rise(f, fps, fAt), color: C.body, fontSize: T.h3, marginTop: 54}}>
           <Phrases text={footer} />
         </div>

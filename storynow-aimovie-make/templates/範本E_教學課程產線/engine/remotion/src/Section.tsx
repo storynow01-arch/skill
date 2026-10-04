@@ -67,10 +67,13 @@ export const Section: React.FC<{data: SectionData; qa?: boolean}> = ({data, qa})
         const last = i === data.scenes.length - 1;
         // 尾端多留 0.4s 與下一場重疊 → 交叉溶接（最後一場不延長，改為直接淡出收尾）
         const extra = last ? 0 : TRANSITION;
+        // 淡出要在 Sequence 最後一格剛好歸零：holdSec 用取整後的格數換算。
+        // 2026-10-04 EP2 品檢 F11：原本 holdSec 沒取整，淡出還剩約 12% 時場景就被拿掉，換場最後一格整塊變暗
+        const frames = Math.round((s.durSec + extra) * fps);
         return (
           <Sequence key={s.id} from={Math.round(s.startSec * fps)}
-                    durationInFrames={Math.round((s.durSec + extra) * fps)}>
-            <SceneFade holdSec={s.durSec + extra} fadeSec={TRANSITION}>
+                    durationInFrames={frames}>
+            <SceneFade holdSec={(frames - 1) / fps} fadeSec={TRANSITION}>
               <Cmp {...s.props} durSec={s.durSec} />
             </SceneFade>
           </Sequence>

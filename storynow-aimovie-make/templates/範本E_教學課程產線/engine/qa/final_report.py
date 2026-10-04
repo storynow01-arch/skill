@@ -143,6 +143,7 @@ def render_html(R: dict, bad: list[str], out: Path, mp4: Path, sheet: Path | Non
         _row("F1", "字幕閃爍", R["F1"]["count"] == 0, R["F1"]["count"], "字幕帶前後有字、中間空 1～2 格"),
         _row("F2", "字幕抖動", R["F2"]["count"] == 0, R["F2"]["count"], "同一頁字幕外框逐格變動"),
         _row("F3", "黑畫面", not R["F3"], len(R["F3"]), "> 0.3 秒"),
+        _row("F11", "畫面突跳", R["F11"]["count"] == 0, R["F11"]["count"], "內容區單一格大幅改變（瞬間亮暗切換、版面跳動）"),
         _row("F4", "最長靜止", None, f"{R['F4']['max_still']}s", "參考值"),
         _row("F5", "規格", R["F5"]["size"] == "1920x1080", f"{R['F5']['size']} {R['F5']['fps']}fps {R['F5']['vcodec']}/{R['F5']['acodec']}"),
         _row("F6", "響度／峰值", R["F6"]["ok"], f"{R['F6']['I']} LUFS／{R['F6']['TP']} dBTP", "EBU R128"),
@@ -183,7 +184,7 @@ def render_html(R: dict, bad: list[str], out: Path, mp4: Path, sheet: Path | Non
     h.append("<h2>檢查項目</h2><div class='wrap'><table><tr><th></th><th>代號</th><th>項目</th><th>結果</th><th>說明</th></tr>"
              + "".join(rows) + "</table></div>")
     ex = []
-    for key, title in (("F1", "字幕閃爍位置"), ("F2", "字幕抖動位置")):
+    for key, title in (("F1", "字幕閃爍位置"), ("F2", "字幕抖動位置"), ("F11", "畫面突跳位置")):
         if R[key]["count"]:
             ex.append(f"<h3>{title}</h3><p>" + "、".join(f"{e['sec']}s" for e in R[key]["examples"]) + "</p>")
     if g:

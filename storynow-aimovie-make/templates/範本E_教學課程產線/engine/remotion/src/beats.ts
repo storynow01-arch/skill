@@ -80,22 +80,39 @@ export type Narration = {
   done: boolean;
   /** 焦點剛切換時的一次性脈衝 0→1→0（只在切換當下，不循環） */
   pulse: number;
+  /** 第 i 項的「亮度權重」0～1：被唸到或全部唸完＝1，其他＝0。
+   *  切換時在 FADE 秒內平滑過渡（2026-10-04 使用者回報：亮暗瞬間切換、唸完突然全亮，看起來像跳一下） */
+  weight: (i: number) => number;
 };
+
+export const FADE = 0.4;
 
 export const narrate = (t: number, plan: FocusPlan | undefined, count: number,
                         fallbackStart = 1.0, stagger = 0.15): Narration => {
   if (!plan || plan.length === 0) {
-    return {appear: (i) => fallbackStart + i * stagger, active: -1, done: true, pulse: 0};
+    return {appear: (i) => fallbackStart + i * stagger, active: -1, done: true, pulse: 0, weight: () => 1};
   }
   const first = new Map<number, number>();
   for (const [at, i] of plan) if (!first.has(i)) first.set(i, at);
   const lastAt = Math.max(...plan.map(([at]) => at));
+  const activeAt = (x: number) => (x >= lastAt + HOLD ? -1 : focusFrom(x, plan));
   const done = t >= lastAt + HOLD;
+  // 平滑：取過去 FADE 秒內的平均目標值（線性漸變），所以任何亮暗切換都不會在一格之內完成
+  const N = 12;
+  const weight = (i: number) => {
+    let sum = 0;
+    for (let k = 0; k < N; k++) {
+      const a = activeAt(t - (FADE * k) / (N - 1));
+      sum += a === -1 || a === i ? 1 : 0;
+    }
+    return sum / N;
+  };
   return {
     appear: (i) => Math.max(0, (first.get(i) ?? fallbackStart + i * stagger) - LEAD),
-    active: done ? -1 : focusFrom(t, plan),
+    active: activeAt(t),
     done,
     pulse: done ? 0 : focusPulse(t, plan),
+    weight,
   };
 };
 

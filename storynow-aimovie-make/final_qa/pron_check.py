@@ -80,3 +80,40 @@ def compare_terms(terms, out=None, voice="zh-TW-YunJheNeural", rate="+18%", pitc
 if __name__ == "__main__":
     for r in compare_terms(sys.argv[1].split(",")):
         print(f"{r['term']:12} {r['verdict']}   {r['durations']}")
+
+
+# ── 英文詞回聽（2026-10-04 加入）───────────────────────────────────────
+# 時長比對只能分辨「逐字母／整個詞」，分辨不出英文單字唸得像不像（例如 mail 被唸成「妙」）。
+# 這裡把詞放進 3 種句子各合成一次，用 faster-whisper small 以英文模式辨識，3 次中至少 2 次聽得出該詞才算唸對。
+# base 模型實測太粗（同一段音檔前後結論不同），small 才可靠。
+CARRIERS = ["這個詞是 {w}，{w}。", "請輸入 {w} 這個字。", "{w} 是常見的英文縮寫。"]
+_MODEL = None
+
+
+def _asr_en(path: str) -> str:
+    global _MODEL
+    if _MODEL is None:
+        from faster_whisper import WhisperModel
+        _MODEL = WhisperModel("small", device="cpu", compute_type="int8")
+    segs, _ = _MODEL.transcribe(path, language="en", beam_size=5)
+    return "".join(s.text for s in segs).strip()
+
+
+def english_check(word: str, spoken: str | None = None, out=None, accept: list[str] | None = None,
+                  voice="zh-TW-YunJheNeural", rate="+18%", pitch="+4Hz") -> dict:
+    """word：稿子上的詞；spoken：實際送進 TTS 的寫法（預設同 word）；accept：辨識結果裡出現哪些拼法算對"""
+    import re
+    out = Path(out or tempfile.mkdtemp())
+    out.mkdir(parents=True, exist_ok=True)
+    spoken = spoken or word
+    norm = lambda x: re.sub(r"[^a-z0-9]", "", x.lower())
+    targets = [norm(a) for a in (accept or [word])]
+    votes, heard = 0, []
+    for k, tpl in enumerate(CARRIERS):
+        p = out / f"en_{norm(word)}_{norm(spoken)}_{k}.mp3"
+        import edge_tts
+        asyncio.run(edge_tts.Communicate(tpl.format(w=spoken), voice, rate=rate, pitch=pitch).save(str(p)))
+        h = _asr_en(str(p))
+        heard.append(h)
+        votes += any(t in norm(h) for t in targets)
+    return {"word": word, "spoken": spoken, "votes": votes, "ok": votes >= 2, "heard": heard}

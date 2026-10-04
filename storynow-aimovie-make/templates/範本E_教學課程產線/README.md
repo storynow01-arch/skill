@@ -30,12 +30,27 @@ closing_card  qa_endcard  flow_arrows  layer_stack  network_diagram  ui_mock
 ① 雙軌稿 01_腳本\<id>_<標題>.md     一行一句旁白＋VISUAL 畫面說明
 ② 分鏡   01_腳本\<id>_plan.json      場景型別＋內容；項目可寫 cue（沒寫會自動拿項目文字去旁白裡找）
        ⛔ 文稿一次審完再出片
-③ 配音   py tts.py <稿>.md            edge-tts zh-TW-YunJheNeural +18% +4Hz；唸法依 00_規範\發音規範.json
+③ 配音   py tts_gemini.py <稿>.md     Gemini 3.8 Flash TTS（預設）；設定 00_規範\配音設定.json，金鑰 .env.local
+                                     一節只送 3～4 次請求；配額用完會停，隔天重跑同一指令從斷點接續
+                                     沒有 Gemini 金鑰：py tts.py <稿>.md（edge-tts zh-TW-YunJheNeural，輸出格式相同）
+       ⓐ 多音詞  py qa\poly_ab.py 11_品檢\多音詞 <節...>   AI 判讀多音詞，只聽紅黃列（見下方「配音」）
 ④ 建置   py build_data.py <id>         ← 第一道品檢：字幕覆蓋、單頁字數、項目全部對上旁白，不過不產出
 ⑤ 渲染   render_v2.ps1 -Ver v2 -Ids 1-1,1-2   檢查 exit code 與輸出檔時間戳
 ⑥ 合併   py assemble.py EP1 1-1 … 1-7 --ver v2   封面＋片頭＋過渡＋各節，整集響度正規化到 −16 LUFS
 ⑦ 品檢   見下方（= storynow-aimovie-make 第⑪步）
 ```
+
+## 配音（Gemini 3.8 Flash TTS）
+
+- **金鑰**：課程根目錄 `.env.local` 一行 `GEMINI_API_KEY=…`（new_course.py 會建好空白檔與 .gitignore）。
+- **聲音**：`00_規範\配音設定.json`。`voice_id` 空白時，第一次配音會依 `voice_description` 用 Gemini「聲音設計」做出聲音並寫回
+  （聲音存在你的 Gemini 專案裡一年）。預設描述是「25 歲台灣年輕男老師、熱情開朗、溫暖中音」，`_其他候選` 另有明亮高音、低沉渾厚兩種。
+  想先試聽：照描述各做一個聲音、同一段課文各唸一次再選。
+- **時間戳**：Gemini 不回傳時間戳，`tts_gemini.py` 用 faster-whisper 逐字時間＋difflib 對齊已知文稿，算出每句起訖，
+  再切成每場一個 mp3＋句級 srt（與 edge-tts 版格式相同，下游不用改）。
+- **唸法**：數字、IP、英文縮寫照 `發音規範.json` 轉；edge-tts 專用的權宜寫法（多音詞同音字替換、ping→聘 這類）列在 `skip_rules`，送 Gemini 時略過。
+- **配額**：免費層每天次數很少（實際上限看 Google AI Studio 的 Rate limits）；遇到每日上限會印出錯誤並停止，已完成的段落快取在 `02_語音\<id>\_gemini_cache\`。
+- **資料政策**：免費層送出的文稿可能被 Google 用來改進產品；業主內容敏感就用付費層。
 
 ## 品檢（四關＋自我測試）
 

@@ -65,7 +65,7 @@ export const DefinitionCard: React.FC<{
                 ...e,
                 // 改成正式卡片：小膠囊的變色在 480x270 量不到，觀眾也看不明顯。
                 // 大面積不透明度切換才是實測有效的那一招（concept_cards 用同一套）。
-                opacity: (e.opacity as number) * (active === -1 || hot ? 1 : 0.32),
+                opacity: (e.opacity as number) * (0.32 + 0.68 * nr.weight(i)),
                 transform: `${e.transform} scale(${hot ? 1 + p * 0.025 : 1})`,
                 background: C.card,
                 border: `1px solid ${hot ? C.primary : C.border}`,

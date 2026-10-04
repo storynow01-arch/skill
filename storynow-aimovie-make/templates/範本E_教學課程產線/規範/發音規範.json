@@ -20,6 +20,12 @@
       "pattern": "(?<![\\d.])(\\d)\\.(\\d)(?![\\d.])",
       "handler": "version_digits",
       "說明": "2.4 → 二點四（避免唸成二又四分之一之類）"
+    },
+    {
+      "name": "單獨唸的 com",
+      "pattern": "(?<![A-Za-z.])com(?![A-Za-z0-9])",
+      "handler": "literal:c o m",
+      "說明": "「點 com」單獨唸時中文聲音唸成「框」→ c o m；google.com 這種完整網域前面有小數點，不套用"
     }
   ],
   "詞典": {
@@ -42,15 +48,31 @@
     "LAN": "L A N",
     "WAN": "W A N",
     "AP": "A P",
-    "tracert": "trace route",
+    "ping": "聘",
+    "about": "額抱特",
     "PAN": "P A N",
     "MAN": "M A N",
     "Mbps": "M b p s",
     "localhost": "local host",
     "VPN": "V P N",
-    "SSH": "S S H"
+    "SSH": "S S H",
+    "mail": "M A I L",
+    "GET": "G E T",
+    "gov": "G O V",
+    "Mega": "Megah"
   },
   "_詞典說明": "英文縮寫拆成單字母，避免 TTS 當成單字唸。已確認 edge-tts 對連寫縮寫的處理不穩定。",
+  "_英文詞試聽（2026-10-04）": "使用者從候選選定：ping→聘（要第四聲）、about→額抱特（要聽得出英文）、tracert 唸原樣。候選頁 11_品檢/多音詞AI判讀/英文候選/候選.html",
+  "多音詞替換": {
+    "_說明": "2026-10-04 AI 判讀（同音字替換＋MFCC/DTW 比對，11_品檢/多音詞AI判讀/）標為唸錯或不確定的詞，使用者試聽「正確讀音版」確認全部正確 → 送 TTS 前一律換成只有一種讀音的同音字。字幕仍用原字。",
+    "重送": "蟲送", "重開": "蟲開", "重來": "蟲來",
+    "下載": "下在",
+    "差在": "插在", "差別": "插別",
+    "應該": "英該",
+    "數據": "樹據",
+    "空間": "崆間",
+    "轉一圈": "賺一圈"
+  },
   "危險樣式": [
     {
       "pattern": "(?<![\\d.])\\d{1,3}(\\.\\d{1,3}){3}(?![\\d.])",
@@ -69,7 +91,7 @@
     "唸錯而補規則": {
       "PAN": "原樣 2.88s ≈ pan 2.86s（唸成單字「盤」）→ 改 P A N",
       "MAN": "原樣 2.90s ≈ man 2.93s（唸成單字）→ 改 M A N",
-      "tracert": "原樣 3.50s，與 trace route 3.70s、逐字母 5.57s 都不同 → 改 trace route",
+      "tracert": "原樣 3.50s，與 trace route 3.70s、逐字母 5.57s 都不同 → 曾改 trace route；2026-10-04 使用者試聽後決定唸原樣 tracert，已移除規則",
       "Mbps": "原樣 3.72s，與逐字母 4.01s 不同 → 改 M b p s",
       "localhost": "原樣 3.79s 與 local host 3.67s 不同 → 改 local host",
       "200": "原樣 2.88s，與「兩百」3.60s、「二零零」3.94s 都不同 → 明定兩百"
@@ -100,5 +122,55 @@
       "3306": "TTS 預設三千三百零六 → 改三三零六",
       "52341": "TTS 預設五萬兩千…→ 改五二三四一"
     }
+  },
+  "英文詞回聽（2026-10-04）": {
+    "方法": "qa/pron_check.py english_check()：詞放進 3 種句子各合成一次，faster-whisper small 英文模式辨識，3 次中 ≥2 次聽得出才算唸對（base 模型太粗，不採用）",
+    "使用者決定": "維持全中文聲音（不改用英文聲音拼接），只修能修好的詞",
+    "改逐字母或改寫": {
+      "mail": "中文聲音唸成「妙／沒有」→ M A I L（網址逐字母唸）",
+      "GET": "唸成「給」→ G E T",
+      "gov": "→ G O V（2/3）",
+      "com（單獨唸，例如「點 com」）": "唸成「框」→ c o m（2/3）；google.com 這類完整網域本來就對（3/3），不改",
+      "Mega": "唸成 Maker → Megah（1～2/3，列入人工試聽）"
+    },
+    "中文聲音無法唸準、保留並列入人工試聽": [
+      "ping",
+      "tracert（trace route）",
+      "about"
+    ],
+    "已確認唸對": [
+      "google",
+      "drive",
+      "Enter",
+      "Windows",
+      "POST",
+      "Wi-Fi",
+      "MySQL",
+      "localhost",
+      "www",
+      "edu",
+      "tw",
+      "http",
+      "https",
+      "port",
+      "Secure",
+      "youtube",
+      "TTL",
+      "Mbps",
+      "MB",
+      "vs",
+      "IP",
+      "SSH",
+      "VPN",
+      "DNS",
+      "TCP",
+      "UDP",
+      "HTTP",
+      "HTTPS",
+      "LAN",
+      "WAN",
+      "AP",
+      "MAN"
+    ]
   }
 }

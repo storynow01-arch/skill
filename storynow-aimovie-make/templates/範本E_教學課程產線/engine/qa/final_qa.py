@@ -83,12 +83,44 @@ def flicker_and_jitter(boxes, fps=30.0, tol=2):
     return flick, jit
 
 
+def _frame_diffs(vf: list[str], h: int, w: int, mp4: Path, chunk: int = 600) -> np.ndarray:
+    """逐格平均亮度差。分段從 ffmpeg 管線讀，整集（5 萬格）也只佔幾百 MB 記憶體。
+    2026-10-04：原本一次讀進整集要 18 GB，EP2 跑到 F11 記憶體不足中斷。"""
+    proc = subprocess.Popen(["ffmpeg", "-v", "error", "-i", str(mp4), *vf, "-f", "rawvideo", "-"],
+                            stdout=subprocess.PIPE)
+    size, out, prev = h * w, [], None
+    while True:
+        buf = proc.stdout.read(size * chunk)
+        n = len(buf) // size
+        if n == 0:
+            break
+        a = np.frombuffer(buf[:n * size], np.uint8).reshape(n, h, w).astype(np.float32)
+        if prev is not None:
+            a = np.concatenate([prev[None], a])
+        out.append(np.abs(np.diff(a, axis=0)).mean(axis=(1, 2)))
+        prev = a[-1]
+    proc.wait()
+    return np.concatenate(out) if out else np.zeros(0)
+
+
+JUMP_TH = 2.0     # 內容區逐格平均亮度差；平滑的淡入淡出、換場交叉溶接都遠低於此
+
+
+def jumps(mp4: Path, fps: float = 30.0, y0: int = 120, h: int = 780) -> list[dict]:
+    """F11 畫面突跳：內容區（不含上方章節標籤與下方字幕帶）在「前後都平穩、只有這一格」大幅改變。
+    2026-10-04 使用者回報物件「突然跳一下」；實測原因是焦點亮暗瞬間切換、footer 出現時整塊內容往上跳。
+    正常的出場（彈簧上浮 0.45 秒）、漸變（0.4 秒）、換場（0.4 秒交叉溶接）都是好幾格逐漸變化，不會被算進來。"""
+    d = _frame_diffs(["-vf", f"crop=1920:{h}:0:{y0},scale=480:{h // 4},format=gray"], h // 4, 480, mp4)
+    out = []
+    for i in range(1, len(d) - 1):
+        if d[i] > JUMP_TH and d[i - 1] < d[i] / 3 and d[i + 1] < d[i] / 3:
+            out.append({"sec": round((i + 1) / fps, 2), "size": round(float(d[i]), 2)})
+    return out
+
+
 def still_analysis(mp4: Path, fps: int = 4, th: float = 0.6):
     """4fps、480x270 逐格差分（與 verify_motion.py 同一套），量最長連續靜止"""
-    p = subprocess.run(["ffmpeg", "-v", "error", "-i", str(mp4), "-vf", f"fps={fps},scale=480:270,format=gray",
-                        "-f", "rawvideo", "-"], capture_output=True)
-    a = np.frombuffer(p.stdout, np.uint8).reshape(-1, 270, 480).astype(np.float32)
-    d = np.abs(np.diff(a, axis=0)).mean(axis=(1, 2))
+    d = _frame_diffs(["-vf", f"fps={fps},scale=480:270,format=gray"], 270, 480, mp4)
     run = best = best_at = 0
     for i, x in enumerate(d):
         run = run + 1 if x < th else 0
@@ -107,6 +139,8 @@ def main():
     ap.add_argument("--text")
     ap.add_argument("--lufs", type=float, default=-16.0)
     ap.add_argument("--minutes", default="")
+    ap.add_argument("--jump-skip", default="",
+                    help="F11 不檢查的時間段（秒），例：0-14.6 = 封面＋委製方提供的片頭影片")
     ap.add_argument("--silence-ok", type=float, default=0.0,
                     help="長度不超過這個秒數的無聲段屬於設計（例如片尾測驗卡 6 秒倒數），列出但不算未通過")
     ap.add_argument("--spec", help="十一步流程建置出的 src/data/spec.json：量字幕＝旁白、字幕同步、Netflix 字幕規範")
@@ -140,6 +174,11 @@ def main():
             "-an", "-f", "null", "-"])
     R["F3"] = [[float(x), float(y)] for x, y in re.findall(r"black_start:([\d.]+) black_end:([\d.]+)", r.stderr)]
 
+    jp = jumps(mp4, fps)
+    skip = [tuple(map(float, r.split("-"))) for r in a.jump_skip.split(",") if r]
+    skipped = [x for x in jp if any(lo <= x["sec"] <= hi for lo, hi in skip)]
+    jp = [x for x in jp if x not in skipped]
+    R["F11"] = {"count": len(jp), "examples": jp[:12], "skipped": len(skipped), "skip": a.jump_skip}
     mo = still_analysis(mp4)
     R["F4"] = {"max_still": mo["max_still"], "at": mo["max_still_at"], "static_ratio": round(mo["static_ratio"], 3)}
 
@@ -178,6 +217,7 @@ def main():
     if R["F1"]["count"]: bad.append(f"F1 字幕閃爍 {R['F1']['count']} 處")
     if R["F2"]["count"]: bad.append(f"F2 字幕抖動 {R['F2']['count']} 處")
     if R["F3"]: bad.append(f"F3 黑畫面 {len(R['F3'])} 段")
+    if R["F11"]["count"]: bad.append(f"F11 畫面突跳 {R['F11']['count']} 處（{', '.join(str(x['sec']) + 's' for x in R['F11']['examples'][:5])}）")
     if R["F5"]["size"] != "1920x1080": bad.append(f"F5 解析度 {R['F5']['size']}")
     if not R["F6"]["ok"]: bad.append(f"F6 響度 {I} LUFS／峰值 {tp} dBTP（目標 {a.lufs}±1、≤−1）")
     designed = [x for x in R["F7"] if x[1] - x[0] <= a.silence_ok + 0.05]

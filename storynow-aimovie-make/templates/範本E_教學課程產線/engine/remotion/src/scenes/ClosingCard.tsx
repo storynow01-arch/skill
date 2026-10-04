@@ -50,7 +50,6 @@ export const ClosingCard: React.FC<{
       <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18}}>
         {lines.map((line, i) => {
           const at = lineAt(i);
-          if (t < at) return null;
           const e = rise(f, fps, at);
           const isFirst = i === 0;
           return (
@@ -77,7 +76,6 @@ export const ClosingCard: React.FC<{
                      justifyContent: 'center', maxWidth: 1400}}>
           {recap.map((r, i) => {
             const at = recapAt(i);
-            if (t < at) return null;
             const e = rise(f, fps, at);
             return (
               <div key={i} style={{
@@ -93,7 +91,7 @@ export const ClosingCard: React.FC<{
         </div>
       )}
 
-      {nextTeaser && t >= teaserAt && (
+      {nextTeaser && (
         <div style={{...rise(f, fps, teaserAt), display: 'flex', alignItems: 'center', gap: 16,
                      marginTop: 34,
                      border: `1px solid ${p > 0.25 ? C.primary : C.border}`,

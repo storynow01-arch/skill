@@ -70,6 +70,12 @@ def main(sid="1-1", src=None):
                        "-af", "atrim=0:60", str(o)]),
          expect=lambda b, a: a is not None and a >= 5.5 and a > b)
 
+    from final_qa import jumps
+    case("V5 畫面突跳（單格位移 40px）", lambda p: len(jumps(p)),
+         lambda o: ff(["-i", str(base), "-filter_complex",
+                       "[0:v]split[m][s];[s]crop=1920:700:0:160[c];[m][c]overlay=x=0:y=200:enable='eq(n,600)'",
+                       "-c:a", "copy", str(o)]))
+
     def flicker(p):
         return check_captions(sid, data, p, band_scan(p))["C2"]["count"]
     case("C2 字幕換頁閃 1 格", flicker,

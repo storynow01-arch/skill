@@ -1,4 +1,4 @@
-import {AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
+import {AbsoluteFill, interpolate, interpolateColors, spring, useCurrentFrame, useVideoConfig} from 'remotion';
 import {Phrases} from '../Phrases';
 import {fitText} from '@remotion/layout-utils';
 import {C, T, FONT, R, L} from '../theme';
@@ -35,6 +35,8 @@ export const QAEndCard: React.FC<{
   const {fps} = useVideoConfig();
   const t = frame / fps;
   const revealed = t >= answerSec;
+  // 揭曉用 0.4 秒漸變，不在一格之內切換（2026-10-04 EP2 品檢 F11：每節結尾都抓到）
+  const rv = interpolate(t, [answerSec, answerSec + 0.4], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
 
   const titleIn = spring({frame, fps, config: SNAPPY});
   const countdown = interpolate(frame, [0, answerSec * fps], [100, 0], {
@@ -82,17 +84,14 @@ export const QAEndCard: React.FC<{
         <Phrases text={question} />
       </div>
 
-      <div style={{height: 56, display: 'flex', alignItems: 'center', gap: 18}}>
-        {!revealed ? (
-          <>
-            <div style={{width: 360, height: 6, background: C.high, borderRadius: R.pill, overflow: 'hidden'}}>
-              <div style={{width: `${countdown}%`, height: '100%', background: C.primary, borderRadius: R.pill}} />
-            </div>
-            <div style={{color: C.muted, fontSize: T.cardNote, minWidth: 40}}>{secsLeft}</div>
-          </>
-        ) : (
-          <div style={{color: C.success, fontSize: T.cardNote, letterSpacing: 2}}>正解</div>
-        )}
+      <div style={{height: 56, position: 'relative', width: 420, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+        <div style={{position: 'absolute', display: 'flex', alignItems: 'center', gap: 18, opacity: 1 - rv}}>
+          <div style={{width: 360, height: 6, background: C.high, borderRadius: R.pill, overflow: 'hidden'}}>
+            <div style={{width: `${countdown}%`, height: '100%', background: C.primary, borderRadius: R.pill}} />
+          </div>
+          <div style={{color: C.muted, fontSize: T.cardNote, minWidth: 40}}>{secsLeft}</div>
+        </div>
+        <div style={{position: 'absolute', color: C.success, fontSize: T.cardNote, letterSpacing: 2, opacity: rv}}>正解</div>
       </div>
 
       <div
@@ -106,19 +105,19 @@ export const QAEndCard: React.FC<{
       >
         {options.slice(0, 4).map((o, i) => {
           const enter = spring({frame, fps, delay: Math.round((0.35 + i * 0.12) * fps), config: SNAPPY});
-          const ok = revealed && i === answerIndex;
-          const dim = revealed && i !== answerIndex;
+          const isAns = i === answerIndex;
+          const ok = revealed && isAns;
           const pop = ok ? spring({frame, fps, delay: Math.round(answerSec * fps), config: SNAPPY}) : 0;
           return (
             <div
               key={i}
               style={{
                 minWidth: 0,
-                opacity: enter * (dim ? 0.3 : 1),
+                opacity: enter * (isAns ? 1 : 1 - 0.7 * rv),
                 transform: `translateY(${(1 - enter) * 18}px) scale(${1 + pop * 0.03})`,
                 background: C.card,
-                border: `1px solid ${ok ? C.success : C.border}`,
-                boxShadow: ok ? '0 0 34px rgba(32,192,88,0.25)' : 'none',
+                border: `1px solid ${isAns ? interpolateColors(rv, [0, 1], [C.border, C.success]) : C.border}`,
+                boxShadow: isAns && rv > 0 ? `0 0 34px rgba(32,192,88,${0.25 * rv})` : 'none',
                 borderRadius: R.md,
                 padding: `26px ${PAD_X}px`,
                 display: 'flex',
@@ -132,8 +131,9 @@ export const QAEndCard: React.FC<{
                   height: BADGE,
                   flexShrink: 0,
                   borderRadius: R.sm,
-                  background: ok ? C.success : C.high,
-                  color: ok ? C.bg : C.muted,
+                  background: isAns ? interpolateColors(rv, [0, 1], [C.high, C.success]) : C.high,
+                  color: isAns ? interpolateColors(rv, [0, 1], [C.muted, C.bg]) : C.muted,
+                  position: 'relative',
                   fontSize: T.cardNote,
                   fontWeight: 700,
                   display: 'flex',
@@ -141,14 +141,21 @@ export const QAEndCard: React.FC<{
                   justifyContent: 'center',
                 }}
               >
-                {ok ? '✓' : LETTERS[i]}
+                {isAns ? (
+                  <>
+                    {/* 先淡出字母、再淡入 ✓，兩者不同時出現（版面品檢：同時出現會判為文字重疊） */}
+                    {rv < 0.5 && <span style={{opacity: 1 - rv * 2}}>{LETTERS[i]}</span>}
+                    {rv >= 0.5 && <span style={{opacity: rv * 2 - 1}}>✓</span>}
+                  </>
+                ) : LETTERS[i]}
               </div>
               <div
                 style={{
                   minWidth: 0,
-                  color: ok ? C.text : C.body,
+                  color: isAns ? interpolateColors(rv, [0, 1], [C.body, C.text]) : C.body,
                   fontSize: optSize,
-                  fontWeight: ok ? 700 : 500,
+                  // 字重不切換：500→700 會讓字寬瞬間改變（一格內位移）
+                  fontWeight: 500,
                   wordBreak: 'keep-all',
                   lineBreak: 'strict',
                 }}
