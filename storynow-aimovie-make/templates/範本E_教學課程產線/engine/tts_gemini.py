@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gemini 3.8 Flash TTS 配音（取代 edge-tts；舊版 tts.py 保留可退回）。
+"""Gemini Flash TTS 配音（自動用最新正式版；取代 edge-tts，舊版 tts.py 保留可退回）。
 
 用法:
     py tts_gemini.py ../01_腳本/1-8_傳輸媒介.md [--force] [--out=<資料夾>]   （--out 試做用，不覆寫 02_語音）
@@ -16,7 +16,7 @@
   4. 每段音檔依文字雜湊快取在 02_語音/<id>/_gemini_cache/，配額用完（429）就停，隔天重跑會從斷點接續
 """
 from __future__ import annotations
-import base64, difflib, hashlib, json, os, re, subprocess, sys, time, urllib.error, urllib.request
+import hashlib, json, re, subprocess, sys
 from pathlib import Path
 
 ENGINE = Path(__file__).resolve().parent
@@ -25,136 +25,34 @@ sys.path.insert(0, str(ENGINE))
 from tts import parse, lint, to_speech, dur          # noqa: E402
 
 CFG_PATH = ROOT / "00_規範" / "配音設定.json"
-API = "https://generativelanguage.googleapis.com/v1beta/"
-
-
-# ── 金鑰與 API ───────────────────────────────────────────────
-def api_key() -> str:
-    if os.environ.get("GEMINI_API_KEY"):
-        return os.environ["GEMINI_API_KEY"]
-    env = ROOT / ".env.local"
-    if env.exists():
-        for line in env.read_text(encoding="utf-8").splitlines():
-            if line.startswith("GEMINI_API_KEY="):
-                k = line.split("=", 1)[1].strip()
-                if k and "請貼" not in k:
-                    return k
-    sys.exit("找不到 GEMINI_API_KEY：請在專案根目錄 .env.local 寫一行 GEMINI_API_KEY=你的key")
-
-
-class Quota(Exception):
-    pass
-
-
-def call(method: str, path: str, body: dict | None = None) -> dict:
-    req = urllib.request.Request(API + path, method=method,
-                                 data=json.dumps(body).encode() if body is not None else None,
-                                 headers={"x-goog-api-key": api_key(), "Content-Type": "application/json"})
-    for attempt in range(4):
-        try:
-            return json.load(urllib.request.urlopen(req, timeout=600))
-        except urllib.error.HTTPError as e:
-            msg = e.read().decode(errors="replace")
-            if e.code == 429:
-                # 每分鐘限制：等一下再試；每日限制：直接停，隔天續跑
-                if "PerDay" in msg or "per day" in msg.lower() or attempt == 3:
-                    raise Quota(msg[:600])
-                time.sleep(25 * (attempt + 1))
-                continue
-            if e.code >= 500 and attempt < 3:
-                time.sleep(10 * (attempt + 1))
-                continue
-            raise RuntimeError(f"HTTP {e.code}: {msg[:600]}")
-    raise RuntimeError("重試失敗")
+import gemini_tts as G                                  # noqa: E402  共用：金鑰、最新模型、聲音設計、合成、對齊
+Quota = G.Quota
 
 
 def load_cfg() -> dict:
     cfg = json.loads(CFG_PATH.read_text(encoding="utf-8"))
+    G.api_key(ROOT)
+    cfg["model_resolved"] = G.resolve_model(cfg.get("model", "auto"))
     if not cfg.get("voice_id"):
         # 第一次：用聲音描述設計聲音，id 寫回設定檔（聲音存在 Gemini 專案裡一年）
-        r = call("POST", "voices", {"store": True, "voice": {
-            "model": cfg["model"], "type": "prompted", "display_name": cfg.get("voice_name", "course_voice"),
-            "gender": cfg.get("gender", "male"), "language_code": cfg.get("language_code", "zh-TW"),
-            "prompted": {"input": cfg["voice_description"]}}})
-        cfg["voice_id"] = r["id"]
-        CFG_PATH.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
+        cfg["voice_id"] = G.design_voice(cfg.get("voice_description") or G.DEFAULT_DESCRIPTION,
+                                         gender=cfg.get("gender", "male"),
+                                         language_code=cfg.get("language_code", "zh-TW"),
+                                         name=cfg.get("voice_name", "course_voice"))
+        save = {k: v for k, v in cfg.items() if k != "model_resolved"}
+        CFG_PATH.write_text(json.dumps(save, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"  已設計聲音 → {cfg['voice_id']}（寫回 {CFG_PATH.name}）")
     return cfg
 
 
 def gemini_text(text: str, cfg: dict) -> str:
     """送 Gemini 的文字：數字、IP、縮寫照 to_speech 轉；但 edge-tts 專用的權宜寫法
-    （多音詞同音字替換、英文詞的中文近似音）Gemini 不需要，在 配音設定.json 的 skip 列出。"""
-    t = to_speech(text, skip=set(cfg.get("skip_rules", [])))
-    return t
+    （多音詞同音字替換、英文詞的中文近似音）Gemini 不需要，在 配音設定.json 的 skip_rules 列出。"""
+    return to_speech(text, skip=set(cfg.get("skip_rules", [])))
 
 
 def synth(text: str, cfg: dict, wav: Path):
-    r = call("POST", "interactions", {
-        "model": cfg["model"],
-        "input": [{"type": "user_input", "content": [{"type": "text", "text": text,
-                   "annotations": [{"type": "speech_metadata", "style": cfg["style"]}]}]}],
-        "response_format": {"type": "audio"},
-        "generation_config": {"speech_config": [{"voice": cfg["voice_id"]}]}})
-    data = [c["data"] for s in r.get("steps", []) for c in s.get("content", []) if c.get("data")]
-    if not data:
-        raise RuntimeError(f"回應沒有音訊：{json.dumps(r, ensure_ascii=False)[:400]}")
-    wav.write_bytes(base64.b64decode(data[0]))
-
-
-# ── 對齊：已知文稿 ↔ whisper 逐字時間 ──────────────────────────
-_MODEL = None
-HAN = re.compile(r"[一-鿿A-Za-z0-9]")
-
-
-def char_times(wav: Path) -> tuple[str, list[tuple[float, float]]]:
-    global _MODEL
-    if _MODEL is None:
-        from faster_whisper import WhisperModel
-        _MODEL = WhisperModel("small", device="cpu", compute_type="int8")
-    segs, _ = _MODEL.transcribe(str(wav), language="zh", word_timestamps=True,
-                                initial_prompt="以下是繁體中文的課程旁白。")
-    chars, times = [], []
-    for s in segs:
-        for w in s.words:
-            cs = [c for c in w.word if HAN.match(c)]
-            for k, c in enumerate(cs):            # 一個 word 內的字平均分配時間
-                a = w.start + (w.end - w.start) * k / len(cs)
-                b = w.start + (w.end - w.start) * (k + 1) / len(cs)
-                chars.append(c.lower()); times.append((a, b))
-    return "".join(chars), times
-
-
-def align(sentences: list[str], heard: str, times: list) -> list[tuple[float, float]]:
-    """每句在音檔中的起訖秒數。辨識錯字（同音字）不影響：difflib 對到的字取時間，沒對到的用前後內插。"""
-    script = [(i, c.lower()) for i, s in enumerate(sentences) for c in s if HAN.match(c)]
-    a = "".join(c for _, c in script)
-    sm = difflib.SequenceMatcher(None, a, heard, autojunk=False)
-    t_of = [None] * len(a)
-    for blk in sm.get_matching_blocks():
-        for k in range(blk.size):
-            t_of[blk.a + k] = times[blk.b + k]
-    # 內插沒對到的字
-    known = [k for k, t in enumerate(t_of) if t]
-    if not known:
-        raise RuntimeError("對齊失敗：辨識結果與文稿完全對不上")
-    for k in range(len(a)):
-        if t_of[k] is None:
-            prev = max((j for j in known if j < k), default=None)
-            nxt = min((j for j in known if j > k), default=None)
-            if prev is None:
-                t_of[k] = (t_of[nxt][0], t_of[nxt][0])
-            elif nxt is None:
-                t_of[k] = (t_of[prev][1], t_of[prev][1])
-            else:
-                f = (k - prev) / (nxt - prev)
-                x = t_of[prev][1] + (t_of[nxt][0] - t_of[prev][1]) * f
-                t_of[k] = (x, x)
-    out = []
-    for i in range(len(sentences)):
-        idx = [k for k, (si, _) in enumerate(script) if si == i]
-        out.append((t_of[idx[0]][0], t_of[idx[-1]][1]) if idx else (out[-1][1] if out else 0, out[-1][1] if out else 0))
-    return out
+    wav.write_bytes(G.synth(text, cfg["voice_id"], style=cfg["style"], model=cfg["model_resolved"]))
 
 
 def split_sentences(narr: str) -> list[str]:
@@ -197,7 +95,7 @@ def main(md: Path, force: bool = False, out_dir: str = ""):
     for g, grp in enumerate(groups):
         sents_by_scene = [split_sentences(gemini_text(narr, cfg)) for _, _, narr in grp]
         text = "\n".join(s for ss in sents_by_scene for s in ss)
-        h = hashlib.sha1(json.dumps([text, cfg["model"], cfg["voice_id"], cfg["style"]],
+        h = hashlib.sha1(json.dumps([text, cfg["model_resolved"], cfg["voice_id"], cfg["style"]],
                                     ensure_ascii=False).encode()).hexdigest()[:12]
         wav = cache / f"{h}.wav"
         if force or not wav.exists():
@@ -207,9 +105,8 @@ def main(md: Path, force: bool = False, out_dir: str = ""):
             except Quota as e:
                 print(f"\n⛔ 配額用完，已完成的段落都在快取裡，之後重跑同一指令會接續。\n{e}")
                 sys.exit(3)
-        heard, times = char_times(wav)
         flat = [s for ss in sents_by_scene for s in ss]
-        spans = align(flat, heard, times)
+        spans = G.align(flat, str(wav))
         total_wav = dur(wav)
         # 2. 依場景切：切點＝前一場最後一句結束與下一場第一句開始的中點
         k, cuts = 0, [0.0]
@@ -247,7 +144,7 @@ def main(md: Path, force: bool = False, out_dir: str = ""):
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lst),
                     "-c", "copy", str(out / "full.mp3")], check=True)
     (out / "marks.json").write_text(json.dumps(
-        {"id": sid, "engine": "gemini", "model": cfg["model"], "voice": cfg["voice_id"], "style": cfg["style"],
+        {"id": sid, "engine": "gemini", "model": cfg["model_resolved"], "voice": cfg["voice_id"], "style": cfg["style"],
          "total_seconds": round(total, 2), "scenes": rows}, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\n  合計 {total:.1f} 秒 ({total / 60:.2f} 分)\n  輸出 → {out}")
 

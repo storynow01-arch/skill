@@ -1,4 +1,4 @@
-"""storyboard.json → 旁白（edge-tts）→ 時間軸 → 配樂 → src/data/spec.json
+"""storyboard.json → 旁白（Gemini Flash TTS，自動用最新版）→ 時間軸 → 配樂 → src/data/spec.json
 
 用法（在專案資料夾內）：
     python <skill>/scripts/build.py storyboard.json [--style glass] [--no-tts] [--no-music]
@@ -6,11 +6,19 @@
 兩種模式：
   mode = "teach"  場景長度由旁白決定（每句單獨合成 → 精準字幕與動畫 cue），配樂為底樂並自動閃避人聲
   mode = "promo"  場景長度由 bars（小節數）決定，所有切點對齊音樂節拍，無旁白
+
+旁白聲音（storyboard 的 "voice"／"voices"）：
+  預設 provider = "gemini"：金鑰放專案資料夾 .env.local（GEMINI_API_KEY=…），模型 auto＝最新正式版 Flash TTS。
+    {"description": "聲音描述（第一次自動設計，id 記在 .gemini_voices.json）", "style": "講話方式", "voice_id": "選填"}
+    也可用 Gemini 現成聲音名：{"gemini_voice": "Achird"}
+  所有句子先一次批次合成（一次請求約 2 分鐘的稿，省配額），再用 whisper 對齊切回每一句。
+  provider = "edge"／"azure" 仍可用（備用）；沒有 GEMINI_API_KEY 時自動退回 edge-tts 並警告。
 """
 import argparse, asyncio, hashlib, json, os, re, shutil, subprocess, sys, wave
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
 STYLES = json.load(open(os.path.join(HERE, '..', 'template', 'src', 'styles.json'), encoding='utf-8'))
 PRON = json.load(open(os.path.join(HERE, 'pron_zh-TW.json'), encoding='utf-8'))
 SR = 48000
@@ -51,17 +59,109 @@ def _tts_azure(text, wav, v):
     open(wav, 'wb').write(urllib.request.urlopen(req, timeout=60).read())
 
 
-def synth_line(text, cache, voice):
+FEMALE_HINT = ('Hsiao', 'Xiao', 'Ava', 'Emma', 'Jenny', 'Aria', 'female', '女')
+DEFAULT_FEMALE = ("25 歲左右的台灣年輕女老師，說標準台灣華語（台灣口音），熱情開朗、親切有活力，咬字清楚，語速稍快，聲音明亮溫暖。")
+
+
+def _gemini_ready():
+    try:
+        import gemini_tts as G
+        G.api_key(os.getcwd())
+        return True
+    except SystemExit:
+        return False
+
+
+def _provider(voice):
+    p = voice.get('provider', 'gemini')
+    if p == 'gemini' and not _gemini_ready():
+        if not getattr(_provider, 'warned', False):
+            print('  ⚠ 找不到 GEMINI_API_KEY（專案 .env.local），這次改用 edge-tts')
+            _provider.warned = True
+        return 'edge'
+    if p == 'azure' and not (os.environ.get('AZURE_SPEECH_KEY') and os.environ.get('AZURE_SPEECH_REGION')):
+        print('  ⚠ 未設定 AZURE_SPEECH_KEY／AZURE_SPEECH_REGION，改用 edge-tts')
+        return 'edge'
+    return p
+
+
+def _gemini_voice(voice, proj):
+    """回傳 Gemini 的 voice（現成聲音名或設計過的 id）。只有描述時第一次自動設計，id 存在 <專案>/.gemini_voices.json"""
+    import gemini_tts as G
+    if voice.get('gemini_voice'): return voice['gemini_voice']
+    if voice.get('voice_id'): return voice['voice_id']
+    female = not voice.get('description') and any(h in voice.get('name', '') for h in FEMALE_HINT)
+    desc = voice.get('description') or (DEFAULT_FEMALE if female else G.DEFAULT_DESCRIPTION)
+    book_path = os.path.join(proj, '.gemini_voices.json')
+    book = json.load(open(book_path, encoding='utf-8')) if os.path.exists(book_path) else {}
+    k = hashlib.md5(desc.encode()).hexdigest()[:12]
+    if k not in book:
+        g = voice.get('gender') or ('female' if female or '女' in desc[:30] else 'male')
+        book[k] = {'id': G.design_voice(desc, gender=g), 'description': desc}
+        json.dump(book, open(book_path, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+        print(f"  已設計 Gemini 聲音 {book[k]['id']}（{desc[:24]}…）")
+    return book[k]['id']
+
+
+def _tag(say, voice, provider):
+    if provider == 'gemini':
+        return f"{say}|gemini|{voice.get('_gid')}|{voice.get('style', '')}|{voice.get('_model')}"
+    return f"{say}|{voice['name']}|{voice['rate']}|{voice['pitch']}|{voice.get('volume', '+0%')}|{voice.get('style', '')}|{provider}"
+
+
+def _prep(voice, proj):
+    """補上 Gemini 需要的欄位（聲音 id、實際模型）"""
+    if '_gid' in voice or _provider(voice) != 'gemini': return voice
+    import gemini_tts as G
+    v = dict(voice)
+    v.setdefault('style', G.DEFAULT_STYLE)
+    v['_gid'] = _gemini_voice(v, proj)
+    v['_model'] = G.resolve_model(v.get('model', 'auto'))
+    return v
+
+
+def _to_cache(wav_bytes, wav):
+    tmp = wav[:-4] + '_raw.wav'
+    open(tmp, 'wb').write(wav_bytes)
+    subprocess.check_call(['ffmpeg', '-v', 'error', '-y', '-i', tmp, '-ac', '1', '-ar', str(SR), wav])
+    os.remove(tmp)
+
+
+def prefetch_gemini(items, cache, proj):
+    """items: [(text, voice)]。還沒快取的句子依聲音分組、批次合成（省配額），切回每句寫進快取。"""
+    import gemini_tts as G
+    groups = {}
+    for text, voice in items:
+        if _provider(voice) != 'gemini': continue
+        voice = _prep(voice, proj)
+        say = to_speech(text)
+        wav = os.path.join(cache, hashlib.md5(_tag(say, voice, 'gemini').encode()).hexdigest()[:12] + '.wav')
+        if os.path.exists(wav): continue
+        groups.setdefault((voice['_gid'], voice['style'], voice['_model']), []).append((say, wav))
+    for (gid, style, model), rows in groups.items():
+        uniq = list(dict.fromkeys(rows))
+        print(f'  Gemini 合成 {len(uniq)} 句（{model}，聲音 {gid}）…')
+        try:
+            outs = G.synth_lines([r[0] for r in uniq], gid, style=style, model=model, workdir=cache)
+        except G.Quota as e:
+            raise SystemExit(f'⛔ Gemini 今日配額用完；已完成的句子都在快取，明天重跑同一指令會接續。\n{e}')
+        for (say, wav), data in zip(uniq, outs):
+            _to_cache(data, wav)
+
+
+def synth_line(text, cache, voice, proj='.'):
     """一句 → 48k mono float32。以內容 hash 快取，改稿只重錄改過的句子。"""
     say = to_speech(text)
-    use_azure = voice.get('provider') == 'azure' and os.environ.get('AZURE_SPEECH_KEY') and os.environ.get('AZURE_SPEECH_REGION')
-    if voice.get('provider') == 'azure' and not use_azure:
-        print('  ⚠ 未設定 AZURE_SPEECH_KEY／AZURE_SPEECH_REGION，改用 edge-tts')
-    tag = f"{say}|{voice['name']}|{voice['rate']}|{voice['pitch']}|{voice.get('volume', '+0%')}|{voice.get('style', '')}|{'az' if use_azure else 'edge'}"
-    h = hashlib.md5(tag.encode()).hexdigest()[:12]
+    provider = _provider(voice)
+    voice = _prep(voice, proj)
+    h = hashlib.md5(_tag(say, voice, provider).encode()).hexdigest()[:12]
     wav = os.path.join(cache, f'{h}.wav')
     if not os.path.exists(wav):
-        if use_azure:
+        if provider == 'gemini':
+            import gemini_tts as G
+            _to_cache(G.synth_lines([say], voice['_gid'], style=voice['style'], model=voice['_model'],
+                                    workdir=cache)[0], wav)
+        elif provider == 'azure':
             raw = wav[:-4] + '_az.wav'
             _tts_azure(say, raw, voice)
             subprocess.check_call(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-ac', '1', '-ar', str(SR), wav])
@@ -80,6 +180,8 @@ def synth_line(text, cache, voice):
     idx = np.where(np.abs(x) > 0.01)[0]
     if len(idx): x = x[max(0, idx[0] - int(0.03 * SR)): idx[-1] + int(0.08 * SR)]
     return x, say
+
+
 
 
 def _biquad_peak(f0, gain_db, q=0.9):
@@ -125,7 +227,7 @@ def line_voice(raw, base, voices):
     who = raw.get('voice')
     if who in voices: v.update(voices[who])
     elif who: v['name'] = who
-    for k in ('rate', 'pitch', 'volume', 'style', 'styledegree', 'provider'):
+    for k in ('rate', 'pitch', 'volume', 'style', 'styledegree', 'provider', 'description', 'voice_id', 'gemini_voice', 'gender'):
         if k in raw: v[k] = raw[k]
     return raw['text'], v
 
@@ -217,7 +319,7 @@ def main():
     style = a.style or sb.get('style', 'cyber-neon')
     if style not in STYLES: sys.exit(f'未知風格 {style}，可用：{", ".join(STYLES)}')
     fps = sb.get('fps', 30); mode = sb.get('mode', 'teach')
-    voice = {'name': 'zh-TW-YunJheNeural', 'rate': '+18%', 'pitch': '+4Hz', **sb.get('voice', {})}
+    voice = {'provider': 'gemini', 'name': 'zh-TW-YunJheNeural', 'rate': '+18%', 'pitch': '+4Hz', **sb.get('voice', {})}
     gap = sb.get('lineGap', 0.28); lead = sb.get('lead', 0.35); tail = sb.get('tail', 0.55)
     bpm = sb.get('bpm') or (sb.get('music') or {}).get('bpm') or STYLES[style]['music']['bpm']
     bar = 60 / bpm * 4
@@ -229,6 +331,14 @@ def main():
     if media_dir and not os.path.isabs(media_dir):
         media_dir = os.path.join(os.path.dirname(os.path.abspath(a.storyboard)), media_dir)
     missing = []
+    if mode == 'teach' and not a.no_tts:      # Gemini：整支片的句子先批次合成（一次請求約 2 分鐘稿）
+        os.makedirs(cache, exist_ok=True)
+        items = []
+        for sc in sb['scenes']:
+            for raw in sc.get('lines', []):
+                ln, lv = line_voice(raw, voice, sb.get('voices', {}))
+                if not re.fullmatch(r'[.…。\s]+', ln): items.append((ln, lv))
+        prefetch_gemini(items, cache, proj)
     t = 0.0; scenes = []; caps = []; duck = []; voice_parts = []; impacts = []; whooshes = []; blips = []; vlines = []
     for i, sc in enumerate(sb['scenes']):
         start = t; cues = []
@@ -251,7 +361,7 @@ def main():
                 ln, lv = line_voice(raw, voice, sb.get('voices', {}))
                 if re.fullmatch(r'[.…。\s]+', ln):   # 「……」＝停頓（讓學生想），不發音、不上字幕
                     cues.append(round((tt - start) * fps)); tt += sb.get('pauseSec', 2.0); continue
-                x, say = synth_line(ln, cache, lv)
+                x, say = synth_line(ln, cache, lv, proj)
                 d = len(x) / SR
                 voice_parts.append((tt, x))
                 vlines.append({'scene': sc['id'], 'text': ln, 'say': say, 'from': round(tt, 3), 'to': round(tt + d, 3)})

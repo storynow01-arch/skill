@@ -1,7 +1,7 @@
 # 製作與品檢（第 ⑧⑨ 步）
 
 ## 環境
-- Python 3.11：`numpy scipy edge-tts`（moviepy、Pillow 僅 Python 版宣傳片需要）
+- Python 3.11：`numpy scipy faster-whisper`（配音 Gemini Flash TTS 走 REST，不需要 SDK；edge-tts 僅備用）（moviepy、Pillow 僅 Python 版宣傳片需要）
 - Node 18+、ffmpeg；Remotion 4.0.300（`engine/template/package.json` 已鎖版本，套件版本必須一致）
 - 字型：@remotion/google-fonts（Noto Sans TC、Noto Serif TC、霞鶩文楷 TC、Press Start 2P、Orbitron……），首次算圖會下載
 
@@ -41,6 +41,8 @@ pip install numpy scipy edge-tts pillow faster-whisper pypinyin opencc-python-re
 "voices": {"小A": {"name": "zh-TW-YunJheNeural", "rate": "+15%", "pitch": "+25Hz"}},
 "lines": ["一般句子", {"text": "這句要興奮！", "rate": "+22%", "pitch": "+8Hz"}, {"text": "我是小A", "voice": "小A"}]
 ```
+**Gemini（預設）**：專案資料夾 `.env.local` 寫 `GEMINI_API_KEY=…`。`"voice": {"description": "25 歲台灣男老師，熱情開朗…", "style": "笑著講課，語速稍快"}`；角色：`"voices": {"小A": {"description": "…"}}`，或用 Gemini 現成聲音 `{"gemini_voice": "Achird"}`。設計過的聲音 id 記在專案 `.gemini_voices.json`（存在 Gemini 專案一年）。免費層每天請求次數很少：build.py 會把整支片的句子批次合成；配額用完會停，明天重跑接續。
+
 **Azure（選用）**：句子或角色加 `"provider": "azure"`，並設定環境變數 `AZURE_SPEECH_KEY`、`AZURE_SPEECH_REGION`；
 可用 `"style"`（只有部分聲音支援，zh-TW 聲音沒有情緒風格）。沒設定金鑰會自動改用 edge-tts。
 

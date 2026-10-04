@@ -1,7 +1,7 @@
 {
   "_說明": "tts_gemini.py 的設定。voice_id 留空會依 voice_description 自動設計並寫回。聲音存在 Gemini 專案裡一年；換 key（換專案）要清空 voice_id 重新設計。",
   "engine": "gemini",
-  "model": "gemini-3.8-flash-tts",
+  "model": "auto",
   "voice_name": "B_溫暖中音",
   "voice_id": "",
   "gender": "male",
@@ -27,5 +27,6 @@
     "多音詞替換",
     "ping",
     "about"
-  ]
+  ],
+  "_model說明": "auto＝每次自動用最新的正式版 Flash TTS（排除 lite、preview）；要固定版本就寫完整名稱，例如 gemini-3.8-flash-tts"
 }

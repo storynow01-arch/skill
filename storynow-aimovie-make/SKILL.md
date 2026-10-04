@@ -1,8 +1,8 @@
 ---
 name: storynow-aimovie-make
-description: 「從內容長出影片」的 AI 影片工作流——使用者給一句話＋資料（PDF、講義、純文字稿、活動通知），先理解內容、問三輪定調問題，再從內容產生 3 個完全不同的創意概念（含英文提示詞），經過文本審閱與 10 秒動態試看後，用程式手刻（Remotion 畫面＋numpy 配樂＋edge-tts 旁白）做出成片並自動品檢。適用：宣傳片、招生影片、科系形象片、教學影片、微課、研習／活動說明影片。也在使用者說「做影片」「做一支宣傳片／招生片／教學影片」「手刻影片」「程式做影片」「產生創意概念」「做試看」，或輸入「資訊科範本1」時觸發。
+description: 「從內容長出影片」的 AI 影片工作流——使用者給一句話＋資料（PDF、講義、純文字稿、活動通知），先理解內容、問三輪定調問題，再從內容產生 3 個完全不同的創意概念（含英文提示詞），經過文本審閱與 10 秒動態試看後，用程式手刻（Remotion 畫面＋numpy 配樂＋Gemini Flash TTS 旁白）做出成片並自動品檢。適用：宣傳片、招生影片、科系形象片、教學影片、微課、研習／活動說明影片。也在使用者說「做影片」「做一支宣傳片／招生片／教學影片」「手刻影片」「程式做影片」「產生創意概念」「做試看」，或輸入「資訊科範本1」時觸發。
 metadata:
-  tags: video, remotion, numpy-audio, edge-tts, creative-concept, recruitment, lesson, trailer, workflow
+  tags: video, remotion, numpy-audio, gemini-tts, creative-concept, recruitment, lesson, trailer, workflow
   author: storynow01-arch
 ---
 
@@ -49,8 +49,8 @@ metadata:
 | ④ 創意概念 | 產出 `02_三種創意概念.md`：3 個**全新**概念，各附英文提示詞（格式同 [`references/prompts/01_…原始提示詞.md`](references/prompts/01_旗艦科技宣傳片_原始提示詞.md)）＋中文對照＋比較表（方法：[`references/concept-design.md`](references/concept-design.md)） | ⛔ |
 | ⑤ 文本 | `03_分鏡文本.md`：每場景的畫面／旁白／大字卡／秒數＋**事實核對表**；多概念時同一旁白對照多種畫面 | ⛔ |
 | ⑥ 動態試看 | 每概念 **10 秒**動態短片（新寫場景程式＋專屬配樂與音效），不是靜態圖 | ⛔ |
-| ⑦ 細節 | 旁白聲音試聽（同一句話三種聲音）、語速、字幕樣式 | ⛔ |
-| ⑧ 製作 | 旁白逐句 TTS → 時間軸（旁白長度補足到整數小節）→ 配樂＋事件音效＋人聲閃避 → Remotion 場景 → 算圖 | |
+| ⑦ 細節 | 旁白聲音試聽：用 Gemini 聲音設計依內容做 3 個聲音（例如粗細／深沉不同），同一句話各唸一次給使用者選；字幕樣式 | ⛔ |
+| ⑧ 製作 | 旁白 Gemini TTS（整支片的句子批次合成、whisper 對齊切回逐句）→ 時間軸（旁白長度補足到整數小節）→ 配樂＋事件音效＋人聲閃避 → Remotion 場景 → 算圖 | |
 | ⑨ 品檢 | **`qa.py` 自動品檢**：版面（瀏覽器內量測重疊／超出畫面／闖進字幕區）、旁白回聽（whisper 比對稿子）、黑畫面／無聲／響度／長度、總覽圖＋`qa_report.md`；有「必修」就修正重算（[`references/production.md`](references/production.md)）；**再做概念忠實度檢查**：用連續格逐項核對範本 README 的招牌特徵（技術全過≠概念還在） | |
 | ⑩ 交付沉澱 | 成片＋把使用者喜歡的概念存進 `references/prompts/`、場景程式存進 `concepts/` | |
 | ⑪ 最終品檢 | **對要交出去的那支 mp4 再量一次**（⑨ 量的是製作中的版本，重新算圖、合併、響度處理都可能帶進新問題）：`python final_qa/final_qa.py out/成片.mp4 --lufs -14 --spec src/data/spec.json --layout qa_layout.json --terms <英數詞> --text <旁白全文>`，交出 `final_qa.html`＋`final_qa.md`——字幕閃爍／抖動、字幕＝旁白與同步、黑畫面、規格、響度、無聲、長度、版面、英數詞唸法（時長比對）、多音詞試聽清單；有字幕就依 Netflix 繁中字幕規範（每行 ≤16 字、每秒 ≤9 字）。全部通過才算交付（[`final_qa/README.md`](final_qa/README.md)） | |
@@ -82,7 +82,7 @@ final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用
 | **真實照片／影片** | storyboard 設 `"mediaDir": "./素材"`；場景 props 寫 `"media": "檔名或關鍵字"`；場景型別 `photo`／`gallery`／`split`，或在自訂場景用 `lib/media` 的 `<Photo>` | **自動退回插畫**（`fallback: {icon, label, colors}`），build 會列出缺哪幾張，影片照常產出 |
 | **概念元件庫** | `engine/template/src/lib/`：camera（一鏡到底）、iso（等角世界）、character（角色劇）、kinetic（動態字體）、pixel（像素遊戲）、tunnel（縱深隧道）、draw（手繪描線）、penkit（筆跟著筆跡）、sketches（線稿庫）、whiteboard（白板手繪引擎＋彩色圖示庫，範本D）、media | — |
 | **自動品檢** | `python engine/scripts/qa.py [--video out/x.mp4]` | — |
-| **聲音升級** | 逐句覆寫 `{"text", "voice", "rate", "pitch", "volume"}`；`"voices"` 定義角色聲音；旁白自動 EQ＋壓縮；音樂用旁白包絡做側鏈閃避；配樂母帶（殘響＋匯流排壓縮＋限幅）；選用 Azure（`"provider": "azure"`＋環境變數） | — |
+| **聲音升級** | 預設 **Gemini Flash TTS**（自動用最新正式版；金鑰放專案 `.env.local` 的 `GEMINI_API_KEY`）；聲音用 `"description"` 描述、第一次自動設計；逐句覆寫 `{"text", "voice", "style"}`；`"voices"` 定義角色聲音；旁白自動 EQ＋壓縮；音樂用旁白包絡做側鏈閃避；配樂母帶；備用 edge-tts／Azure（`"provider"`） | 沒有金鑰自動退回 edge-tts 並警告 |
 
 **建專案**：`python engine/scripts/new_project.py <資料夾> --example teach|promo`（同機已有專案可用 junction 共用 `node_modules`）
 **建置**：`python engine/scripts/build.py storyboard.json [--style X]`
@@ -90,6 +90,7 @@ final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用
 **響度**：`ffmpeg -i in.mp4 -c:v copy -af loudnorm=I=-14:TP=-1:LRA=9 -c:a aac out.mp4`
 
 ## 硬規則
+- **配音一律用 Gemini Flash TTS 的最新正式版**（`gemini_tts.py` 的 `model="auto"` 自動挑；不要寫死舊模型名）。金鑰只放 `.env.local`，不可進 git。
 - 數字、校名、名次**逐條對資料**；資料與提示詞衝突時照資料，並明講差異。
 - 會轉傳的影片：手機、個人 Email、學生姓名等**先問再放**。
 - 回覆一律繁體中文。
