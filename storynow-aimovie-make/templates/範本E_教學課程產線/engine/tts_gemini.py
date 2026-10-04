@@ -75,7 +75,7 @@ def main(md: Path, force: bool = False, out_dir: str = ""):
     cache = out / "_gemini_cache"
     cache.mkdir(parents=True, exist_ok=True)
     scenes = parse(md)
-    print(f"{md.name} → {len(scenes)} 個 scene（{cfg['model']}，聲音 {cfg['voice_id']}）\n")
+    print(f"{md.name} → {len(scenes)} 個 scene（{cfg['model_resolved']}，聲音 {cfg['voice_id']}）\n")
 
     problems = [p for s, _, n in scenes for p in lint(gemini_text(n, cfg), s)]
     if problems:
