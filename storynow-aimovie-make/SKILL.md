@@ -26,15 +26,16 @@ metadata:
 | 「範本A」「闖關遊戲範本」 | 照 [`templates/範本A_闖關遊戲/README.md`](templates/範本A_闖關遊戲/README.md)：任何文本 → 遊戲畫面 |
 | 「範本B」「手稿範本」 | 照 [`templates/範本B_創客手稿/README.md`](templates/範本B_創客手稿/README.md)：任何文本 → 一鏡到底筆記本 |
 | 「範本C」「快剪範本」 | 照 [`templates/範本C_動態字體快剪/README.md`](templates/範本C_動態字體快剪/README.md)：任何文本 → 動態字體快剪 |
+| 「範本D」「白板手繪」「手繪範本」 | 照 [`templates/範本D_白板手繪/README.md`](templates/範本D_白板手繪/README.md)：任何文本 → 白板手繪（一支馬克筆先描線再上色，一鏡到底） |
 | 「範本E」「教學課程產線」「整門課的教學影片」 | 照 [`templates/範本E_教學課程產線/README.md`](templates/範本E_教學課程產線/README.md)：一整門課 → 幾十節風格一致（garychen-dark 深色科技風）的教學影片，合併成集；附四關品檢 |
-| 「用範本做」＋文本（沒指定哪個） | AskUserQuestion 讓使用者選 A／B／C（附一句特色），或「三個都做」 |
+| 「用範本做」＋文本（沒指定哪個） | AskUserQuestion 讓使用者選 A／B／C／D（附一句特色），或「全部都做」 |
 | 「做影片」＋資料 | 走完整十一步流程（下方） |
 | 「用 XX 概念做這份內容」 | 從第 ② 步開始，第 ④ 步直接採用指定概念，但仍要重新設計分鏡 |
 
 ## 範本流程（使用者丟文本、選範本時用；比十步流程快）
 1. 讀文本 → 依 [`templates/範本風格_場景語彙.md`](templates/範本風格_場景語彙.md) 拆成 9 種場景（title／scenario／definition／cards／vs／stat／quiz／recap／qaEnd），寫 `storyboard.json`
 2. 給使用者審文本 ⛔（事實、旁白、場景型別）
-3. `new_project.py <專案>` → **`make_video.py storyboard.json --template A|B|C`**（一行：同步範本程式→檢查圖示→建置→音效→品檢→算圖→響度→成片品檢）
+3. `new_project.py <專案>` → **`make_video.py storyboard.json --template A|B|C|D`**（一行：同步範本程式→檢查圖示→建置→音效→品檢→算圖→響度→成片品檢）
 4. **概念忠實度**：照 make_video 最後印出的清單，用連續格逐項核對招牌特徵（技術品檢管不到這個）
 5. 同一份 storyboard 可以換範本重算，分鏡與旁白不用改（`snapBars` 依範本曲速重新對拍）；圖示欄位寫 emoji 或線稿名都可（見 `lib/sketches.ts`）
 
@@ -69,6 +70,7 @@ concepts/          做過的概念場景程式（參考實作，新影片要依�
   levelup/ notebook/ kinetic/ lesson-logistics/ lesson-sitcom/ lesson-cable/ audio/
 references/        流程、題庫、概念方法、製作與品檢、教訓、提示詞庫（prompts/）、實作範例（examples/：事實清單、內容分析、三概念分鏡）
 templates/資訊科範本1/   研習說明＋資訊科宣傳片（含宣傳片原始碼）
+templates/範本A～D_*/   範本風格（README：原始提示詞、忠實度檢查、範本設定）；範本風格_場景語彙.md＝四個範本共用的 9 種場景
 templates/範本E_教學課程產線/  整門課的教學影片產線（自成一包：engine／規範／examples，new_course.py 建新課程；含四關品檢＋自我測試）
 final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用）：final_qa.py、pron_check.py（唸法時長比對）、多音字清單.json
 ```
@@ -77,7 +79,7 @@ final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用
 | 功能 | 怎麼用 | 沒有素材時 |
 |---|---|---|
 | **真實照片／影片** | storyboard 設 `"mediaDir": "./素材"`；場景 props 寫 `"media": "檔名或關鍵字"`；場景型別 `photo`／`gallery`／`split`，或在自訂場景用 `lib/media` 的 `<Photo>` | **自動退回插畫**（`fallback: {icon, label, colors}`），build 會列出缺哪幾張，影片照常產出 |
-| **概念元件庫** | `engine/template/src/lib/`：camera（一鏡到底）、iso（等角世界）、character（角色劇）、kinetic（動態字體）、pixel（像素遊戲）、tunnel（縱深隧道）、draw（手繪描線）、media | — |
+| **概念元件庫** | `engine/template/src/lib/`：camera（一鏡到底）、iso（等角世界）、character（角色劇）、kinetic（動態字體）、pixel（像素遊戲）、tunnel（縱深隧道）、draw（手繪描線）、penkit（筆跟著筆跡）、sketches（線稿庫）、whiteboard（白板手繪引擎＋彩色圖示庫，範本D）、media | — |
 | **自動品檢** | `python engine/scripts/qa.py [--video out/x.mp4]` | — |
 | **聲音升級** | 逐句覆寫 `{"text", "voice", "rate", "pitch", "volume"}`；`"voices"` 定義角色聲音；旁白自動 EQ＋壓縮；音樂用旁白包絡做側鏈閃避；配樂母帶（殘響＋匯流排壓縮＋限幅）；選用 Azure（`"provider": "azure"`＋環境變數） | — |
 

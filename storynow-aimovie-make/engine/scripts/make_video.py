@@ -1,7 +1,7 @@
 """一行做出範本影片：同步引擎 → 檢查圖示 → 建置（旁白、配樂、字幕）→ 範本音效 → 版面＋旁白品檢 → 算圖 → 響度 → 成片品檢。
 
 用法（在專案資料夾裡執行；專案由 new_project.py 建立，node_modules 已就緒）：
-    python <skill>/engine/scripts/make_video.py storyboard.json --template B
+    python <skill>/engine/scripts/make_video.py storyboard.json --template B   # A／B／C／D
     python <skill>/engine/scripts/make_video.py storyboard.json --template A --name 1-3_IP位址
 選項：
     --no-sync     不把 skill 最新的範本程式（tpl、lib、QaProbe）同步進專案
@@ -18,6 +18,7 @@ TPL = {
     'A': {'name': '闖關遊戲', 'dir': '範本A_闖關遊戲', 'music': {'genre': 'chiptune', 'bpm': 140, 'key': 'C'}},
     'B': {'name': '創客手稿', 'dir': '範本B_創客手稿', 'music': {'genre': 'acoustic', 'bpm': 90, 'key': 'G'}},
     'C': {'name': '動態字體快剪', 'dir': '範本C_動態字體快剪', 'music': {'genre': 'phonk', 'bpm': 145, 'key': 'Em'}},
+    'D': {'name': '白板手繪', 'dir': '範本D_白板手繪', 'music': {'genre': 'marimba', 'bpm': 112, 'key': 'D'}},
 }
 
 

@@ -1,0 +1,310 @@
+/* 範本 D：白板手繪 Whiteboard —— 淺灰紙面的一張大白板，每個場景畫在一塊區域，鏡頭平移過去（中途微拉遠），最後拉遠看整張白板。
+   招牌特徵（概念忠實度）：①一支馬克筆，筆尖永遠貼著正在畫的那一筆，一次只畫一樣 ②先描黑框、再上色並輕彈一下
+   ③扁平藍／橘／黃／紅圖示（lib/whiteboard）④白字黑邊粗字幕 ⑤每個畫面動作都有音效（沙沙、啵、叮、嗡、咻）。
+   做法：每個場景把要畫的東西排成「物件清單」（開始格＋長度＋位置），整支片共用一支筆與一台鏡頭。 */
+import React, {useMemo} from 'react';
+import {AbsoluteFill, Audio, Easing, Sequence, interpolate, random, staticFile, useCurrentFrame} from 'remotion';
+import {loadFont as loadKai} from '@remotion/google-fonts/LXGWWenKaiTC';
+import {loadFont as loadSans} from '@remotion/google-fonts/NotoSansTC';
+import {DrawShape, DrawText, Item, Marker, Shape, Sfx, WB, arrow, box, card, check, circleMark, cross, iconFor, lerp, tipOf, underline, wbTextW} from '../lib/whiteboard';
+import {QaProbe} from '../QaProbe';
+import {TplSpec, captionAt, cue, wrap} from './common';
+
+const HAND = loadKai('normal', {weights: ['700'], ignoreTooManyRequestsWarning: true}).fontFamily;
+const BOLD = loadSans('normal', {weights: ['900'], ignoreTooManyRequestsWarning: true}).fontFamily;
+const SX = 2150, SY = 1300, COLS = 3, PAN = 26;
+const PASTEL = ['#dff0f9', '#fde9cf', '#fff3c4', '#e3f4e6'];
+
+/** 場景 i 在白板上的位置（蛇行排列，鏡頭移動距離最短） */
+const region = (i: number) => {
+  const row = Math.floor(i / COLS), col = row % 2 ? COLS - 1 - (i % COLS) : i % COLS;
+  return {x: col * SX, y: row * SY};
+};
+/** 在寬度 maxW 內放得下的字級 */
+const fitW = (s: string, maxW: number, base: number, min = 30) => Math.max(min, Math.min(base, maxW / Math.max(1, wbTextW(s, 1))));
+const tdur = (s: string, min = 10) => Math.max(min, Math.round([...s].length * 2.2));
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Sc = {p: any; cues: number[]; dur: number; from: number};
+type Kit = {
+  shape: (at: number, x: number, y: number, s: number, sh: Shape, dur?: number, sfx?: Sfx, rot?: number) => void;
+  text: (at: number, x: number, y: number, t: string, size: number, o?: {color?: string; bold?: boolean; anchor?: 'start' | 'middle'; dur?: number; sfx?: Sfx}) => void;
+  C: (i: number | undefined, fb: number) => number;   // 第 i 句旁白開始（絕對格）
+  T0: number;                                         // 鏡頭到位、可以開始畫
+};
+
+/* ---------- 9 種場景（區域內座標 0..1920 × 0..1080，內容放在 y<900，避開字幕） ---------- */
+const heading = (k: Kit, t: string | undefined, at: number) => {
+  if (!t) return;
+  wrap(t, 20).slice(0, 2).forEach((ln, i) => k.text(at + i * 6, 960, 160 + i * 78, ln, fitW(ln, 1500, 72), {color: WB.blue}));
+};
+
+const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
+  title: (k, r) => {
+    const p = r.p;
+    if (p.eyebrow) k.text(k.T0, 960, 330, String(p.eyebrow), 64, {color: WB.blue, dur: 10});
+    const size = fitW(p.title, 1500, 150);
+    k.text(k.T0 + 8, 960, 540, p.title, size, {bold: true, dur: tdur(p.title, 22), sfx: 'ding'});
+    const w = Math.min(1500, wbTextW(p.title, size));
+    k.shape(k.T0 + 10, 960 - w / 2, 590, 1, underline(w), 12, 'none');
+    if (p.en) k.text(k.T0 + 14, 960, 690, p.en, fitW(p.en, 1400, 46), {color: '#7d8791', dur: 12});
+    if (p.icon || p.sketch) k.shape(k.T0, 960, 200, 0.9, iconFor(p.sketch ?? p.icon), 14);
+  },
+  scenario: (k, r) => {
+    const p = r.p, pills: string[] = p.pills ?? [];
+    heading(k, p.heading, k.T0);
+    k.shape(k.T0, 470, 520, 1.9, iconFor(p.sketch ?? p.icon), 18);
+    const gap = Math.min(150, 560 / Math.max(1, pills.length));
+    pills.forEach((x, i) => {
+      const at = k.C(p.cueMap?.[i], 20 + i * 30), y = 340 + i * gap;
+      const last = i === pills.length - 1 && p.lastIsProblem !== false;
+      k.shape(at, 900, y - 20, 0.7, last ? cross() : check(), 8, last ? 'buzz' : 'pop');
+      k.text(at + 6, 970, y, x, fitW(x, 820, 60), {color: last ? WB.red : WB.ink, dur: tdur(x), anchor: 'start'});
+    });
+  },
+  definition: (k, r) => {
+    const p = r.p, big: string = p.bigText ?? '', hl: string = p.highlight ?? '';
+    if (p.label) {
+      const lw = wbTextW(String(p.label), 50) + 80;
+      k.shape(k.T0, 960, 190, 1, card(lw, 90, '#dff0f9'), 10, 'none');
+      k.text(k.T0 + 8, 960, 208, String(p.label), 50, {color: WB.blue, dur: 8});
+    }
+    const lines = wrap(big, 13).slice(0, 2);
+    const size = Math.min(...lines.map((ln) => fitW(ln, 1600, 124)));
+    lines.forEach((ln, i) => k.text(k.C(p.cueMap?.[0], 6) + i * 10, 960, 430 + i * (size + 20), ln, size, {bold: true, color: WB.orange, dur: tdur(ln, 16), sfx: i ? 'none' : 'ding'}));
+    const li = lines.findIndex((ln) => hl && ln.includes(hl));
+    if (li >= 0) {
+      const ln = lines[li], x0 = 960 - wbTextW(ln, size) / 2 + wbTextW(ln.slice(0, ln.indexOf(hl)), size);
+      k.shape(k.C(p.cueMap?.[1], 40), x0, 430 + li * (size + 20) + 26, 1, underline(wbTextW(hl, size), WB.red), 12, 'none');
+    }
+    const notes: string[] = p.sideNotes ?? [];
+    const w = Math.min(520, 1600 / Math.max(1, notes.length) - 40);
+    notes.forEach((n, i) => {
+      const at = k.C(p.noteCues?.[i], 50 + i * 15), x = 960 + (i - (notes.length - 1) / 2) * (w + 40);
+      k.shape(at, x, 760, 1, card(w, 150, PASTEL[(i + 1) % 4]), 10, 'pop');
+      k.text(at + 8, x, 778, n, fitW(n, w - 50, 46), {dur: tdur(n)});
+    });
+  },
+  cards: (k, r) => {
+    const p = r.p, cards: {icon?: string; sketch?: string; title: string; note?: string}[] = p.cards ?? [];
+    heading(k, p.heading, k.T0);
+    const n = Math.max(1, cards.length), w = Math.min(500, 1700 / n - 40);
+    cards.forEach((c, i) => {
+      const at = k.C(p.cueMap?.[i], 20 + i * 30), x = 960 + (i - (n - 1) / 2) * (w + 40);
+      k.shape(at, x, 520, 1, card(w, 500, PASTEL[i % 4]), 10, 'none');
+      k.shape(at + 2, x, 410, Math.min(1.25, w / 260), iconFor(c.sketch ?? c.icon), 14);
+      k.text(at + 4, x, 610, c.title, fitW(c.title, w - 50, 58), {bold: true, dur: tdur(c.title, 8)});
+      if (c.note) wrap(c.note, Math.max(4, Math.floor((w - 50) / 38))).slice(0, 2).forEach((ln, j) =>
+        k.text(at + 8 + j * 4, x, 680 + j * 50, ln, 38, {color: '#5b6672', dur: tdur(ln, 8)}));
+    });
+    if (p.footer) k.text(k.C(r.cues.length - 1, 120) + 10, 960, 860, '★ ' + p.footer, fitW(p.footer, 1500, 54), {color: WB.red});
+  },
+  vs: (k, r) => {
+    const p = r.p;
+    const side = (sd: {frame?: string; icon?: string; sketch?: string; text: string}, i: number) => {
+      const at = k.C(p.cueMap?.[i], i ? 40 : 6), x = i ? 1420 : 500;
+      const bg = sd.frame === 'danger' ? '#fde3df' : sd.frame === 'success' ? '#e3f4e6' : '#dff0f9';
+      k.shape(at, x, 470, 1, card(760, 600, bg), 10, 'none');
+      k.shape(at + 2, x, 330, 1.35, iconFor(sd.sketch ?? sd.icon), 14);
+      wrap(sd.text ?? '', 11).slice(0, 3).forEach((ln, j) => k.text(at + 6 + j * 4, x, 560 + j * 70, ln, fitW(ln, 680, 58), {dur: tdur(ln)}));
+      if (sd.frame === 'danger') k.shape(at + 10, x + 300, 230, 1.1, cross(), 8, 'buzz');
+      if (sd.frame === 'success') k.shape(at + 10, x + 300, 230, 1.1, check(), 8, 'ding');
+    };
+    side(p.left ?? {text: ''}, 0);
+    k.text(k.C(p.cueMap?.[1], 40) - 4, 960, 500, !p.mid || p.mid === 'vs' ? 'vs' : p.mid, 90, {bold: true, color: WB.orange, dur: 6, sfx: 'none'});
+    side(p.right ?? {text: ''}, 1);
+    if (p.footerPill) k.text(k.C(r.cues.length - 1, 90) + 6, 960, 860, '→ ' + p.footerPill, fitW(p.footerPill, 1500, 56), {color: WB.red});
+  },
+  stat: (k, r) => {
+    const p = r.p, at = Math.max(k.C(0, 10), k.T0), num = `${p.value}${p.suffix ?? ''}`;
+    const size = fitW(num, 900, 300);
+    k.text(at, 620, 560, num, size, {bold: true, color: WB.orange, dur: 18, sfx: 'ding'});
+    const w = wbTextW(num, size);
+    k.shape(at + 4, 620, 460, 1, circleMark(w / 2 + 70, size * 0.5), 14, 'none');
+    wrap(p.label ?? '', 9).slice(0, 2).forEach((ln, i) => k.text(at + 8 + i * 6, 1200, 440 + i * 96, ln, fitW(ln, 680, 80), {anchor: 'start'}));
+    wrap(p.sub ?? '', 13).slice(0, 2).forEach((ln, i) => k.text(at + 12 + i * 6, 1200, 660 + i * 60, ln, 46, {color: WB.blue, anchor: 'start'}));
+  },
+  quiz: (k, r) => {
+    const p = r.p, opts: string[] = p.options ?? [], reveal = k.C(p.revealCue, Math.round(r.dur * 0.6));
+    k.shape(k.T0, 220, 150, 1.4, iconFor('tag'), 10);
+    k.text(k.T0 + 4, 212, 168, '小測驗', 40, {bold: true, color: '#fff', dur: 6});
+    wrap(p.question ?? '', 20).slice(0, 2).forEach((ln, i) => k.text(k.T0 + 8 + i * 6, 960, 320 + i * 80, ln, fitW(ln, 1600, 66)));
+    const n = Math.max(1, opts.length), w = Math.min(620, 1700 / n - 50);
+    opts.forEach((o, i) => {
+      const x = 960 + (i - (n - 1) / 2) * (w + 50), at = k.T0 + 30 + i * 14;
+      k.shape(at, x, 600, 1, box(w, 200), 8, 'none');
+      k.text(at + 4, x, 620, `${String.fromCharCode(65 + i)}. ${o}`, fitW(o + 'AA', w - 60, 58), {dur: tdur(o, 8)});
+      if (i === p.answerIndex) k.shape(reveal, x, 600, 1, circleMark(w / 2 + 30, 130), 14, 'ding');
+    });
+    if (p.afterNote) k.text(reveal + 16, 960, 860, p.afterNote, fitW(p.afterNote, 1600, 54), {color: WB.red});
+  },
+  recap: (k, r) => {
+    const p = r.p, take: string[] = p.takeaway ?? [], recap: string[] = p.recap ?? [];
+    k.text(k.T0, 960, 160, '今天帶走', 72, {color: WB.blue, dur: 10});
+    take.forEach((t, i) => {
+      const at = Math.max(k.C(p.takeCues?.[i], 20 + i * 40), k.T0 + 12), y = 330 + i * 120;
+      const x0 = recap.length ? 330 : 520;
+      k.shape(at, x0, y - 22, 0.7, check(), 8, 'pop');
+      k.text(at + 4, x0 + 70, y, t, fitW(t, recap.length ? 1000 : 1300, 62), {anchor: 'start'});
+    });
+    recap.forEach((t, i) => k.text(k.T0 + 30 + i * 10, 1450, 330 + i * 64, '· ' + t, fitW(t, 380, 38), {color: '#5b6672', anchor: 'start', dur: tdur(t, 8)}));
+    if (p.nextTeaser) {
+      const at = k.C(p.nextCue, 120);
+      k.shape(at, recap.length ? 420 : 610, 790, 0.8, iconFor('house'), 12);
+      k.text(at + 4, recap.length ? 540 : 730, 820, '下一節：' + p.nextTeaser, fitW('下一節：' + p.nextTeaser, 1200, 64), {bold: true, color: WB.orange, anchor: 'start', sfx: 'ding'});
+    }
+  },
+  qaEnd: (k, r) => {
+    const p = r.p, opts: string[] = p.options ?? [], ans = r.from + Math.round((p.answerSec ?? 4) * 30);
+    wrap(p.question ?? '', 22).slice(0, 2).forEach((ln, i) => k.text(r.from + 6 + i * 6, 960, 170 + i * 78, ln, fitW(ln, 1600, 64), {color: WB.blue, dur: 10}));
+    opts.slice(0, 4).forEach((o, i) => {
+      const x = 960 + ((i % 2) - 0.5) * 820, y = 420 + Math.floor(i / 2) * 230, at = r.from + 20 + i * 8;
+      k.shape(at, x, y, 1, box(740, 180), 6, 'none');
+      k.text(at + 2, x, y + 20, `${String.fromCharCode(65 + i)}. ${o}`, fitW(o + 'AA', 660, 54), {dur: 6, sfx: 'none'});
+      if (i === p.answerIndex) k.shape(ans, x, y, 1, circleMark(400, 115), 12, 'ding');
+    });
+  },
+};
+
+/** 整支片的物件清單：各場景排好 → 同場景內不重疊（一支筆一次只畫一樣） */
+const buildItems = (spec: TplSpec): Item[] => {
+  const all: Item[] = [];
+  spec.scenes.forEach((s, i) => {
+    const g = region(i), items: Item[] = [];
+    const T0 = s.from + (i === 0 ? 10 : PAN);
+    const k: Kit = {
+      T0,
+      C: (ci, fb) => s.from + cue(s.cues, ci, fb),
+      shape: (at, x, y, sc, sh, dur = 16, sfx = 'pop', rot = 0) =>
+        items.push({kind: 'shape', at, dur, x: g.x + x, y: g.y + y, s: sc, rot, shape: sh, sfx: sh.fills?.length ? sfx : sfx === 'pop' ? 'none' : sfx}),
+      text: (at, x, y, t, size, o = {}) =>
+        items.push({kind: 'text', at, dur: o.dur ?? tdur(t), x: g.x + x, y: g.y + y, text: t, size, color: o.color, bold: o.bold, anchor: o.anchor ?? 'middle', sfx: o.sfx}),
+    };
+    (SCENES[s.type] ?? SCENES.definition)(k, {p: s.props ?? {}, cues: s.cues ?? [], dur: s.dur, from: s.from});
+    items.forEach((it) => { it.at = Math.max(it.at, T0); });   // 鏡頭到位前不畫；同時開始的照寫入順序（標題先、再卡片）
+    items.sort((a, b) => a.at - b.at);
+    const end = s.from + s.dur - 4, want = items.map((it) => [it.at, it.dur]);
+    for (let pass = 0, k2 = 1; pass < 4; pass++) {      // 排不下就整場等比例加快，保證換場前畫完
+      let t = T0;
+      items.forEach((it, j) => { it.dur = Math.max(3, Math.round(want[j][1] * k2)); it.at = Math.max(want[j][0], t); t = it.at + it.dur - 2; });
+      if (t + 2 <= end || !items.length) break;
+      k2 *= Math.max(0.35, (end - T0) / Math.max(1, t + 2 - T0)) * 0.97;
+    }
+    all.push(...items);
+  });
+  return all;
+};
+
+/* ---------- 鏡頭 ---------- */
+/** 片尾拉遠的起點：最後一句字幕結束後（最晚 = 片尾前 80 格） */
+const outroStart = (spec: TplSpec) => {
+  const last = spec.captions.length ? spec.captions[spec.captions.length - 1].to + 6 : 0;
+  return Math.min(spec.totalFrames - 40, Math.max(spec.totalFrames - 80, last));
+};
+type Cam = {x: number; y: number; z: number; oy?: number};
+const camAt = (spec: TplSpec, f: number): Cam => {
+  const ctr = (i: number) => ({x: region(i).x + 960, y: region(i).y + 540});
+  const n = spec.scenes.length;
+  let idx = 0;
+  spec.scenes.forEach((s, i) => { if (f >= s.from) idx = i; });
+  let cam: Cam;
+  if (idx === 0) {
+    const p = lerp(f, 0, 30);
+    cam = {...ctr(0), z: 1.12 - 0.12 * p};
+  } else {
+    const a = ctr(idx - 1), b = ctr(idx), s0 = spec.scenes[idx].from;
+    const p = lerp(f, s0, s0 + PAN, 0, 1, Easing.inOut(Easing.cubic));
+    const dip = Math.min(0.28, Math.hypot(b.x - a.x, b.y - a.y) / 9000);
+    cam = {x: a.x + (b.x - a.x) * p, y: a.y + (b.y - a.y) * p, z: 1 - dip * Math.sin(Math.PI * p)};
+  }
+  // 片尾：拉遠看整張白板
+  const rows = Math.ceil(n / COLS), cols = Math.min(n, COLS);
+  const W = (cols - 1) * SX + 1920, H = (rows - 1) * SY + 1080;
+  const zAll = Math.min(1920 / (W + 160), 880 / (H + 80));   // 全景放在字幕區上方
+  const q0 = outroStart(spec), q = lerp(f, q0, Math.min(spec.totalFrames - 12, q0 + 50), 0, 1, Easing.inOut(Easing.cubic));
+  if (q > 0 && n > 1) {
+    const z = Math.exp(Math.log(cam.z) + (Math.log(zAll) - Math.log(cam.z)) * q);
+    return {x: cam.x + (W / 2 - cam.x) * q, y: cam.y + (H / 2 - cam.y) * q, z, oy: 540 - 85 * q};
+  }
+  return cam;
+};
+const toScreen = (pt: {x: number; y: number}, c: Cam) => ({x: (pt.x - c.x) * c.z + 960, y: (pt.y - c.y) * c.z + (c.oy ?? 540)});
+
+/* ---------- 筆：畫的時候貼著筆尖，空檔短就滑到下一筆，空檔長就收到右下角 ---------- */
+const OFF = {x: 2450, y: 1650};
+const penAt = (spec: TplSpec, items: Item[], f: number, c: Cam) => {
+  for (const it of items) { const tp = tipOf(it, f); if (tp) return toScreen(tp, c); }
+  let prev: Item | null = null, next: Item | null = null;
+  for (const it of items) {
+    if (it.at + it.dur < f && (!prev || it.at + it.dur > prev.at + prev.dur)) prev = it;
+    if (it.at > f && (!next || it.at < next.at)) next = it;
+  }
+  const pEnd = prev ? prev.at + prev.dur : -999;
+  const pTip = prev ? toScreen(tipOf(prev, pEnd)!, camAt(spec, pEnd)) : OFF;
+  const nTip = next ? toScreen(tipOf(next, next.at)!, camAt(spec, next.at)) : OFF;
+  const mix = (a: typeof OFF, b: typeof OFF, p: number) => ({x: a.x + (b.x - a.x) * p, y: a.y + (b.y - a.y) * p - Math.sin(Math.PI * p) * 40});
+  if (next && next.at - pEnd <= 24) return mix(pTip, nTip, lerp(f, pEnd, next.at));
+  if (f - pEnd < 13) return mix(pTip, OFF, lerp(f, pEnd, pEnd + 13, 0, 1, Easing.in(Easing.quad)));
+  if (next && next.at - f < 13) return mix(OFF, nTip, lerp(f, next.at - 13, next.at, 0, 1, Easing.out(Easing.quad)));
+  return OFF;
+};
+
+/* ---------- 音效（tpl_sfx.py D 產生 public/sfx_d/*.wav；換場 whoosh 在 tpl_sfx.wav） ---------- */
+const DrawSfx: React.FC<{items: Item[]}> = ({items}) => (
+  <>
+    {items.map((it, i) => (
+      <React.Fragment key={i}>
+        <Sequence from={it.at} durationInFrames={Math.max(4, it.dur)} layout="none">
+          <Audio src={staticFile('sfx_d/scribble.wav')} startFrom={(i * 37) % 120}
+            volume={(t) => 0.22 * Math.min(1, t / 3, Math.max(0, (Math.max(4, it.dur) - t) / 3))} />
+        </Sequence>
+        {it.kind === 'shape' && it.sfx === 'pop' && (
+          <Sequence from={it.at + it.dur} durationInFrames={10} layout="none"><Audio src={staticFile('sfx_d/pop.wav')} volume={0.3} /></Sequence>)}
+        {(it.sfx === 'ding' || it.sfx === 'buzz') && (
+          <Sequence from={it.at + (it.kind === 'text' ? Math.max(0, it.dur - 2) : 2)} durationInFrames={36} layout="none">
+            <Audio src={staticFile(`sfx_d/${it.sfx}.wav`)} volume={it.sfx === 'ding' ? 0.28 : 0.22} /></Sequence>)}
+      </React.Fragment>
+    ))}
+  </>
+);
+
+export const TemplateD: React.FC<TplSpec> = (spec) => {
+  const f = useCurrentFrame();
+  const items = useMemo(() => buildItems(spec), [spec]);
+  const c = camAt(spec, f);
+  const pen = penAt(spec, items, f, c);
+  const cap = f < outroStart(spec) ? captionAt(spec, f, 8) : undefined;
+  const capO = cap ? interpolate(f, [cap.from - 2, cap.from + 3], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}) : 0;
+  const fade = Math.max(0, 1 - f / 8, (f - (spec.totalFrames - 12)) / 12);
+  const vis = items.filter((it) => it.at <= f);
+  return (
+    <AbsoluteFill style={{backgroundColor: WB.paper, overflow: 'hidden'}}>
+      <AbsoluteFill style={{background: 'radial-gradient(ellipse at 50% 45%, #f6f6f7 0%, #eeeef0 60%, #dfe0e3 100%)'}} />
+      <svg width={1920} height={1080} style={{position: 'absolute', opacity: 0.35}}>
+        {Array.from({length: 140}, (_, i) => <circle key={i} cx={random(`x${i}`) * 1920} cy={random(`y${i}`) * 1080} r={0.8 + random(`r${i}`) * 1.2} fill="#b9bcc2" />)}
+      </svg>
+      <div data-qa="canvas" style={{position: 'absolute', left: 0, top: 0, width: 1920, height: 1080}}>
+        <svg width={1920} height={1080} style={{position: 'absolute', overflow: 'visible'}}>
+          <g transform={`translate(960 ${c.oy ?? 540}) scale(${c.z}) translate(${-c.x} ${-c.y})`}>
+            {vis.map((it, i) => it.kind === 'shape'
+              ? <DrawShape key={i} it={it} f={f} />
+              : <DrawText key={i} it={it} f={f} id={`wbt${i}`} hand={HAND} bold={BOLD} />)}
+          </g>
+        </svg>
+      </div>
+      <svg data-qa="ignore" width={1920} height={1080} style={{position: 'absolute'}}>
+        <Marker x={pen.x} y={pen.y} scale={0.95 * Math.max(0.75, c.z)} tilt={Math.sin(f / 9) * 2} />
+      </svg>
+      {cap && (
+        <div data-qa="caption" style={{position: 'absolute', left: 60, right: 60, top: 948, textAlign: 'center', opacity: capO, fontFamily: BOLD, fontWeight: 900,
+          fontSize: 54, color: '#fff', letterSpacing: 2, WebkitTextStroke: '10px #1d232a', paintOrder: 'stroke fill', textShadow: '0 4px 10px rgba(0,0,0,0.25)'}}>{cap.text}</div>
+      )}
+      <AbsoluteFill style={{background: '#000', opacity: fade, pointerEvents: 'none'}} />
+      {spec.qa && <QaProbe w={spec.width} h={spec.height} />}
+      {spec.music && <Audio src={staticFile(spec.music)} volume={spec.musicVolume ?? 0.5} />}
+      {spec.voice && <Audio src={staticFile(spec.voice)} />}
+      <Audio src={staticFile('tpl_sfx.wav')} />
+      <DrawSfx items={items} />
+    </AbsoluteFill>
+  );
+};
