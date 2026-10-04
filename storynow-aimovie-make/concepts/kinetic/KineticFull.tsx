@@ -80,7 +80,7 @@ export const KineticFull: React.FC = () => {
             <div style={{display: 'flex', alignItems: 'baseline'}}>
               {[['你的未來，', WH, 8], ['自己', WH, 8.5], ['寫', AC, 9]].map(([w, c, b]) => <Big key={w as string} c={c as string} size={w === '寫' ? 230 : 170} style={slam(lf, b as number)}>{w}</Big>)}
             </div>
-            <Big c={WH} size={60} style={{marginTop: 30, letterSpacing: 24, ...slam(lf, 11)}}>海青工商 資訊科</Big>
+            <Big c={WH} size={60} style={{marginTop: 30, letterSpacing: 24, ...slam(lf, 11)}}>範例高中 資訊科</Big>
           </Full>
         );
       }
@@ -230,7 +230,7 @@ export const KineticFull: React.FC = () => {
           <div style={{display: 'flex', alignItems: 'baseline'}}>
             {words.map(([w, b]) => on(lf, b) ? <Big key={w} c={w === '寫' ? AC : WH} size={w === '寫' ? 240 : 180} style={slam(lf, b)}>{w}</Big> : null)}
           </div>
-          {on(lf, 6) && <Big c={WH} size={60} style={{position: 'absolute', bottom: 210, letterSpacing: 24, ...slam(lf, 6)}}>海青工商 資訊科</Big>}
+          {on(lf, 6) && <Big c={WH} size={60} style={{position: 'absolute', bottom: 210, letterSpacing: 24, ...slam(lf, 6)}}>範例高中 資訊科</Big>}
           {on(lf, 8) && <Big c={AC} size={34} font={EN} style={{position: 'absolute', bottom: 150, letterSpacing: 14, ...slam(lf, 8)}}>HAICHING · IT · 2026</Big>}
         </Full>
       );

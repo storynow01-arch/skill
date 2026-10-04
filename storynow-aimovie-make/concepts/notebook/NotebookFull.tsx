@@ -84,7 +84,7 @@ export const NotebookFull: React.FC = () => {
           {/* S2 標題 */}
           <DrawText x={560} y={1090} text="你的未來，自己寫" size={150} font={KAI} color={INK} {...D('S2')} dur={du('S2', 0.5)} />
           <DrawPath d="M 560 1130 Q 1150 1170 1740 1120" start={st('S2') + du('S2', 0.5)} dur={12} f={f} color={RED} w={9} len={1300} />
-          <DrawText x={600} y={1210} text="海青工商 資訊科" size={60} font={KAI} color={BLUE} start={st('S2') + du('S2', 0.55)} dur={14} f={f} />
+          <DrawText x={600} y={1210} text="範例高中 資訊科" size={60} font={KAI} color={BLUE} start={st('S2') + du('S2', 0.55)} dur={14} f={f} />
 
           {/* S3 兩個程式視窗 → 執行結果 */}
           <DrawPath d="M 2300 460 h 520 v 300 h -520 Z M 2300 500 h 520" {...D('S3')} dur={14} w={5} len={1800} />

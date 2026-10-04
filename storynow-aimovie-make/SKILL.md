@@ -49,7 +49,7 @@ metadata:
 | ④ 創意概念 | 產出 `02_三種創意概念.md`：3 個**全新**概念，各附英文提示詞（格式同 [`references/prompts/01_…原始提示詞.md`](references/prompts/01_旗艦科技宣傳片_原始提示詞.md)）＋中文對照＋比較表（方法：[`references/concept-design.md`](references/concept-design.md)） | ⛔ |
 | ⑤ 文本 | `03_分鏡文本.md`：每場景的畫面／旁白／大字卡／秒數＋**事實核對表**；多概念時同一旁白對照多種畫面 | ⛔ |
 | ⑥ 動態試看 | 每概念 **10 秒**動態短片（新寫場景程式＋專屬配樂與音效），不是靜態圖 | ⛔ |
-| ⑦ 細節 | 旁白聲音試聽：用 Gemini 聲音設計依內容做 3 個聲音（例如粗細／深沉不同），同一句話各唸一次給使用者選；字幕樣式 | ⛔ |
+| ⑦ 細節 | 旁白聲音試聽：依內容與使用者要求（性別、年齡、個性、粗細／深沉、語速）寫 3 段聲音描述，**`python engine/scripts/voice_preview.py --out 05_聲音試聽 --line "台詞" --voice "A=描述" --voice "B=描述" --voice "C=描述"`** 產出固定格式試聽頁（聲音內嵌、附音高與語速）；使用者選定後把 voices.json 的 voice_id 寫進 storyboard 的 voice；字幕樣式 | ⛔ |
 | ⑧ 製作 | 旁白 Gemini TTS（整支片的句子批次合成、whisper 對齊切回逐句）→ 時間軸（旁白長度補足到整數小節）→ 配樂＋事件音效＋人聲閃避 → Remotion 場景 → 算圖 | |
 | ⑨ 品檢 | **`qa.py` 自動品檢**：版面（瀏覽器內量測重疊／超出畫面／闖進字幕區）、旁白回聽（whisper 比對稿子）、黑畫面／無聲／響度／長度、總覽圖＋`qa_report.md`；有「必修」就修正重算（[`references/production.md`](references/production.md)）；**再做概念忠實度檢查**：用連續格逐項核對範本 README 的招牌特徵（技術全過≠概念還在） | |
 | ⑩ 交付沉澱 | 成片＋把使用者喜歡的概念存進 `references/prompts/`、場景程式存進 `concepts/` | |
@@ -62,7 +62,8 @@ metadata:
 ```
 engine/
   template/        Remotion 專案範本（theme／kit／scenes／lesson／mediaScenes／motion／lib 元件庫／custom／QaProbe）—— new_project.py 會複製它
-  scripts/         new_project.py（建專案）、build.py（storyboard→照片解析→旁白→時間軸→配樂→側鏈閃避→spec.json）、qa.py＋qa_layout.mjs（自動品檢）、
+  scripts/         new_project.py（建專案）、build.py（storyboard→照片解析→旁白→時間軸→配樂→側鏈閃避→spec.json）、
+                   gemini_tts.py（Gemini 配音共用模組：自動用最新 Flash TTS）、voice_preview.py（第⑦步聲音試聽頁）、qa.py＋qa_layout.mjs（自動品檢）、
                    make_music.py（13 種曲風 numpy 合成＋音效）、from_ai_pipeline.py（舊產線 .md+plan → storyboard，選用）、
                    pron_zh-TW.json（唸法：IP 逐字、縮寫拆字母）
   examples/        storyboard 範例（教學、宣傳、活動說明、舊產線轉換）

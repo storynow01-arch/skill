@@ -227,7 +227,7 @@ export const LevelUpFull: React.FC = () => {
               textShadow: `10px 10px 0 ${C.ink}`}}>{ch}</PixText>;
           })}
         </div>
-        <PixText size={30} tc style={{marginTop: 30}}>海青工商　資訊科</PixText>
+        <PixText size={30} tc style={{marginTop: 30}}>範例高中　資訊科</PixText>
         <PixText size={34} style={{marginTop: 50, opacity: Math.floor(lf / 15) % 2 ? 1 : 0.2}}>▶ PRESS START</PixText>
       </AbsoluteFill>
     );
@@ -369,7 +369,7 @@ export const LevelUpFull: React.FC = () => {
                   textShadow: `10px 10px 0 ${C.blue}`}}>{ch}</PixText>;
               })}
             </div>
-            <PixText size={44} tc style={{marginTop: 40, opacity: lf > 84 ? 1 : 0}}>海青工商　資訊科</PixText>
+            <PixText size={44} tc style={{marginTop: 40, opacity: lf > 84 ? 1 : 0}}>範例高中　資訊科</PixText>
             <PixText size={22} color={C.gold} style={{marginTop: 30, opacity: lf > 96 ? 1 : 0}}>NEW GAME ▶ 2026</PixText>
           </>
         )}

@@ -52,7 +52,7 @@
 - 抽 6 格檢查後再交付；常見問題：場景太小、標題蓋住主體、對話泡泡不消失、結尾沒演完
 
 ## ⑦ 細節
-- 聲音：依內容寫 3 個 Gemini 聲音描述（年齡、性別、個性，再拉開粗細與深沉），用 `gemini_tts.design_voice()` 設計，同一句代表性台詞各唸一次給使用者聽；選定的描述寫進 storyboard 的 `voice.description`
+- 聲音：依內容寫 3 個 Gemini 聲音描述（年齡、性別、個性，再拉開粗細與深沉），用 `engine/scripts/voice_preview.py` 設計並產出試聽頁（同一句代表性台詞各唸一次，台詞約 20 秒音高才準）；選定的描述寫進 storyboard 的 `voice.description`
 - 語速與語氣：寫在 `voice.style`（例如「熱情開朗的老師在上課，語速稍快」）
 - 角色劇（小劇場類）可用多個聲音：旁白＋角色 A＋角色 B
 
