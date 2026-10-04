@@ -1,0 +1,25 @@
+{
+  "id": "1-1",
+  "style": "garychen-dark",
+  "chapterLabel": "1-1  示範：雲端硬碟",
+  "scenes": [
+    {"id": "S1", "type": "title_card",
+     "props": {"title": "雲端硬碟", "subtitleEn": "CLOUD DRIVE", "eyebrow": "1-1"}},
+    {"id": "S2", "type": "concept_cards",
+     "props": {"heading": "雲端硬碟的三個好處", "cards": [
+       {"n": 1, "icon": "📱", "title": "隨處都能打開", "note": "手機、平板、學校電腦", "cue": "隨處都能打開"},
+       {"n": 2, "icon": "🔁", "title": "自動備份", "note": "電腦壞了，檔案還在", "cue": "自動備份"},
+       {"n": 3, "icon": "📦", "title": "空間可以加", "note": "不必再買新的隨身碟", "cue": "空間可以加"}]}},
+    {"id": "S3", "type": "comparison",
+     "props": {"left": {"frame": "danger", "icon": "💾", "text": "隨身碟：掉了就沒了"}, "mid": "vs",
+               "right": {"frame": "success", "icon": "🏦", "text": "雲端硬碟：有人幫你顧"},
+               "footerPill": "差別在誰負責保管", "cueWords": ["隨身碟放在口袋", "雲端硬碟像銀行保險箱"]}},
+    {"id": "S4", "type": "closing_card",
+     "props": {"takeaway": ["雲端硬碟，是有人幫你保管的資料夾。"],
+               "recap": ["隨處能開", "自動備份", "空間能加"], "nextTeaser": "下一節"}},
+    {"id": "S5", "type": "qa_endcard", "fixedSec": 6,
+     "props": {"question": "雲端硬碟和隨身碟最大的差別是什麼？",
+               "options": ["容量比較大", "有人幫你保管", "一定比較快", "不需要網路"],
+               "answerIndex": 1, "answerSec": 4, "totalSec": 6}}
+  ]
+}

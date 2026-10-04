@@ -1,0 +1,283 @@
+{
+  "id": "1-1",
+  "chapterLabel": "1-1  示範：雲端硬碟",
+  "audio": "1-1.mp3",
+  "style": "garychen-dark",
+  "captions": [
+    {
+      "text": "報告做到一半　電腦突然當機",
+      "startMs": 100,
+      "endMs": 3047,
+      "timestampMs": 1573,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "檔案還在不在",
+      "startMs": 3047,
+      "endMs": 4933,
+      "timestampMs": 3990,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "這一節用三分鐘講清楚雲端硬碟",
+      "startMs": 4933,
+      "endMs": 8189,
+      "timestampMs": 6561,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "雲端硬碟有三個好處",
+      "startMs": 8189,
+      "endMs": 10512,
+      "timestampMs": 9351,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "第一　隨處都能打開　手機　平板",
+      "startMs": 10512,
+      "endMs": 13813,
+      "timestampMs": 12162,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "學校電腦都行",
+      "startMs": 13813,
+      "endMs": 15343,
+      "timestampMs": 14578,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "第二　自動備份　電腦壞了　檔案還在",
+      "startMs": 15343,
+      "endMs": 19008,
+      "timestampMs": 17175,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "第三　空間可以加　不必再買新的隨身碟",
+      "startMs": 19008,
+      "endMs": 22850,
+      "timestampMs": 20929,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "拿隨身碟來比",
+      "startMs": 22850,
+      "endMs": 24844,
+      "timestampMs": 23847,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "隨身碟放在口袋　掉了就沒了",
+      "startMs": 24844,
+      "endMs": 27810,
+      "timestampMs": 26327,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "雲端硬碟像銀行保險箱",
+      "startMs": 27810,
+      "endMs": 29777,
+      "timestampMs": 28793,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "東西存在別人的機房　有人幫你顧",
+      "startMs": 29777,
+      "endMs": 32577,
+      "timestampMs": 31177,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "差別不在容量　而在誰負責保管",
+      "startMs": 32577,
+      "endMs": 35860,
+      "timestampMs": 34218,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "今天帶走一句話",
+      "startMs": 35860,
+      "endMs": 37822,
+      "timestampMs": 36841,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "雲端硬碟　是有人幫你保管的資料夾",
+      "startMs": 37822,
+      "endMs": 41233,
+      "timestampMs": 39527,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "隨處能開　自動備份　空間能加",
+      "startMs": 41233,
+      "endMs": 44485,
+      "timestampMs": 42858,
+      "confidence": null,
+      "pageBreakAfter": true
+    },
+    {
+      "text": "下一節　我們看它是怎麼做到的",
+      "startMs": 44485,
+      "endMs": 47473,
+      "timestampMs": 45979,
+      "confidence": null,
+      "pageBreakAfter": true
+    }
+  ],
+  "scenes": [
+    {
+      "id": "S1",
+      "type": "title_card",
+      "props": {
+        "title": "雲端​硬碟",
+        "subtitleEn": "CLOUD DRIVE",
+        "eyebrow": "1-1"
+      },
+      "startSec": 0.0,
+      "durSec": 8.09
+    },
+    {
+      "id": "S2",
+      "type": "concept_cards",
+      "props": {
+        "heading": "雲端​硬碟​的​三個​好處",
+        "cards": [
+          {
+            "n": 1,
+            "icon": "📱",
+            "title": "隨處​都​能​打開",
+            "note": "手機、平板、學校​電腦",
+            "cue": "隨處都能打開"
+          },
+          {
+            "n": 2,
+            "icon": "🔁",
+            "title": "自動​備份",
+            "note": "電腦​壞​了，檔案​還在",
+            "cue": "自動備份"
+          },
+          {
+            "n": 3,
+            "icon": "📦",
+            "title": "空間​可以​加",
+            "note": "不必​再​買​新​的​隨身​碟",
+            "cue": "空間可以加"
+          }
+        ],
+        "focusPlan": [
+          [
+            2.95,
+            0
+          ],
+          [
+            7.76,
+            1
+          ],
+          [
+            11.41,
+            2
+          ]
+        ]
+      },
+      "startSec": 8.09,
+      "durSec": 14.66
+    },
+    {
+      "id": "S3",
+      "type": "comparison",
+      "props": {
+        "left": {
+          "frame": "danger",
+          "icon": "💾",
+          "text": "隨身​碟：掉​了​就​沒​了"
+        },
+        "mid": "vs",
+        "right": {
+          "frame": "success",
+          "icon": "🏦",
+          "text": "雲端​硬碟：有人​幫​你​顧"
+        },
+        "footerPill": "差別​在​誰​負責​保管",
+        "cueWords": [
+          "隨身碟放在口袋",
+          "雲端硬碟像銀行保險箱"
+        ],
+        "focusPlan": [
+          [
+            1.99,
+            0
+          ],
+          [
+            4.96,
+            1
+          ]
+        ],
+        "footerAt": 11.42
+      },
+      "startSec": 22.75,
+      "durSec": 13.01
+    },
+    {
+      "id": "S4",
+      "type": "closing_card",
+      "props": {
+        "takeaway": [
+          "雲端​硬碟，是​有人​幫​你​保管​的​資料夾。"
+        ],
+        "recap": [
+          "隨處​能​開",
+          "自動​備份",
+          "空間​能加"
+        ],
+        "nextTeaser": "下​一節",
+        "lineAts": [
+          0.0
+        ],
+        "recapAts": [
+          5.37,
+          6.46,
+          7.54
+        ],
+        "teaserAt": 8.62
+      },
+      "startSec": 35.76,
+      "durSec": 11.71
+    },
+    {
+      "id": "S5",
+      "type": "qa_endcard",
+      "fixedSec": 6,
+      "props": {
+        "question": "雲端​硬碟​和​隨身​碟​最大​的​差別​是​什麼？",
+        "options": [
+          "容量​比較​大",
+          "有人​幫​你​保管",
+          "一定​比較​快",
+          "不​需要​網路"
+        ],
+        "answerIndex": 1,
+        "answerSec": 4,
+        "totalSec": 6
+      },
+      "startSec": 47.47,
+      "durSec": 6
+    }
+  ]
+}

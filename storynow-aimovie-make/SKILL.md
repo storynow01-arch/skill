@@ -26,8 +26,9 @@ metadata:
 | 「範本A」「闖關遊戲範本」 | 照 [`templates/範本A_闖關遊戲/README.md`](templates/範本A_闖關遊戲/README.md)：任何文本 → 遊戲畫面 |
 | 「範本B」「手稿範本」 | 照 [`templates/範本B_創客手稿/README.md`](templates/範本B_創客手稿/README.md)：任何文本 → 一鏡到底筆記本 |
 | 「範本C」「快剪範本」 | 照 [`templates/範本C_動態字體快剪/README.md`](templates/範本C_動態字體快剪/README.md)：任何文本 → 動態字體快剪 |
+| 「範本E」「教學課程產線」「整門課的教學影片」 | 照 [`templates/範本E_教學課程產線/README.md`](templates/範本E_教學課程產線/README.md)：一整門課 → 幾十節風格一致（garychen-dark 深色科技風）的教學影片，合併成集；附四關品檢 |
 | 「用範本做」＋文本（沒指定哪個） | AskUserQuestion 讓使用者選 A／B／C（附一句特色），或「三個都做」 |
-| 「做影片」＋資料 | 走完整十步流程（下方） |
+| 「做影片」＋資料 | 走完整十一步流程（下方） |
 | 「用 XX 概念做這份內容」 | 從第 ② 步開始，第 ④ 步直接採用指定概念，但仍要重新設計分鏡 |
 
 ## 範本流程（使用者丟文本、選範本時用；比十步流程快）
@@ -37,7 +38,7 @@ metadata:
 4. **概念忠實度**：照 make_video 最後印出的清單，用連續格逐項核對招牌特徵（技術品檢管不到這個）
 5. 同一份 storyboard 可以換範本重算，分鏡與旁白不用改（`snapBars` 依範本曲速重新對拍）；圖示欄位寫 emoji 或線稿名都可（見 `lib/sketches.ts`）
 
-## 十步流程（細節見 [`references/workflow.md`](references/workflow.md)）
+## 十一步流程（細節見 [`references/workflow.md`](references/workflow.md)）
 
 | 步驟 | 內容 | 煞車點 |
 |---|---|---|
@@ -51,6 +52,7 @@ metadata:
 | ⑧ 製作 | 旁白逐句 TTS → 時間軸（旁白長度補足到整數小節）→ 配樂＋事件音效＋人聲閃避 → Remotion 場景 → 算圖 | |
 | ⑨ 品檢 | **`qa.py` 自動品檢**：版面（瀏覽器內量測重疊／超出畫面／闖進字幕區）、旁白回聽（whisper 比對稿子）、黑畫面／無聲／響度／長度、總覽圖＋`qa_report.md`；有「必修」就修正重算（[`references/production.md`](references/production.md)）；**再做概念忠實度檢查**：用連續格逐項核對範本 README 的招牌特徵（技術全過≠概念還在） | |
 | ⑩ 交付沉澱 | 成片＋把使用者喜歡的概念存進 `references/prompts/`、場景程式存進 `concepts/` | |
+| ⑪ 最終品檢 | **對要交出去的那支 mp4 再量一次**（⑨ 量的是製作中的版本，重新算圖、合併、響度處理都可能帶進新問題）：`python final_qa/final_qa.py out/成片.mp4 --lufs -14 --spec src/data/spec.json --layout qa_layout.json --terms <英數詞> --text <旁白全文>`，交出 `final_qa.html`＋`final_qa.md`——字幕閃爍／抖動、字幕＝旁白與同步、黑畫面、規格、響度、無聲、長度、版面、英數詞唸法（時長比對）、多音詞試聽清單；有字幕就依 Netflix 繁中字幕規範（每行 ≤16 字、每秒 ≤9 字）。全部通過才算交付（[`final_qa/README.md`](final_qa/README.md)） | |
 
 使用者回答模糊（例如選項沒有的「1 和 4」）時，**用下一輪問題確認，不要猜**。
 
@@ -67,6 +69,8 @@ concepts/          做過的概念場景程式（參考實作，新影片要依�
   levelup/ notebook/ kinetic/ lesson-logistics/ lesson-sitcom/ lesson-cable/ audio/
 references/        流程、題庫、概念方法、製作與品檢、教訓、提示詞庫（prompts/）、實作範例（examples/：事實清單、內容分析、三概念分鏡）
 templates/資訊科範本1/   研習說明＋資訊科宣傳片（含宣傳片原始碼）
+templates/範本E_教學課程產線/  整門課的教學影片產線（自成一包：engine／規範／examples，new_course.py 建新課程；含四關品檢＋自我測試）
+final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用）：final_qa.py、pron_check.py（唸法時長比對）、多音字清單.json
 ```
 
 ## 四項增強（2026-10-01）
