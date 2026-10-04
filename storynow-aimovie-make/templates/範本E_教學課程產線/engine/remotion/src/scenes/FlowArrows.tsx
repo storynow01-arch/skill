@@ -51,13 +51,14 @@ export const FlowArrows: React.FC<{
                 background: C.card,
                 color: hot ? C.primary : C.body,
                 boxShadow: hot ? `0 0 34px ${C.glow}` : 'none',
-                borderRadius: R.pill, padding: '20px 32px',
+                // 兩行以上的說明放在膠囊裡，第二行會貼到兩端的半圓 → 改大圓角矩形、文字置中（2026-10-04 使用者抽檢 1-14）
+                borderRadius: R.lg, padding: '24px 40px', textAlign: 'center',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,   // 6→12：字放大後標題與說明黏在一起（品檢「間距過小」）
                 minWidth: 170,
               }}>
                 <span style={{fontSize: T.h3, fontWeight: 600}}><Phrases text={s.label} /></span>
                 {s.note && (
-                  <span style={{fontSize: T.cardNote, color: hot ? C.body : C.muted}}><Phrases text={s.note} /></span>
+                  <span style={{fontSize: T.cardNote, color: hot ? C.body : C.muted, textAlign: 'center'}}><Phrases text={s.note} /></span>
                 )}
               </div>
 

@@ -3,7 +3,7 @@
    由 04_引擎/qa/qa_layout.mjs 收集。
 
    檢查：超出畫面、文字互相重疊、闖進字幕區、超出安全區、字級過小、內容溢出、
-        文字被裁切（行數超過容器）。
+        文字被裁切（行數超過容器）、物件標點、文字貼邊（壓到圓角弧線）。
    data-qa="caption" 是字幕帶；data-qa="chrome" 是 LOGO／章節標籤／進度條，不受安全區限制。 */
 import React, {useLayoutEffect, useState} from 'react';
 import {continueRender, delayRender, useCurrentFrame} from 'remotion';
@@ -84,6 +84,38 @@ const lineBoxes = (el: Element) => {
 
 type Box = {text: string; x: number; y: number; w: number; h: number; el: Element; font: number; chrome: boolean};
 
+/** 文字所在的圓角框（往上找 5 層內第一個有圓角、且有底色或邊框的元素） */
+const roundedCard = (el: Element) => {
+  let e = el.parentElement;
+  for (let k = 0; e && k < 5; k++, e = e.parentElement) {
+    const cs = getComputedStyle(e);
+    const rad = parseFloat(cs.borderTopLeftRadius || '0');
+    const solid = (rgba(cs.backgroundColor)?.[3] ?? 0) > 0.2 || parseFloat(cs.borderTopWidth) > 0;
+    if (rad > 0 && solid) {
+      const r = e.getBoundingClientRect();
+      return {r, rad: Math.min(rad, r.height / 2, r.width / 2)};
+    }
+  }
+  return null;
+};
+
+/** 文字框四角是否落在圓角框的圓弧外（壓到或超出弧線）。回傳超出幾 px，0＝沒問題 */
+const curveOverflow = (b: {x: number; y: number; w: number; h: number}, card: {r: DOMRect; rad: number}) => {
+  const {r, rad} = card;
+  if (rad < 12) return 0;
+  const shrink = b.h * 0.15;                       // 行高上下有留白，取字形的大略範圍
+  const ys = [b.y + shrink, b.y + b.h - shrink], xs = [b.x, b.x + b.w];
+  let worst = 0;
+  for (const x of xs) for (const y of ys) {
+    const cx = x < r.left + rad ? r.left + rad : x > r.right - rad ? r.right - rad : null;
+    const cy = y < r.top + rad ? r.top + rad : y > r.bottom - rad ? r.bottom - rad : null;
+    if (cx === null || cy === null) continue;      // 不在四個圓角區
+    const d = Math.hypot(x - cx, y - cy) - (rad - 8);   // 至少離弧線 8px
+    worst = Math.max(worst, d);
+  }
+  return Math.round(worst);
+};
+
 const opacityOf = (el: Element) => {
   let e: Element | null = el, op = 1;
   while (e && (e instanceof HTMLElement || e instanceof SVGElement)) {
@@ -136,6 +168,13 @@ const measure = (W: number, H: number) => {
       issues.push({kind: '字級過小', text: b.text, detail: `${b.font}px < ${QA_RULES.minFont}px`});
     if (he.scrollWidth > he.clientWidth + 4 && getComputedStyle(he).overflow !== 'visible')
       issues.push({kind: '內容溢出', text: b.text, detail: `scroll ${he.scrollWidth} > ${he.clientWidth}`});
+    // 物件標點（2026-10-04 使用者抽檢）：畫面物件文字比照字幕規則，不放「，」「；」、不以「。」結尾
+    if (!b.chrome && /[，；]|[。]$/u.test(own))
+      issues.push({kind: '物件標點', text: b.text, detail: `含「${(own.match(/[，；。]/u) ?? [''])[0]}」`});
+    // 文字貼邊：文字壓到圓角框（膠囊）的弧線（2026-10-04 使用者抽檢 1-14 流程卡）
+    const card = b.chrome ? null : roundedCard(el);
+    const over = card ? curveOverflow(b, card) : 0;
+    if (over > 0) issues.push({kind: '文字貼邊', text: b.text, detail: `超出圓角安全範圍 ${over}px`});
     // 斷行：用 Range 取每一行的實際範圍。最後一行只剩 1～3 個字（孤字）、或大字標題超過兩行，都算版面問題
     const lines = lineBoxes(el);
     if (!b.chrome && lines.length >= 2) {

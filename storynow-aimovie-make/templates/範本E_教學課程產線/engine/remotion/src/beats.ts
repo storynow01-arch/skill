@@ -66,7 +66,8 @@ export const focusFrom = (t: number, plan: FocusPlan | undefined): number => {
  *  使用者要求：「文本唸到的時候物件要跟著動；唸完之後固定，不要不斷循環。」
  *    - 第 i 項在旁白唸到它時才出場（plan 裡它第一次出現的時間，提早 LEAD 秒開始浮出）
  *    - 唸到哪一項就亮哪一項，其他已出場的項目淡一點
- *    - 最後一項唸完 HOLD 秒後，全部恢復全亮並固定；之後不再有任何週期性變化
+ *    - 全部唸完後保留「最後唸到的那一項」亮起、其他維持淡，直到換場；之後不再有任何週期性變化
+ *      （2026-10-04 使用者抽檢 EP2：原本唸完 HOLD 秒後全部恢復全亮，看起來像「全滅」、重點消失）
  *  沒有 plan（找不到旁白對應）時：依序快速出場，全部全亮，不輪播。 */
 export const LEAD = 0.15;
 export const HOLD = 1.6;
@@ -95,7 +96,7 @@ export const narrate = (t: number, plan: FocusPlan | undefined, count: number,
   const first = new Map<number, number>();
   for (const [at, i] of plan) if (!first.has(i)) first.set(i, at);
   const lastAt = Math.max(...plan.map(([at]) => at));
-  const activeAt = (x: number) => (x >= lastAt + HOLD ? -1 : focusFrom(x, plan));
+  const activeAt = (x: number) => focusFrom(x, plan);   // 唸完不歸零：停在最後一項
   const done = t >= lastAt + HOLD;
   // 平滑：取過去 FADE 秒內的平均目標值（線性漸變），所以任何亮暗切換都不會在一格之內完成
   const N = 12;

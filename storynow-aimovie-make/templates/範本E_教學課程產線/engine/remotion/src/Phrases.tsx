@@ -8,7 +8,8 @@
  *  瀏覽器只會在短語之間換行；短語本身比一行還長才會在內部斷。 */
 import React from 'react';
 
-const SPLIT = /(?<=[，、：；。？！…・·])|(?=「|『|（)|(?<=」|』|）)/u;
+//  2026-10-04：畫面文字的「，」「；」由 build_data 換成全形空白（不顯示標點），空白後面也是短語邊界。
+const SPLIT = /(?<=[，、：；。？！…・·　])|(?=「|『|（)|(?<=」|』|）)/u;
 
 export const phrases = (text: string): string[] =>
   text.split(SPLIT).filter((s) => s.length > 0);

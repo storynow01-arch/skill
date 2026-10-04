@@ -160,9 +160,21 @@ def word_breaks(text: str) -> str:
     return "".join(out)
 
 
+SCREEN_TRAIL = re.compile(r"[。，、；：…\s　]+$")
+SCREEN_INNER = re.compile(r"\s*[，；。]\s*")
+
+
+def clean_screen_text(text: str) -> str:
+    """畫面物件文字比照字幕規則（2026-10-04 使用者抽檢：兩行字還留著「，」）：
+    行尾標點刪掉；句中的「，」「；」「。」改成全形空白（換行的機會點，不顯示標點）。
+    保留：問號／驚嘆號（標題是問句）、「、」（列舉）、「：」（第二段：…）、引號、箭頭。"""
+    t = SCREEN_TRAIL.sub("", text.strip())
+    return SCREEN_INNER.sub("　", t)
+
+
 def add_word_breaks(obj, key=None):
     if isinstance(obj, str):
-        return obj if key in NO_WRAP_KEYS else word_breaks(obj)
+        return obj if key in NO_WRAP_KEYS else word_breaks(clean_screen_text(obj))
     if isinstance(obj, list):
         return [add_word_breaks(x, key) for x in obj]
     if isinstance(obj, dict):
@@ -349,9 +361,13 @@ def main(sid: str, dry: bool = False):
         items_end = 0.0
         ok_sem, unsaid = narration_matches(sc, tl, times)
         if times and not ok_sem:
-            # 旁白沒有逐項唸到這些物件：不要硬掛在別的詞上突然跳出來，改成場景一開始就依序出現、全亮
+            # 旁白沒有逐項唸到這些物件＝文不對題。
+            # 2026-10-04 使用者抽檢 1-8 S2：「跟所講的東西沒有相關性、突然跳出來一直停著，很無聊」
+            # → 不再自動改成一開場出現，直接擋下，要求改 plan 的項目文字（用旁白裡的說法）。
+            # 刻意不逐項唸的場景，在 plan 的 props 寫 "allowStatic": true 才放行。
             sc.setdefault("props", {})["staticItems"] = True
-            static_scenes.append(f'{sc["id"]}（{"、".join(unsaid[:3])}）')
+            if not sc.get("props", {}).get("allowStatic"):
+                static_scenes.append(f'{sc["id"]}（{"、".join(unsaid[:3])}）')
             times = None
         if times:
             n = len(times)
@@ -363,7 +379,9 @@ def main(sid: str, dry: bool = False):
         # footer、測驗揭曉、結語逐句等「非項目」元素也對齊旁白
         sc.setdefault("props", {}).update(extra_timings(sc, tl, items_end))
     if static_scenes:
-        print(f"  ℹ 旁白沒逐項唸到的物件，改為一開場就出現：{'；'.join(static_scenes)}")
+        raise SystemExit(f"  ✗ 物件文字與旁白文不對題（旁白沒有逐項唸到）：{'；'.join(static_scenes)}\n"
+                         f"    請改 01_腳本/{sid}_plan.json 的項目文字，用旁白裡的說法；"
+                         f"刻意不唸的場景加 \"allowStatic\": true")
     if cued or cue_misses:
         print(f"  ✓ 內容驅動焦點：{cued} 個場景依旁白時間點對齊"
               + (f"，{len(cue_misses)} 個 cue 查無" if cue_misses else ""))

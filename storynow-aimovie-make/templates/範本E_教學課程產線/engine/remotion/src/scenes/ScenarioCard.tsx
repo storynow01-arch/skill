@@ -31,8 +31,9 @@ export const ScenarioCard: React.FC<{
   }
   return (
     <AbsoluteFill style={{justifyContent:'center', alignItems:'center', fontFamily:FONT}}>
+      {/* 會轉的圖示（190px）轉到 45° 時外框變大約 1.4 倍，往上會碰到標題 → 多留 40px（2026-10-04 版面探針 1-1 S8） */}
       {heading && (
-        <div style={{...rise(f,fps,0), color:C.text, fontSize:T.h2, fontWeight:700, marginBottom:50}}>
+        <div style={{...rise(f,fps,0), color:C.text, fontSize:T.h2, fontWeight:700, marginBottom: spinItem >= 0 ? 90 : 50}}>
           <Phrases text={heading} />
         </div>
       )}
