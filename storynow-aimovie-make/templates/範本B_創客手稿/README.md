@@ -11,7 +11,7 @@
 ```
 Create a 60-second recruitment video programmatically, coded and rendered with whatever tools you need.
 One continuous camera move glides across a giant maker's desk and grid notebook, where an invisible pen draws everything
-in real time — for the IT Department of Haiching Industrial High School (海青工商資訊科). Title: "你的未來，自己寫".
+in real time — for the IT Department of Example Senior High School (範例高中資訊科). Title: "你的未來，自己寫".
 
 1. First Line: a pen writes print("Hello") on the notebook; the ink lines grow into the hand-lettered title.
 2. Sketch to Reality: hand-drawn sketches of C/Python code, an AI eye recognising doodles, an ESP32 wiring diagram and

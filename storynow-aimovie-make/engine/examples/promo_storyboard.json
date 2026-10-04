@@ -1,12 +1,12 @@
 {
-  "title": "海青工商資訊科 — 攜手築夢·智造未來（60 秒宣傳片範例）",
+  "title": "範例高中資訊科 — 攜手築夢·智造未來（60 秒宣傳片範例）",
   "mode": "promo",
   "style": "cyber-neon",
   "hud": {"left": "HAICHING IT // OFFICIAL TRAILER 2026", "right": "TRAILER"},
   "captions": false,
   "scenes": [
-    {"id": "S1", "type": "title", "bars": 4, "props": {"eyebrow": "OFFICIAL TRAILER · 2026", "title": "海青工商 資訊科", "size": 140, "en": "DEPARTMENT OF INFORMATION TECHNOLOGY"}},
-    {"id": "S2", "type": "title", "bars": 2, "impact": true, "props": {"eyebrow": "海青工商資訊科　官方宣傳片", "title": "攜手築夢·智造未來", "en": "BUILD DREAMS TOGETHER · ENGINEER THE FUTURE"}},
+    {"id": "S1", "type": "title", "bars": 4, "props": {"eyebrow": "OFFICIAL TRAILER · 2026", "title": "範例高中 資訊科", "size": 140, "en": "DEPARTMENT OF INFORMATION TECHNOLOGY"}},
+    {"id": "S2", "type": "title", "bars": 2, "impact": true, "props": {"eyebrow": "範例高中資訊科　官方宣傳片", "title": "攜手築夢·智造未來", "en": "BUILD DREAMS TOGETHER · ENGINEER THE FUTURE"}},
     {"id": "S3", "type": "code", "bars": 4, "code": 0.5, "hud": "01 / AI & SOFTWARE",
      "props": {"chapter": {"num": "01", "zh": "AI & 軟體工程", "en": "AI & SOFTWARE ENGINEERING"}, "heading": "核心程式力 C × Python", "en": "CORE CODING",
                "chips": ["演算法與資料結構", "AI 邊緣運算", "ESP32 / Arduino 物聯網", "協作機械手臂"],
@@ -33,6 +33,6 @@
                "left": {"title": "升學熱門科系", "items": ["資訊 / 軟體工程", "半導體 / 電子", "智慧機器人", "網路資安"]},
                "right": {"title": "科技就業", "items": ["AI 軟體工程師", "韌體研發", "雲端資安", "物聯網自動化"]}}},
     {"id": "S11", "type": "closing", "bars": 2, "impact": true,
-     "props": {"title": "攜手築夢·智造未來", "subtitle": "海青工商　資訊科", "lines": ["有理想 · 有目標 · 不斷進步 · 追求最好還要更好"], "en": "HAICHING INDUSTRIAL HIGH SCHOOL · DEPARTMENT OF INFORMATION TECHNOLOGY"}}
+     "props": {"title": "攜手築夢·智造未來", "subtitle": "範例高中　資訊科", "lines": ["有理想 · 有目標 · 不斷進步 · 追求最好還要更好"], "en": "HAICHING INDUSTRIAL HIGH SCHOOL · DEPARTMENT OF INFORMATION TECHNOLOGY"}}
   ]
 }

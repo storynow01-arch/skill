@@ -11,7 +11,7 @@
 ```
 Create a 60-second recruitment video programmatically, coded and rendered with whatever tools you need.
 The entire video IS a retro video game: the viewer is the player, a "Lv.1 Rookie" junior-high student, and joining the
-IT Department of Haiching Industrial High School (海青工商資訊科) is pressing START. Title: "你的未來，自己寫".
+IT Department of Example Senior High School (範例高中資訊科) is pressing START. Title: "你的未來，自己寫".
 
 1. Press Start: a pixel title screen, blinking "PRESS START", a coin-insert sound; the player sprite drops in.
 2. World Map: a side-scrolling world map with four stages — C/Python, AI Vision, ESP32 IoT, Robot Arm.
@@ -19,7 +19,7 @@ IT Department of Haiching Industrial High School (海青工商資訊科) is pres
 3. Boss Stage: the National Skills Competition — medals drop as loot; a "HALL OF FAME" leaderboard reveals
    10 WorldSkills competitors and 12 national golds; regional gold/silver/bronze sweep shown as a 3-star clear.
 4. Next World: 26 admissions to national universities appear as unlocked new worlds (Taiwan Tech, YunTech, NKUST).
-5. Continue?: "NEW GAME: 海青資訊科 — YES ▶", the cursor blinks on YES.
+5. Continue?: "NEW GAME: 範例資訊科 — YES ▶", the cursor blinks on YES.
 
 Visuals: chunky pixel art, parallax side-scrolling camera, HUD with HP/XP bars, score popups, screen shake on hits.
 Audio: upbeat 8-bit chiptune at 150 BPM with crisp coin, jump, power-up and level-up sound effects on every event.

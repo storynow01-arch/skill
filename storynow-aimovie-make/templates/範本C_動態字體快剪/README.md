@@ -10,8 +10,8 @@
 ## 原始提示詞（招生片版本，逐字保存）
 ```
 Create a 60-second recruitment video programmatically, coded and rendered with whatever tools you need.
-A bold kinetic-typography piece where words ARE the visuals, for the IT Department of Haiching Industrial High School
-(海青工商資訊科). Title: "你的未來，自己寫". Every beat lands a cut.
+A bold kinetic-typography piece where words ARE the visuals, for the IT Department of Example Senior High School
+(範例高中資訊科). Title: "你的未來，自己寫". Every beat lands a cut.
 
 1. Hook: black screen, one word at a time slams in on each beat — 「你」「的」「未來」— then the screen splits.
 2. Words Become Things: 「寫」 shatters into lines of C and Python code; 「AI」 opens like an eye that scans the screen;
