@@ -2,31 +2,25 @@
   "_說明": "tts_gemini.py 的設定。voice_id 留空會依 voice_description 自動設計並寫回。聲音存在 Gemini 專案裡一年；換 key（換專案）要清空 voice_id 重新設計。",
   "engine": "gemini",
   "model": "auto",
-  "voice_name": "B_溫暖中音",
-  "voice_id": "",
+  "_model說明": "auto＝每次自動用最新的正式版 Flash TTS（排除 lite、preview）；要固定版本就寫完整名稱，例如 gemini-3.8-flash-tts",
+  "voice_name": "02 沉穩專業・50 歲",
+  "voice_id": "voice_km2g006xq4f0",
+  "_voice說明": "2026-10-05 使用者從 20 個試聽選定（11_品檢/聲音試聽_付費版/試聽.html 第 02 組下方）。存在付費專案（.env.local key 指紋 ff300a38）裡，最後一次使用後保留一年；換 key 會找不到，要清空 voice_id 依描述重新設計（聲音只會相似、不會完全一樣）。試聽量測：平均音高 122 Hz、語速 4.1 字/秒。",
   "gender": "male",
   "language_code": "zh-TW",
-  "voice_description": "25 歲左右的台灣年輕男老師，說標準台灣華語（台灣口音、不捲舌、不帶北京腔兒化音），熱情開朗、充滿活力、笑著講課，親切像大哥哥，咬字清楚，語速稍快。聲音中等厚度、中音域、圓潤飽滿溫暖，穩重又有精神。",
-  "_其他候選": {
-    "A_明亮清爽": {
-      "voice_id": "",
-      "voice_description": "25 歲左右的台灣年輕男老師，說標準台灣華語（台灣口音、不捲舌、不帶北京腔兒化音），熱情開朗、充滿活力、笑著講課，親切像大哥哥，咬字清楚，語速稍快。聲音偏細、音調偏高、明亮清脆，輕快有朝氣。"
-    },
-    "B_溫暖中音": {
-      "voice_id": "",
-      "voice_description": "25 歲左右的台灣年輕男老師，說標準台灣華語（台灣口音、不捲舌、不帶北京腔兒化音），熱情開朗、充滿活力、笑著講課，親切像大哥哥，咬字清楚，語速稍快。聲音中等厚度、中音域、圓潤飽滿溫暖，穩重又有精神。"
-    },
-    "C_低沉渾厚": {
-      "voice_id": "",
-      "voice_description": "25 歲左右的台灣年輕男老師，說標準台灣華語（台灣口音、不捲舌、不帶北京腔兒化音），熱情開朗、充滿活力、笑著講課，親切像大哥哥，咬字清楚，語速稍快。聲音粗厚、音調低沉、胸腔共鳴明顯、有磁性，但語氣依然熱情開朗。"
-    }
-  },
-  "style": "熱情開朗的年輕男老師在上課，笑著講、有活力，台灣華語口音，語速稍快但咬字清楚",
+  "voice_description": "50 歲左右的台灣資深男老師，個性年輕有活力，說標準台灣華語（台灣口音、不捲舌、不帶北京腔兒化音），咬字清楚，聲音清楚有穿透力、教室後排也聽得清楚，沉穩專業、有自信，聲音中低、飽滿有磁性。",
+  "style": "像講座講師，沉穩有自信、語氣篤定，語速適中，台灣華語口音，不要播音腔、不要太戲劇化",
   "chunk_chars": 700,
   "skip_rules": [
     "多音詞替換",
     "ping",
-    "about"
+    "about",
+    "mail",
+    "GET",
+    "gov",
+    "Mega",
+    "單獨唸的 com"
   ],
-  "_model說明": "auto＝每次自動用最新的正式版 Flash TTS（排除 lite、preview）；要固定版本就寫完整名稱，例如 gemini-3.8-flash-tts"
+  "_skip_rules說明": "這些是 edge-tts 時代的權宜寫法（中文聲音唸英文不準才改），Gemini 唸得好，送 Gemini 時跳過：多音詞同音字替換、ping→聘、about→額抱特、mail/GET/gov→逐字母、Mega→Megah、單獨的 com→c o m。名稱對應 發音規範.json 的「詞典」鍵與 regex_rules 的 name。",
+  "_voice_id說明": "voice_id 屬於原作者的付費 Gemini 專案。用同一把 key（.env.local）可直接使用同一個聲音；其他人的 key 會找不到（HTTP 404）→ 把 voice_id 清成空字串，第一次配音會依 voice_description 設計相似的聲音"
 }

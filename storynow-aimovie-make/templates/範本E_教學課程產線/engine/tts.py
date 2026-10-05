@@ -43,7 +43,7 @@ def to_speech(text: str, skip: set | frozenset = frozenset()) -> str:
     # 規範裡 handler 為「literal:替換文字」的規則（例如單獨唸的 com → c o m）
     for r in _SPEC.get("regex_rules", []):
         h = r.get("handler", "")
-        if h.startswith("literal:"):
+        if h.startswith("literal:") and r.get("name") not in skip:
             text = re.sub(r["pattern"], h[len("literal:"):], text)
     for num, say in _SPEC.get("數字詞典", {}).items():
         if not num.startswith("_"):

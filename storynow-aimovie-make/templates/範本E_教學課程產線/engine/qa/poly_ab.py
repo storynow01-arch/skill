@@ -55,8 +55,27 @@ def _homophone_table() -> dict[str, str]:
 def expected(word: str, c: str) -> str:
     if word in SPEC["詞"]:
         return SPEC["詞"][word]
+    return word_pinyin(word)[word.index(c)]
+
+
+_T2S = None
+
+
+def word_pinyin(word: str) -> list[str]:
+    """詞的標準讀音。pypinyin 的詞組庫是簡體字，繁體詞（處理、差別）查不到會退回單字最常見讀音
+    （處 chù、差 chà）→ 先用 OpenCC 轉簡體再查（2026-10-05 發現）。多音字清單.json 的「詞」優先。"""
+    global _T2S
     from pypinyin import pinyin, Style
-    return pinyin(word, style=Style.TONE)[word.index(c)][0]
+    if _T2S is None:
+        import opencc
+        _T2S = opencc.OpenCC("t2s")
+    py = [x[0] for x in pinyin(_T2S.convert(word), style=Style.TONE)]
+    for w, r in SPEC["詞"].items():                 # 清單裡寫的是那個多音字的讀音
+        if w in word:
+            c = next((ch for ch in w if ch in SPEC.get("字", "")), None)
+            if c and c in word:
+                py[word.index(c)] = r
+    return py
 
 
 def find_targets(ids: list[str]) -> list[dict]:

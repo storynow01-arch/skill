@@ -88,10 +88,19 @@ def main():
     rows = []
     for v in voices:
         name = v["name"].strip()
-        vid = v.get("voice_id") or G.design_voice(v["description"], gender=v.get("gender", gender),
-                                                   language_code=a.language, name=name)
         safe = re.sub(r'[\\/:*?"<>|\s]+', "_", name)
         wav = out / f"{safe}.wav"
+        # 聲音 id 記在 <名稱>.voice.json：重跑時沿用，不重複設計（2026-10-05：重跑三次多設計了 8 個重複聲音）
+        vfile = out / f"{safe}.voice.json"
+        prev = json.loads(vfile.read_text(encoding="utf-8")) if vfile.exists() else {}
+        old_done = out / f"{safe}.done.json"
+        if not prev and old_done.exists():
+            prev = {k: x for k, x in json.loads(old_done.read_text(encoding="utf-8")).items() if k == "voice_id"}
+        vid = v.get("voice_id") or prev.get("voice_id")
+        if not vid:
+            vid = G.design_voice(v["description"], gender=v.get("gender", gender), language_code=a.language, name=name)
+            vfile.write_text(json.dumps({"voice_id": vid, "description": v["description"]}, ensure_ascii=False),
+                             encoding="utf-8")
         v_line, v_style = v.get("line") or line, v.get("style") or style
         used = model
         done = out / f"{safe}.done.json"          # 已產生過（同名）就沿用，不重複花配額

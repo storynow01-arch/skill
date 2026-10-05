@@ -52,6 +52,14 @@ def call(method: str, path: str, body: dict | None = None, query: str = "") -> d
         except urllib.error.HTTPError as e:
             msg = e.read().decode(errors="replace")
             if e.code == 429:
+                # 「每天 10 次」其實是滾動計算：訊息會寫還要等多久（retry in 4m10s／11h18m5s）。
+                # 10 分鐘內就自動等再試；更久才當作今天用完（2026-10-05 實測）
+                m = re.search(r"retry in (?:(\d+)h)?(?:(\d+)m)?(?:(\d+)(?:\.\d+)?s)?", msg)
+                wait = (int(m.group(1) or 0) * 3600 + int(m.group(2) or 0) * 60 + int(m.group(3) or 0)) if m else 0
+                if 0 < wait <= 600 and attempt < 4:
+                    print(f"  … Gemini 配額 {wait} 秒後恢復，等待中", flush=True)
+                    time.sleep(wait + 5)
+                    continue
                 if "PerDay" in msg or "per day" in msg.lower() or attempt == 4:
                     raise Quota(msg[:800])
                 time.sleep(25 * (attempt + 1))          # 每分鐘限制：等一下再試
@@ -60,6 +68,12 @@ def call(method: str, path: str, body: dict | None = None, query: str = "") -> d
                 time.sleep(10 * (attempt + 1))
                 continue
             raise RuntimeError(f"Gemini HTTP {e.code}: {msg[:800]}")
+        except (urllib.error.URLError, ConnectionError, TimeoutError, OSError) as e:
+            # 網路層錯誤（SSL 被切斷、逾時、ERR_NO_BUFFER_SPACE）：等一下重試（2026-10-05 實測 SSLEOFError）
+            if attempt < 4:
+                time.sleep(8 * (attempt + 1))
+                continue
+            raise RuntimeError(f"Gemini 連線失敗：{e}")
     raise RuntimeError("Gemini 重試失敗")
 
 

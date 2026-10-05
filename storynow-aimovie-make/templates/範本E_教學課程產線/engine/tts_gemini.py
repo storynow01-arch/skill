@@ -16,7 +16,7 @@
   4. 每段音檔依文字雜湊快取在 02_語音/<id>/_gemini_cache/，配額用完（429）就停，隔天重跑會從斷點接續
 """
 from __future__ import annotations
-import hashlib, json, re, subprocess, sys
+import hashlib, json, re, shutil, subprocess, sys
 from pathlib import Path
 
 ENGINE = Path(__file__).resolve().parent
@@ -71,9 +71,14 @@ def srt_time(x: float) -> str:
 def main(md: Path, force: bool = False, out_dir: str = ""):
     cfg = load_cfg()
     sid = md.stem.split("_")[0]
-    out = Path(out_dir).resolve() / sid if out_dir else ROOT / "02_語音" / sid
-    cache = out / "_gemini_cache"
+    final = Path(out_dir).resolve() / sid if out_dir else ROOT / "02_語音" / sid
+    cache = final / "_gemini_cache"
     cache.mkdir(parents=True, exist_ok=True)
+    # 整節成功才覆寫（2026-10-05：配額中途用完，1-1 變成新舊聲音混在一起）：先寫到 _staging，全部完成再搬
+    out = final / "_staging"
+    if out.exists():
+        shutil.rmtree(out)
+    out.mkdir()
     scenes = parse(md)
     print(f"{md.name} → {len(scenes)} 個 scene（{cfg['model_resolved']}，聲音 {cfg['voice_id']}）\n")
 
@@ -91,7 +96,7 @@ def main(md: Path, force: bool = False, out_dir: str = ""):
     if cur:
         groups.append(cur)
 
-    rows, total = [], 0.0
+    rows, total, warnings = [], 0.0, []
     for g, grp in enumerate(groups):
         sents_by_scene = [split_sentences(gemini_text(narr, cfg)) for _, _, narr in grp]
         text = "\n".join(s for ss in sents_by_scene for s in ss)
@@ -107,6 +112,11 @@ def main(md: Path, force: bool = False, out_dir: str = ""):
                 sys.exit(3)
         flat = [s for ss in sents_by_scene for s in ss]
         spans = G.align(flat, str(wav))
+        # 對齊檢查：每句長度要合理（每字至少 0.1 秒）；太短＝辨識沒對到（漏唸、唸錯、亂唸）
+        for q, (st, en) in enumerate(spans):
+            nchar = len(re.sub(r"[^\u4e00-\u9fffA-Za-z0-9]", "", flat[q]))
+            if nchar >= 4 and (en - st) < 0.1 * nchar:
+                warnings.append({"group": g + 1, "sentence": flat[q], "seconds": round(en - st, 2)})
         total_wav = dur(wav)
         # 2. 依場景切：切點＝前一場最後一句結束與下一場第一句開始的中點
         k, cuts = 0, [0.0]
@@ -145,8 +155,31 @@ def main(md: Path, force: bool = False, out_dir: str = ""):
                     "-c", "copy", str(out / "full.mp3")], check=True)
     (out / "marks.json").write_text(json.dumps(
         {"id": sid, "engine": "gemini", "model": cfg["model_resolved"], "voice": cfg["voice_id"], "style": cfg["style"],
-         "total_seconds": round(total, 2), "scenes": rows}, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"\n  合計 {total:.1f} 秒 ({total / 60:.2f} 分)\n  輸出 → {out}")
+         "total_seconds": round(total, 2), "scenes": rows, "align_warnings": warnings},
+        ensure_ascii=False, indent=2), encoding="utf-8")
+    # 全部成功 → 檢查對齊 → 搬到正式位置（原本的檔案先移到 _上一版）
+    sent_total = sum(len(split_sentences(gemini_text(n, cfg))) for _, _, n in scenes)
+    if warnings:
+        print(f"\n⚠ 對齊可疑 {len(warnings)}／{sent_total} 句（可能漏唸或唸錯）：")
+        for w in warnings[:10]:
+            print(f"   第{w['group']}段 {w['seconds']}s「{w['sentence'][:30]}」")
+    if len(warnings) > max(2, sent_total * 0.1) and "--accept" not in sys.argv:
+        print(f"⛔ 可疑句太多，沒有覆寫 {final}（新音檔留在 _staging，聽過沒問題可加 --accept 重跑）")
+        sys.exit(4)
+    prev = final / "_上一版"
+    if prev.exists():
+        shutil.rmtree(prev)
+    old = [x for x in final.iterdir() if x.is_file()]
+    if old:
+        prev.mkdir()
+        for x in old:
+            shutil.move(str(x), str(prev / x.name))
+    for x in out.iterdir():
+        shutil.move(str(x), str(final / x.name))
+    out.rmdir()
+    # concat.txt 裡記的是 _staging 路徑 → 改回正式位置
+    (final / "concat.txt").write_text("".join(f"file '{final / (r['scene'] + '.mp3')}'\n" for r in rows), encoding="utf-8")
+    print(f"\n  合計 {total:.1f} 秒 ({total / 60:.2f} 分)　對齊可疑 {len(warnings)} 句\n  輸出 → {final}（原檔在 _上一版）")
 
 
 if __name__ == "__main__":

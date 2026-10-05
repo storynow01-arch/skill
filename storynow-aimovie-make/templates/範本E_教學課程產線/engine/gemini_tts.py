@@ -68,6 +68,12 @@ def call(method: str, path: str, body: dict | None = None, query: str = "") -> d
                 time.sleep(10 * (attempt + 1))
                 continue
             raise RuntimeError(f"Gemini HTTP {e.code}: {msg[:800]}")
+        except (urllib.error.URLError, ConnectionError, TimeoutError, OSError) as e:
+            # 網路層錯誤（SSL 被切斷、逾時、ERR_NO_BUFFER_SPACE）：等一下重試（2026-10-05 實測 SSLEOFError）
+            if attempt < 4:
+                time.sleep(8 * (attempt + 1))
+                continue
+            raise RuntimeError(f"Gemini 連線失敗：{e}")
     raise RuntimeError("Gemini 重試失敗")
 
 
