@@ -27,11 +27,36 @@ _IPV4 = re.compile(r'(?<![\d.])(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\d.
 _DOT2 = re.compile(r'(?<![\d.])(\d{1,3})\.(\d{1,3})(?![\d.])')
 
 
-def to_speech(text):
-    """專業寫法 → TTS 唸法（IP 逐字唸、縮寫拆字母）。規則來自 pron_zh-TW.json。"""
+def _gemini_rules():
+    """voices.json 的 gemini_replace（網址唸法、中英文之間的空格…，見 references/gemini-voice-lessons.md）"""
+    try:
+        rules = json.load(open(os.path.join(HERE, 'voices.json'), encoding='utf-8')).get('gemini_replace', [])
+    except FileNotFoundError:
+        return []
+    out = []
+    for r in rules:
+        repl = r['repl']
+        if repl == '__SPELL__':                     # edu／gov／tw 逐字母
+            repl = lambda m: ' '.join(m.group(0).upper())
+        out.append((re.compile(r['pattern']), repl))
+    return out
+
+
+GEMINI_RULES = _gemini_rules()
+
+
+def to_speech(text, provider='edge'):
+    """專業寫法 → TTS 唸法（IP、2.4 逐字唸）。
+    edge／azure：再套 pron_zh-TW.json 的權宜詞典（縮寫拆字母…）。
+    gemini：不套權宜詞典（Gemini 唸得好，替換反而怪），改套 voices.json 的 gemini_replace
+    （網址的點唸「點」、單獨 com 前加點、edu／gov／tw 逐字母、拿掉中英文之間的空格）。字幕永遠用原文。"""
     d = lambda s: ''.join(_ZH[int(c)] for c in s)
     text = _IPV4.sub(lambda m: '點'.join(d(g) for g in m.groups()), text)
     text = _DOT2.sub(lambda m: f'{d(m.group(1))}點{d(m.group(2))}', text)
+    if provider == 'gemini':
+        for pat, repl in GEMINI_RULES:
+            text = pat.sub(repl, text)
+        return text
     for term, say in sorted(PRON['詞典'].items(), key=lambda kv: -len(kv[0])):
         text = re.sub(rf'(?<![A-Za-z]){re.escape(term)}(?![A-Za-z0-9])', say, text)
     return text
@@ -134,7 +159,7 @@ def prefetch_gemini(items, cache, proj):
     for text, voice in items:
         if _provider(voice) != 'gemini': continue
         voice = _prep(voice, proj)
-        say = to_speech(text)
+        say = to_speech(text, 'gemini')
         wav = os.path.join(cache, hashlib.md5(_tag(say, voice, 'gemini').encode()).hexdigest()[:12] + '.wav')
         if os.path.exists(wav): continue
         groups.setdefault((voice['_gid'], voice['style'], voice['_model']), []).append((say, wav))
@@ -151,8 +176,8 @@ def prefetch_gemini(items, cache, proj):
 
 def synth_line(text, cache, voice, proj='.'):
     """一句 → 48k mono float32。以內容 hash 快取，改稿只重錄改過的句子。"""
-    say = to_speech(text)
     provider = _provider(voice)
+    say = to_speech(text, provider)
     voice = _prep(voice, proj)
     h = hashlib.md5(_tag(say, voice, provider).encode()).hexdigest()[:12]
     wav = os.path.join(cache, f'{h}.wav')
@@ -297,20 +322,47 @@ def mismatch(items, narration):
     return bad
 
 
+CAP_PUNCT = re.compile(r'[，。、：；？！—―「」『』…,.:;?!\s]')
+
+
+def cap_len(x):
+    """字幕實際顯示的字數（標點與空白在畫面上會清掉，不算）"""
+    return len(CAP_PUNCT.sub('', x))
+
+
+def word_cut(part, k, lo):
+    """沒有標點可斷時，切在 k 以前最後一個詞的交界（不把「號碼」切成兩頁）；找不到就硬切在 k"""
+    try:
+        import jieba
+        jieba.setLogLevel(60)
+        pos, ends = 0, []
+        for w in jieba.cut(part):
+            pos += len(w); ends.append(pos)
+        ok = [e for e in ends if lo <= e <= k]
+        return ok[-1] if ok else k
+    except ImportError:
+        return k
+
+
 def split_caption(text, mx=16):
-    """超過 mx 字的旁白切成多頁字幕：優先在句號/問號，其次逗號/頓號斷開。"""
-    if len(text) <= mx:
+    """超過 mx 字的旁白切成多頁字幕：優先在句號/問號，其次逗號/頓號斷開。字數不算標點
+    （2026-10-05：17 字含句號的句子曾被切出只剩「。」的空白頁）。"""
+    if cap_len(text) <= mx:
         return [text]
     parts = re.split(r'(?<=[。？！；])', text)
     parts = [x for x in parts if x]
     out = []
     for part in parts:
-        while len(part) > mx:
-            cut = max((part.rfind(c, 0, mx + 1) for c in '，、：—'), default=-1)
-            cut = cut + 1 if cut >= mx // 3 else mx
+        while cap_len(part) > mx:
+            k, n = 0, 0                              # 第 mx 個「顯示字」的位置
+            while k < len(part) and (n < mx or CAP_PUNCT.match(part[k])):
+                if not CAP_PUNCT.match(part[k]): n += 1
+                k += 1
+            cut = max((part.rfind(c, 0, k + 1) for c in '，、：—'), default=-1)
+            cut = cut + 1 if cut >= mx // 3 else word_cut(part, k, mx // 2)
             out.append(part[:cut]); part = part[cut:]
         if part:
-            if out and len(out[-1]) + len(part) <= mx: out[-1] += part
+            if out and (cap_len(out[-1]) + cap_len(part) <= mx or not cap_len(part)): out[-1] += part
             else: out.append(part)
     return out
 
@@ -437,6 +489,9 @@ def main():
                 for pg in pages:                     # 長句分頁，時間依字數比例分配
                     t1 = t0 + d * len(pg) / n_all
                     cap_txt = clean_caption(pg)
+                    if not cap_txt.strip():          # 只剩標點的頁：時間併給上一頁
+                        if caps: caps[-1]['to'] = round(t1 * fps)
+                        t0 = t1; continue
                     cps = len(CJK.findall(cap_txt)) / max(t1 - t0, 0.01)
                     if cps > 9.5:
                         fast_caps.append(f"{sc['id']}「{cap_txt}」{cps:.1f} 字/秒")
@@ -467,6 +522,37 @@ def main():
         end = scenes[k + 1]['from'] if k + 1 < len(scenes) else round(total * fps)
         s['dur'] = end - s['from']
     total_frames = round(total * fps)
+    # 字幕最短停留 5/6 秒（Netflix）：後面有空檔就延長，不壓到下一頁
+    min_f = round(fps * 5 / 6)
+    for k, c in enumerate(caps):
+        if c['to'] - c['from'] < min_f:
+            lim = caps[k + 1]['from'] if k + 1 < len(caps) else total_frames
+            c['to'] = max(c['to'], min(c['from'] + min_f, lim))
+    k = 0                                    # 延長後還是太短（緊接下一頁）：跟相鄰頁合併，合起來 ≤ 每頁字數上限才併
+    while k < len(caps):
+        c = caps[k]
+        if c['to'] - c['from'] < min_f:
+            nx = caps[k + 1] if k + 1 < len(caps) else None
+            pv = caps[k - 1] if k else None
+            if nx and nx['from'] - c['to'] <= 3 and cap_len(c['text'] + nx['text']) <= sb.get('capMax', 16):
+                nx['text'] = c['text'] + '　' + nx['text']; nx['from'] = c['from']; caps.pop(k); continue
+            if pv and c['from'] - pv['to'] <= 3 and cap_len(pv['text'] + c['text']) <= sb.get('capMax', 16):
+                pv['text'] = pv['text'] + '　' + c['text']; pv['to'] = c['to']; caps.pop(k); continue
+        k += 1
+    # 品牌素材（封面／片頭／LOGO）：LOGO 複製進 public 給畫面用；封面與片頭由 make_video 在算圖後接上
+    brand = None
+    if sb.get('brand'):
+        bd = sb['brand'] if isinstance(sb['brand'], dict) else {'dir': sb['brand']}
+        bdir = bd.get('dir', '')
+        if not os.path.isabs(bdir): bdir = os.path.join(os.path.dirname(os.path.abspath(a.storyboard)), bdir)
+        brand = {'dir': bdir}
+        lg = os.path.join(bdir, bd.get('logo', 'logo.png'))
+        if bd.get('logo', 'logo.png') and os.path.exists(lg):
+            shutil.copy(lg, os.path.join(pub, 'brand_logo' + os.path.splitext(lg)[1])); brand['logo'] = 'brand_logo' + os.path.splitext(lg)[1]
+        for k2, dflt in (('cover', 'cover.jpg'), ('intro', 'intro.mp4')):
+            f2 = os.path.join(bdir, bd.get(k2, dflt))
+            if bd.get(k2, dflt) and os.path.exists(f2): brand[k2] = f2
+        print('  品牌素材：', '、'.join(k2 for k2 in ('cover', 'intro', 'logo') if k2 in brand) or '（資料夾裡找不到 cover／intro／logo）')
 
     voice_file = None
     if voice_parts:
@@ -501,7 +587,7 @@ def main():
             'hud': sb.get('hud'), 'music': music_file, 'voice': voice_file,
             'musicVolume': sb.get('musicVolume', 0.5 if mode == 'teach' else 1.0), 'duckTo': sb.get('duckTo', 0.14),
             'duck': duck, 'impacts': [round(x * fps) for x in impacts], 'captions': caps if sb.get('captions', True) else [],
-            'scenes': scenes, 'voiceLines': vlines, 'bpm': bpm, 'narrator': sb.get('narrator')}
+            'scenes': scenes, 'voiceLines': vlines, 'bpm': bpm, 'narrator': sb.get('narrator'), 'brand': brand}
     os.makedirs(os.path.join(proj, 'src', 'data'), exist_ok=True)
     json.dump(spec, open(os.path.join(proj, 'src', 'data', 'spec.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     if missing:

@@ -19,9 +19,9 @@ export const lerp = (f: number, a: number, b: number, from = 0, to = 1, e = ease
 export type Fill = {d: string; c: string; o?: number};
 export type Shape = {strokes: string[]; fills?: Fill[]; w?: number; ink?: string; extra?: React.ReactNode; o?: [number, number]};
 export type Sfx = 'pop' | 'ding' | 'buzz' | 'none';
-export type DrawItem = {kind: 'shape'; at: number; dur: number; x: number; y: number; s?: number; rot?: number; shape: Shape; sfx?: Sfx};
+export type DrawItem = {kind: 'shape'; at: number; dur: number; x: number; y: number; s?: number; rot?: number; shape: Shape; sfx?: Sfx; boxId?: string};
 export type TextItem = {kind: 'text'; at: number; dur: number; x: number; y: number; text: string; size: number; color?: string;
-  bold?: boolean; anchor?: 'start' | 'middle'; sfx?: Sfx};
+  bold?: boolean; anchor?: 'start' | 'middle'; sfx?: Sfx; box?: string};   // box＝所屬容器（品檢：字不可超出）
 export type Item = DrawItem | TextItem;
 
 const lenCache = new Map<string, number>();
@@ -71,7 +71,7 @@ export const DrawShape: React.FC<{it: DrawItem; f: number}> = ({it, f}) => {
   const s = (it.s ?? 1) * bump;
   const [ox, oy] = shape.o ?? [0, 0];
   return (
-    <g transform={`translate(${it.x} ${it.y}) rotate(${it.rot ?? 0}) scale(${s}) translate(${ox} ${oy})`}>
+    <g data-qa-box={it.boxId} transform={`translate(${it.x} ${it.y}) rotate(${it.rot ?? 0}) scale(${s}) translate(${ox} ${oy})`}>
       <g opacity={fillP}>{shape.fills?.map((fl, i) => <path key={i} d={fl.d} fill={fl.c} opacity={fl.o ?? 1} />)}</g>
       {shape.strokes.map((d, i) => {
         const vis = Math.max(0, Math.min(lens[i], L));
@@ -94,7 +94,7 @@ export const DrawText: React.FC<{it: TextItem; f: number; id: string; hand: stri
   return (
     <g>
       <clipPath id={id}><rect x={x0 - 40} y={it.y - it.size * 1.3} width={(w + 90) * p} height={it.size * 1.8} /></clipPath>
-      <text clipPath={`url(#${id})`} x={it.x} y={it.y} textAnchor={it.anchor ?? 'start'} style={{fontFamily: it.bold ? bold : hand}}
+      <text data-qa-in={it.box} clipPath={`url(#${id})`} x={it.x} y={it.y} textAnchor={it.anchor ?? 'start'} style={{fontFamily: it.bold ? bold : hand}}
         fontWeight={it.bold ? 900 : 700} fontSize={it.size} fill={it.color ?? WB.ink}>{it.text}</text>
     </g>
   );

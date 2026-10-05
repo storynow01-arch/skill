@@ -28,6 +28,7 @@ metadata:
 | 「範本C」「快剪範本」 | 照 [`templates/範本C_動態字體快剪/README.md`](templates/範本C_動態字體快剪/README.md)：任何文本 → 動態字體快剪 |
 | 「範本D」「白板手繪」「手繪範本」 | 照 [`templates/範本D_白板手繪/README.md`](templates/範本D_白板手繪/README.md)：任何文本 → 白板手繪（一支馬克筆先描線再上色，一鏡到底） |
 | 「範本E」「教學課程產線」「整門課的教學影片」 | 照 [`templates/範本E_教學課程產線/README.md`](templates/範本E_教學課程產線/README.md)：一整門課 → 幾十節風格一致（garychen-dark 深色科技風）的教學影片，合併成集；附四關品檢；配音用 **Gemini Flash TTS（自動最新版）**；**完整 14 步流程（文稿檢查→逐字審稿→選聲音→配音→AI 耳朵聽檢→建置→版面探針→渲染→品檢→交付）見 [`templates/範本E_教學課程產線/規範/完整工作流程.md`](templates/範本E_教學課程產線/規範/完整工作流程.md)** |
+| 「加封面／片頭／LOGO」 | storyboard 加 `"brand": {"dir": "<素材資料夾>"}`（cover.jpg、intro.mp4、logo.png），範本 A～D 都適用，細節見 [`templates/範本風格_場景語彙.md`](templates/範本風格_場景語彙.md) 的「品牌素材」 |
 | 「用範本做」＋文本（沒指定哪個） | AskUserQuestion 讓使用者選 A／B／C／D（附一句特色），或「全部都做」 |
 | 「做影片」＋資料 | 走完整十一步流程（下方） |
 | 「用 XX 概念做這份內容」 | 從第 ② 步開始，第 ④ 步直接採用指定概念，但仍要重新設計分鏡 |
@@ -96,6 +97,7 @@ final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用
 ## 硬規則
 - **文稿寫專業寫法，唸法交給程式**：網址寫 mail.google.com（不寫「mail 點 google 點 com」）、年份與百分比用阿拉伯數字；配音前跑 `final_qa/term_check.py`，必改 0 才配音。
 - **配音一律用 Gemini Flash TTS 的最新正式版**（`gemini_tts.py` 的 `model="auto"` 自動挑；不要寫死舊模型名）。金鑰只放 `.env.local`，不可進 git。
+- **配音前先讀 [`references/gemini-voice-lessons.md`](references/gemini-voice-lessons.md)**：網址唸法（字母間的 . → 點、單獨 com 前加點、edu／gov／tw 逐字母）、「；」與「……」的切句坑、AI 耳朵唸法約定。使用者說「用我的聲音／克隆聲音」→ 照 `engine/scripts/voices.json` 的 `storynow01`（voice_id＋選定風格）。
 - 數字、校名、名次**逐條對資料**；資料與提示詞衝突時照資料，並明講差異。
 - 會轉傳的影片：手機、個人 Email、學生姓名等**先問再放**。
 - 回覆一律繁體中文。

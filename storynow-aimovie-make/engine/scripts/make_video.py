@@ -40,15 +40,20 @@ def sync_engine():
     print('✓ 已同步 skill 範本程式 → src/tpl、src/lib')
 
 
-def known_icons():
+def known_icons(tpl=None):
     t = open(os.path.join(SRC, 'lib', 'sketches.ts'), encoding='utf-8').read()
     sk = set(re.findall(r'^\s{2}(\w+): \{paths', t, re.M))
     emo = dict(re.findall(r"'([^']+)': '(\w+)'", t.split('export const EMOJI_TO_SKETCH')[1]))
+    if tpl == 'D':   # 範本D 先查白板彩色圖示庫（lib/whiteboard.tsx 的 WB_ICONS＋EXTRA_EMOJI），找不到才退回線稿
+        w = open(os.path.join(SRC, 'lib', 'whiteboard.tsx'), encoding='utf-8').read()
+        body = w.split('export const WB_ICONS')[1].split('const EXTRA_EMOJI')[0]
+        sk |= set(re.findall(r'^\s{2}(\w+)(?=: \(\)|,)', body, re.M))
+        emo.update(re.findall(r"'([^']+)': '(\w+)'", w.split('const EXTRA_EMOJI')[1].split('};')[0]))
     return sk, emo
 
 
-def check_icons(sb):
-    sk, emo = known_icons()
+def check_icons(sb, tpl=None):
+    sk, emo = known_icons(tpl)
     used = []
     def walk(o):
         if isinstance(o, dict):
@@ -65,6 +70,90 @@ def check_icons(sb):
     else:
         print(f'✓ 圖示 {len(used)} 個全部有線稿')
     return miss
+
+
+# ── 品牌素材：封面＋片頭＋淡入正片（同範本E assemble.py 的順序；LOGO 已在畫面裡）──────────
+COVER_SEC, FADE_SEC = 3.0, 0.6
+VOPTS = ['-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-r', '30']
+AOPTS = ['-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-ac', '2']
+
+
+def ff(*args):
+    sh(['ffmpeg', '-v', 'error', '-y', *args])
+
+
+def black_rows(img_path):
+    """封面上下緣的黑邊列數（截圖帶進來的視窗標題列：一列裡有 ≥3% 寬的連續近黑色就算）"""
+    from PIL import Image
+    import numpy as np
+    g = np.asarray(Image.open(img_path).convert('L'))
+    h, w = g.shape
+
+    def is_bar(row):
+        dark = row < 30
+        run = best = 0
+        for v in dark:
+            run = run + 1 if v else 0
+            best = max(best, run)
+        return best >= w * 0.03
+    top = 0
+    while top < h // 6 and is_bar(g[top]): top += 1
+    bot = 0
+    while bot < h // 6 and is_bar(g[h - 1 - bot]): bot += 1
+    return top, bot
+
+
+def has_audio(path):
+    r = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', path],
+                       capture_output=True, text=True)
+    return bool(r.stdout.strip())
+
+
+def first_color(video, t=1.0):
+    """正片開場的底色（片頭淡出到這個顏色，接正片不跳）"""
+    r = subprocess.run(['ffmpeg', '-v', 'error', '-ss', str(t), '-i', video, '-frames:v', '1', '-vf', 'crop=iw/3:ih/5:0:0,scale=1:1',
+                        '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], capture_output=True)
+    b = r.stdout[:3] or b'\xef\xef\xf0'
+    return '0x%02x%02x%02x' % tuple(b)
+
+
+def brand_assemble(spec, main, out):
+    """封面（3 秒，裁掉黑邊）→ 片頭（放大到 1080p）→ 片頭最後一格淡到正片底色 → 正片。回傳正片前面加了幾秒"""
+    b = spec.get('brand') or {}
+    if not (b.get('cover') or b.get('intro')):
+        return 0.0
+    work = os.path.join('out', '_brand'); os.makedirs(work, exist_ok=True)
+    parts, lead = [], 0.0
+    if b.get('cover'):
+        top, bot = black_rows(b['cover'])
+        if top or bot: print(f'✓ 封面裁掉黑邊：上 {top} 列、下 {bot} 列')
+        ff('-loop', '1', '-t', str(COVER_SEC), '-i', b['cover'], '-f', 'lavfi', '-t', str(COVER_SEC), '-i', 'anullsrc=r=48000:cl=stereo',
+           '-vf', f'crop=iw:ih-{top + bot}:0:{top},scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setsar=1',
+           *VOPTS, *AOPTS, '-shortest', os.path.join(work, 'cover.mp4'))
+        parts.append(os.path.join(work, 'cover.mp4')); lead += COVER_SEC
+    if b.get('intro'):
+        vf = 'scale=1920:-2:flags=lanczos,crop=1920:1080,setsar=1'
+        if has_audio(b['intro']):
+            ff('-i', b['intro'], '-vf', vf, *VOPTS, *AOPTS, os.path.join(work, 'intro.mp4'))
+        else:
+            ff('-i', b['intro'], '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-vf', vf, *VOPTS, *AOPTS, '-shortest', os.path.join(work, 'intro.mp4'))
+        parts.append(os.path.join(work, 'intro.mp4'))
+        last = os.path.join(work, 'last.png')
+        ff('-sseof', '-0.1', '-i', os.path.join(work, 'intro.mp4'), '-frames:v', '1', last)
+        color = first_color(main)
+        ff('-loop', '1', '-t', str(FADE_SEC), '-i', last, '-f', 'lavfi', '-t', str(FADE_SEC), '-i', 'anullsrc=r=48000:cl=stereo',
+           '-vf', f'fade=t=out:st=0:d={FADE_SEC}:color={color},setsar=1', *VOPTS, *AOPTS, '-shortest', os.path.join(work, 'fade.mp4'))
+        parts.append(os.path.join(work, 'fade.mp4'))
+        r = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', os.path.join(work, 'intro.mp4')], capture_output=True, text=True)
+        lead += float(r.stdout.strip() or 0) + FADE_SEC
+    parts.append(main)
+    ins = sum((['-i', x] for x in parts), [])
+    fc = ''.join(f'[{i}:v]setsar=1,fps=30,format=yuv420p[v{i}];[{i}:a]aresample=48000,aformat=channel_layouts=stereo[a{i}];' for i in range(len(parts)))
+    fc += ''.join(f'[v{i}][a{i}]' for i in range(len(parts))) + f'concat=n={len(parts)}:v=1:a=1[v][a]'
+    ff(*ins, '-filter_complex', fc, '-map', '[v]', '-map', '[a]', *VOPTS, *AOPTS, out)
+    shutil.rmtree(work, ignore_errors=True)
+    print(f'✓ 已接上品牌素材：正片前 {lead:.1f} 秒（' + '、'.join(k for k in ('cover', 'intro') if b.get(k)) + '）')
+    return lead
 
 
 def main():
@@ -84,7 +173,7 @@ def main():
         build_sb = os.path.join(os.path.dirname(os.path.abspath(a.storyboard)), f'.build_{T}.json')
         json.dump(sb, open(build_sb, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
         print('✓ 配樂用範本預設：', info['music'])
-    check_icons(sb)
+    check_icons(sb, T)
     py = sys.executable
     os.makedirs('qa', exist_ok=True)
     if not a.no_qa:   # ⓪ 文稿檢查（2026-10-05）：網址／協定／產品名寫法、年份百分比、大陸用語、唸法寫進稿子
@@ -111,13 +200,23 @@ def main():
     raw, final = f'out/_raw_{T}.mp4', f'out/{name}_範本{T}_{info["name"]}.mp4'
     sh(['npx', 'remotion', 'render', 'src/index.ts', comp, raw, '--concurrency=4', '--crf=18', '--audio-codec=aac', '--audio-bitrate=192k', '--log=error'] if os.name != 'nt'
        else f'npx remotion render src/index.ts {comp} {raw} --concurrency=4 --crf=18 --audio-codec=aac --audio-bitrate=192k --log=error')
-    sh(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-c:v', 'copy', '-af', 'loudnorm=I=-14:TP=-1:LRA=9', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', final])
-    os.remove(raw)
+    spec = json.load(open(os.path.join('src', 'data', 'spec.json'), encoding='utf-8'))
+    joined = f'out/_joined_{T}.mp4'
+    lead = brand_assemble(spec, raw, joined)          # storyboard 有 "brand" 才會接封面／片頭
+    src = joined if lead else raw
+    # 峰值上限 −1.5 dBTP（−1 在 AAC 編碼後會浮到 −0.7，2026-10-05 最終品檢 F6 抓到）
+    sh(['ffmpeg', '-v', 'error', '-y', '-i', src, '-c:v', 'copy', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=9', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', final])
+    for x in (raw, joined):
+        if os.path.exists(x): os.remove(x)
+    if lead:
+        json.dump({'lead': lead}, open(os.path.join('qa', 'brand_lead.json'), 'w', encoding='utf-8'))
     if not a.no_qa:
-        sh([py, os.path.join(HERE, 'qa.py'), '--comp', comp, '--skip-layout', '--skip-asr', '--video', final], check=False)
+        sh([py, os.path.join(HERE, 'qa.py'), '--comp', comp, '--skip-layout', '--skip-asr', '--video', final, '--lead', f'{lead:.3f}'], check=False)
         shutil.copy('qa_report.md', f'qa/post_{T}.md')
         if os.path.exists('qa_contact.jpg'): shutil.copy('qa_contact.jpg', f'qa/contact_{T}.jpg')
     print(f'\n✅ 成片：{final}')
+    if lead:
+        print(f'   （前 {lead:.1f} 秒是封面＋片頭；最終品檢請加 --jump-skip 0-{lead:.1f} --silence-ok {COVER_SEC + 0.5:.1f}）')
     readme = os.path.join(SKILL, 'templates', info['dir'], 'README.md')
     t = open(readme, encoding='utf-8').read()
     m = re.search(r'## 概念忠實度檢查.*?\n\n(?=## )', t, re.S)

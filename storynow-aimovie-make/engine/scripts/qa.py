@@ -40,7 +40,7 @@ def layout_check(spec, comp):
         f = item.get('frame', -1)
         sid = next((s['id'] for s in spec['scenes'] if s['from'] <= f < s['from'] + s['dur']), '?')
         for iss in item.get('issues', []):
-            lvl = '必修' if iss['kind'] in ('超出畫面', '闖進字幕區') else '建議'
+            lvl = '必修' if iss['kind'] in ('超出畫面', '闖進字幕區', '文字超出圖形', '壓到 LOGO') else '建議'
             out.append((lvl, f'版面 {sid} @{f / spec["fps"]:.1f}s', f"{iss['kind']}：{iss['detail']}"))
     # 同一個問題在三個取樣點重複出現時只留一次
     seen, uniq = set(), []
@@ -91,10 +91,10 @@ def asr_check(spec, threshold):
 
 
 # ───────────── 3. 成片 ─────────────
-def video_check(spec, video):
+def video_check(spec, video, lead=0.0):
     out = []
     dur = float(run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', video]).stdout.strip() or 0)
-    exp = spec['totalFrames'] / spec['fps']
+    exp = spec['totalFrames'] / spec['fps'] + lead      # lead＝正片前接上的封面＋片頭秒數
     out.append(('通過' if abs(dur - exp) < 0.5 else '必修', '長度', f'{dur:.2f}s（預期 {exp:.2f}s）'))
     r = run(['ffmpeg', '-hide_banner', '-i', video, '-vf', 'blackdetect=d=0.5:pix_th=0.06', '-af', 'silencedetect=n=-45dB:d=2.5,ebur128', '-f', 'null', '-'])
     log = r.stderr
@@ -134,6 +134,7 @@ def contact_sheet(spec, video, path='qa_contact.jpg'):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--video'); ap.add_argument('--comp', default='Video')
+    ap.add_argument('--lead', type=float, default=0.0, help='成片前面接了封面＋片頭幾秒（長度檢查用）')
     ap.add_argument('--skip-layout', action='store_true'); ap.add_argument('--skip-asr', action='store_true')
     ap.add_argument('--asr-threshold', type=float, default=0.8)
     a = ap.parse_args()
@@ -146,7 +147,7 @@ def main():
         print('② 旁白回聽…'); rows += asr_check(spec, a.asr_threshold)
     sheet = None
     if a.video:
-        print('③ 成片檢查…'); rows += video_check(spec, a.video); sheet = contact_sheet(spec, a.video)
+        print('③ 成片檢查…'); rows += video_check(spec, a.video, a.lead); sheet = contact_sheet(spec, a.video)
     must = [r for r in rows if r[0] == '必修']
     icon = {'必修': '❌', '建議': '⚠️', '通過': '✅', '資訊': 'ℹ️'}
     md = ['# 品檢報告', '', f"- 結果：**{'未通過（' + str(len(must)) + ' 項必修）' if must else '通過'}**",

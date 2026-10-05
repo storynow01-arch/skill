@@ -42,6 +42,11 @@ and high-impact, and the audio should be seamlessly programmed in with precise, 
 | 片尾 | 最後一個場景（通常是 recap）設 `"minSec"`，比旁白長約 3 秒，留給拉遠全景（例：旁白 10 秒 → `"minSec": 13`） |
 | 套件 | 需要 `@remotion/paths`（已寫進 `engine/template/package.json`；舊專案要補 `npm i @remotion/paths@4.0.300`） |
 
+## 品牌素材與版面品檢（2026-10-05）
+- 封面／片頭／LOGO：storyboard 加 `"brand"`（見 `../範本風格_場景語彙.md`「品牌素材」）。有 LOGO 時，標題寬度上限從 1500 縮成 1240，片尾全景放在 LOGO 下方。
+- 卡片、標籤、選項框都標成「容器」（`data-qa-box`），框裡的字標 `data-qa-in`：版面探針檢查字有沒有超出框、或被框線（含圓孔、尖角）穿過，有就列必修。
+  起因：quiz 的「小測驗」原本借用吊牌圖示，字壓到左框與圓孔；舊探針只量文字對文字，看不到。現在標籤一律依字寬畫框。
+
 ## 場景對應
 | 場景 | 畫面 |
 |---|---|

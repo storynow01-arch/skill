@@ -90,6 +90,41 @@ const measure = (W: number, H: number) => {
     const hx = Math.min(b.x + b.w, cap.right) - Math.max(b.x, cap.left);
     if (hx > 20 && b.y + b.h > cap.top + 4 && b.y < cap.bottom) issues.push({kind: '闖進字幕區', detail: `「${b.text}」`});
   }
+  // ⑤ 文字超出所屬圖形（2026-10-05：「小測驗」字壓到吊牌框，原本的量測只看文字對文字，看不到 SVG 圖形）
+  //    容器圖形標 data-qa-box="id"、放在裡面的字標 data-qa-in="id"
+  for (const el of Array.from(document.querySelectorAll('[data-qa-in]'))) {
+    if (visible(el) < 0.35) continue;
+    const box = document.querySelector(`[data-qa-box="${el.getAttribute('data-qa-in')}"]`);
+    if (!box || visible(box) < 0.35) continue;
+    const r = el.getBoundingClientRect(), bb = box.getBoundingClientRect();
+    if (r.width < 2 || bb.width < 2 || r.right < 0 || r.left > W) continue;
+    const label = (el.textContent ?? '').trim().slice(0, 24);
+    const out = Math.max(bb.left - r.left, r.right - bb.right, bb.top - r.top, r.bottom - bb.bottom);
+    if (out > 2) { issues.push({kind: '文字超出圖形', detail: `「${label}」超出所屬框 ${Math.round(out)}px`}); continue; }
+    // 框線（含圓孔、尖角）穿過文字：沿每條描邊取樣，點落在文字範圍內就算（只看外框範圍抓不到，2026-10-05 負面測試）
+    let hits = 0;
+    for (const path of Array.from(box.querySelectorAll('path')) as SVGPathElement[]) {
+      const st = getComputedStyle(path).stroke;
+      if (!st || st === 'none') continue;
+      const m = path.getScreenCTM(); if (!m) continue;
+      const len = path.getTotalLength(), n = Math.min(400, Math.max(40, Math.round(len / 3)));
+      for (let i = 0; i <= n; i++) {
+        const q = path.getPointAtLength((len * i) / n), x = m.a * q.x + m.c * q.y + m.e, y = m.b * q.x + m.d * q.y + m.f;
+        if (x > r.left + 2 && x < r.right - 2 && y > r.top + r.height * 0.15 && y < r.bottom - r.height * 0.15) hits++;
+      }
+    }
+    if (hits) issues.push({kind: '文字超出圖形', detail: `「${label}」壓到所屬框的框線（${hits} 點）`});
+  }
+  // ⑥ LOGO 保留區：任何文字或容器圖形碰到 LOGO
+  const logo = document.querySelector('[data-qa="logo"]');
+  if (logo && visible(logo) >= 0.35) {
+    const L = logo.getBoundingClientRect();
+    const hit = (x: number, y: number, w: number, h: number) =>
+      Math.min(x + w, L.right) - Math.max(x, L.left) > 2 && Math.min(y + h, L.bottom) - Math.max(y, L.top) > 2;
+    for (const b of leaves) if (hit(b.x, b.y, b.w, b.h)) issues.push({kind: '壓到 LOGO', detail: `「${b.text}」`});
+    for (const el of Array.from(document.querySelectorAll('[data-qa-box]')))
+      if (visible(el) >= 0.35) { const r = el.getBoundingClientRect(); if (hit(r.left, r.top, r.width, r.height)) issues.push({kind: '壓到 LOGO', detail: `圖形 ${el.getAttribute('data-qa-box')}`}); }
+  }
   return {texts: leaves.length, issues};
 };
 

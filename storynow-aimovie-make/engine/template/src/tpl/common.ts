@@ -4,7 +4,7 @@
    （欄位定義見 templates/範本風格_場景語彙.md） */
 import type {Spec} from '../Video';
 
-export type TplSpec = Spec & {qa?: boolean; tplName?: string};
+export type TplSpec = Spec & {qa?: boolean; tplName?: string; brand?: {logo?: string; cover?: string; intro?: string} | null};
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TplScene = {p: any; cues: number[]; dur: number; from: number; id: string};
 

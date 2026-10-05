@@ -11,6 +11,7 @@ import {NeonIcon} from '../lib/iconkit';
 import {Shatter} from '../lib/kinetic';
 import {Tunnel} from '../lib/tunnel';
 import {TplSpec, captionAt, cue, fit, sceneIndex, wrap} from './common';
+import {BrandLogo} from './brand';
 
 const TC = loadTC('normal', {weights: ['700', '900'], ignoreTooManyRequestsWarning: true}).fontFamily;
 const EN = loadInter('normal', {weights: ['900']}).fontFamily;
@@ -302,7 +303,7 @@ export const TemplateC: React.FC<TplSpec & {bpm?: number}> = (spec) => {
   const cur = spec.scenes[idx];
   const flash = idx > 0 && f - cur.from < 3;
   const cap = captionAt(spec, f, 6);
-  const fade = Math.max(0, 1 - f / 4, (f - (spec.totalFrames - 16)) / 16);
+  const fade = Math.max(0, spec.brand ? 0 : 1 - f / 4, (f - (spec.totalFrames - 16)) / 16);
   return (
     <AbsoluteFill style={{background: BK}}>
       {spec.scenes.map((s) => {
@@ -312,6 +313,7 @@ export const TemplateC: React.FC<TplSpec & {bpm?: number}> = (spec) => {
       {flash && <AbsoluteFill style={{background: AC, opacity: 1 - (f - cur.from) / 3}} />}
       {cap && <div data-qa="caption" style={{position: 'absolute', left: 0, right: 0, bottom: 40, display: 'flex', justifyContent: 'center'}}>
         <div style={{fontFamily: TC, fontWeight: 700, fontSize: 36, color: WH, background: 'rgba(0,0,0,0.8)', padding: '8px 28px', borderLeft: `6px solid ${AC}`, maxWidth: 1600}}>{cap.text}</div></div>}
+      <BrandLogo logo={spec.brand?.logo} />
       <AbsoluteFill style={{background: '#000', opacity: fade, pointerEvents: 'none'}} />
       {spec.qa && <QaProbe w={spec.width} h={spec.height} />}
       {spec.music && <Audio src={staticFile(spec.music)} volume={spec.musicVolume ?? 0.55} />}

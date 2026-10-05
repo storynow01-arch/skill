@@ -38,6 +38,16 @@ export const SKETCHES: Record<string, Sketch> = {
   calculator: {paths: ['M 50 25 h 100 v 150 h -100 Z', 'M 62 40 h 76 v 30 h -76 Z', 'M 68 95 h 14 M 93 95 h 14 M 118 95 h 14 M 68 125 h 14 M 93 125 h 14 M 118 125 h 14 M 68 155 h 14 M 93 155 h 14 M 118 155 h 14'], alive: 'blink', dots: [[125, 55]]},
   network: {paths: ['M 100 40 a 18 18 0 1 0 0.1 0', 'M 40 140 a 18 18 0 1 0 0.1 0', 'M 160 140 a 18 18 0 1 0 0.1 0', 'M 92 74 l -40 52 M 108 74 l 40 52 M 58 158 h 84'], alive: 'pulse'},
   warning: {paths: ['M 100 30 l 75 135 h -150 Z', 'M 100 75 v 45', 'M 100 140 v 5'], alive: 'pulse', fill: '#FF9E9E'},
+  // 2026-10-05 補（07_skill實作 1-1 實測時顯示「?」的 9 個）
+  gauge: {paths: ['M 30 140 a 70 70 0 0 1 140 0', 'M 42 105 l 12 7 M 70 78 l 7 11 M 100 68 v 14 M 130 78 l -7 11 M 158 105 l -12 7', 'M 100 140 l 40 -45', 'M 100 140 a 8 8 0 1 0 0.1 0'], alive: 'bob'},
+  packet: {paths: ['M 35 60 h 130 v 90 h -130 Z', 'M 35 85 h 130', 'M 50 72 h 30 M 95 72 h 20 M 130 72 h 20', 'M 55 110 h 90 M 55 130 h 60'], alive: 'bob'},
+  road: {paths: ['M 75 30 l -50 145', 'M 125 30 l 50 145', 'M 100 40 v 20 M 100 80 v 25 M 100 125 v 35'], alive: 'bob'},
+  stamp: {paths: ['M 85 35 a 15 15 0 1 0 30 0 a 15 15 0 1 0 -30 0', 'M 92 50 v 35 h 16 v -35', 'M 50 85 h 100 v 25 h -100 Z', 'M 40 110 h 120 v 14 h -120 Z', 'M 50 160 h 100'], alive: 'bob'},
+  tag: {paths: ['M 35 60 h 85 l 45 40 l -45 40 h -85 Z', 'M 120 100 a 8 8 0 1 0 0.1 0', 'M 55 85 h 40 M 55 115 h 30'], alive: 'bob'},
+  ear: {paths: ['M 130 55 q -10 -30 -45 -25 q -35 8 -35 50 q 0 25 18 40 q 14 12 10 32 q 2 22 24 20 q 16 -2 18 -22 q 2 -18 16 -32 q 18 -20 -6 -63', 'M 85 85 q 8 -22 28 -10 q 12 12 -8 32'], alive: 'pulse'},
+  document: {paths: ['M 50 25 h 70 l 30 30 v 120 h -100 Z', 'M 120 25 v 30 h 30', 'M 70 85 h 60 M 70 110 h 60 M 70 135 h 40'], alive: 'bob'},
+  shuffle: {paths: ['M 25 60 h 40 q 30 0 50 40 q 20 40 50 40 h 10', 'M 25 140 h 40 q 30 0 50 -40 q 20 -40 50 -40 h 10', 'M 165 45 l 15 15 l -15 15', 'M 165 125 l 15 15 l -15 15'], alive: 'bob'},
+  repeat: {paths: ['M 50 100 a 50 50 0 0 1 90 -30', 'M 150 100 a 50 50 0 0 1 -90 30', 'M 142 45 v 27 h -27', 'M 58 155 v -27 h 27'], alive: 'spin'},
 };
 
 export const EMOJI_TO_SKETCH: Record<string, string> = {
@@ -47,6 +57,7 @@ export const EMOJI_TO_SKETCH: Record<string, string> = {
   '📖': 'book', '📚': 'book', '📘': 'book', '🔍': 'magnifier', '🔎': 'magnifier', '⏰': 'clock', '🕒': 'clock', '⏱️': 'clock', '🏆': 'trophy', '🏅': 'medal', '🥇': 'medal',
   '🧑': 'person', '👤': 'person', '🙋': 'person', '🧑‍💻': 'person', '🗄️': 'database', '🗃️': 'database', '💽': 'database', '👨‍💻': 'code', '⌨️': 'code', '🧾': 'checklist', '📋': 'checklist',
   '📷': 'camera', '📸': 'camera', '🎥': 'camera', '🚀': 'rocket', '📏': 'ruler', '📐': 'ruler', '🧮': 'calculator', '🔢': 'calculator', '🔗': 'network', '🕸️': 'network', '⚠️': 'warning', '❗': 'warning',
+  '🏷️': 'tag', '🏷': 'tag', '👂': 'ear', '📄': 'document', '📃': 'document', '📝': 'document', '🔀': 'shuffle', '🔁': 'repeat', '🔄': 'repeat', '🛣️': 'road',
 };
 
 export const sketchFor = (nameOrEmoji?: string): Sketch | null => {

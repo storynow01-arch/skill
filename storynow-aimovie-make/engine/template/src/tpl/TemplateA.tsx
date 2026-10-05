@@ -8,6 +8,7 @@ import {loadFont as loadTC} from '@remotion/google-fonts/NotoSansTC';
 import {QaProbe} from '../QaProbe';
 import {PixelIcon} from '../lib/iconkit';
 import {TplSpec, captionAt, cue, fit, wrap} from './common';
+import {BrandLogo} from './brand';
 
 const PX = loadPixel('normal', {weights: ['400']}).fontFamily;
 const TC = loadTC('normal', {weights: ['900'], ignoreTooManyRequestsWarning: true}).fontFamily;
@@ -380,7 +381,7 @@ export const TemplateA: React.FC<TplSpec & {narrator?: string}> = (spec) => {
   const dissolve = win && !onMap ? (f - (win.end - 8)) / 8 : 1;
   const cleared = wins.filter((w) => w && f >= w.start + 4).length;
   const nClear = Math.max(1, spec.scenes.length - 1);
-  const fade = Math.max(0, 1 - f / 8, (f - (total - 24)) / 24);
+  const fade = Math.max(0, spec.brand ? 0 : 1 - f / 8, (f - (total - 24)) / 24);
   const cap = captionAt(spec, f, 8);
   const lines = cap ? wrap(cap.text, 30) : [];
   return (
@@ -393,7 +394,7 @@ export const TemplateA: React.FC<TplSpec & {narrator?: string}> = (spec) => {
         return Comp ? <Sequence key={s.id} from={s.from} durationInFrames={s.dur}><Comp p={s.props} cues={s.cues} dur={s.dur} /></Sequence> : null;
       })}
       {onMap && win && <WorldMap f={f} spec={spec} i={wi} w={win} />}
-      <div style={{position: 'absolute', left: 40, top: 30, right: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+      <div style={{position: 'absolute', left: 40, top: 30, right: spec.brand?.logo ? 300 : 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
         <div style={{display: 'flex', alignItems: 'center', gap: 18}}>
           <T px size={22} color={C.gold}>{`LV.${1 + cleared}`}</T>
           <div style={{width: 320, height: 24, border: `5px solid ${C.white}`, background: C.dark}}><div style={{width: `${(cleared / nClear) * 100}%`, height: '100%', background: C.green}} /></div>
@@ -419,6 +420,7 @@ export const TemplateA: React.FC<TplSpec & {narrator?: string}> = (spec) => {
         );
       })()}
       <AbsoluteFill style={{background: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0 2px, transparent 2px 4px)', pointerEvents: 'none'}} />
+      <BrandLogo logo={spec.brand?.logo} />
       <AbsoluteFill style={{background: '#000', opacity: fade, pointerEvents: 'none'}} />
       {spec.qa && <QaProbe w={spec.width} h={spec.height} />}
       {spec.music && <Audio src={staticFile(spec.music)} volume={spec.musicVolume ?? 0.45} />}

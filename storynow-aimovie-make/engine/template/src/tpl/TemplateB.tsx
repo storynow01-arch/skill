@@ -8,6 +8,7 @@ import {loadFont as loadHand} from '@remotion/google-fonts/Caveat';
 import {makePenKit} from '../lib/penkit';
 import {QaProbe} from '../QaProbe';
 import {TplSpec, captionAt, cue, fit, sceneIndex, textW, wrap} from './common';
+import {BrandLogo} from './brand';
 
 const KAI = loadKai('normal', {weights: ['700'], ignoreTooManyRequestsWarning: true}).fontFamily;
 const HAND = loadHand('normal', {weights: ['700']}).fontFamily;
@@ -231,7 +232,7 @@ export const TemplateB: React.FC<TplSpec> = (spec) => {
   if (outro > 0) cam = cam.map((v, k) => v + ([W / 2, H / 2, Math.min(1920 / W, 1080 / H) * 0.95, 0][k] - v) * io(outro));
   const [cx, cy, z, rot] = cam;
   const cap = captionAt(spec, f, 8);
-  const fade = Math.max(0, 1 - f / 8, (f - (spec.totalFrames - 15)) / 15);
+  const fade = Math.max(0, spec.brand ? 0 : 1 - f / 8, (f - (spec.totalFrames - 15)) / 15);
   return (
     <AbsoluteFill style={{background: '#8A6A4A', overflow: 'hidden'}}>
       <AbsoluteFill style={{backgroundImage: 'repeating-linear-gradient(90deg, #8A6A4A 0 38px, #7E5F41 38px 40px, #94735A 40px 90px)'}} />
@@ -255,6 +256,7 @@ export const TemplateB: React.FC<TplSpec> = (spec) => {
             boxShadow: '0 6px 14px rgba(0,0,0,0.25)', borderLeft: '10px dashed #F2C94C', borderRight: '10px dashed #F2C94C'}}>{cap.text}</div>
         </div>
       )}
+      <BrandLogo logo={spec.brand?.logo} />
       <AbsoluteFill style={{background: '#000', opacity: fade, pointerEvents: 'none'}} />
       {spec.qa && <QaProbe w={spec.width} h={spec.height} />}
       {spec.music && <Audio src={staticFile(spec.music)} volume={spec.musicVolume ?? 0.5} />}

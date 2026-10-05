@@ -9,6 +9,7 @@ import {loadFont as loadSans} from '@remotion/google-fonts/NotoSansTC';
 import {DrawShape, DrawText, Item, Marker, Shape, Sfx, WB, arrow, box, card, check, circleMark, cross, iconFor, lerp, tipOf, underline, wbTextW} from '../lib/whiteboard';
 import {QaProbe} from '../QaProbe';
 import {TplSpec, captionAt, cue, wrap} from './common';
+import {BrandLogo} from './brand';
 
 const HAND = loadKai('normal', {weights: ['700'], ignoreTooManyRequestsWarning: true}).fontFamily;
 const BOLD = loadSans('normal', {weights: ['900'], ignoreTooManyRequestsWarning: true}).fontFamily;
@@ -27,8 +28,10 @@ const tdur = (s: string, min = 10) => Math.max(min, Math.round([...s].length * 2
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Sc = {p: any; cues: number[]; dur: number; from: number};
 type Kit = {
-  shape: (at: number, x: number, y: number, s: number, sh: Shape, dur?: number, sfx?: Sfx, rot?: number) => void;
-  text: (at: number, x: number, y: number, t: string, size: number, o?: {color?: string; bold?: boolean; anchor?: 'start' | 'middle'; dur?: number; sfx?: Sfx}) => void;
+  shape: (at: number, x: number, y: number, s: number, sh: Shape, dur?: number, sfx?: Sfx, rot?: number, boxId?: string) => void;
+  text: (at: number, x: number, y: number, t: string, size: number, o?: {color?: string; bold?: boolean; anchor?: 'start' | 'middle'; dur?: number; sfx?: Sfx; box?: string}) => void;
+  id: (name: string) => string;                       // 容器 id（品檢：裡面的字不可超出）
+  logo: boolean;                                      // 右上角有 LOGO：標題寬度讓開
   C: (i: number | undefined, fb: number) => number;   // 第 i 句旁白開始（絕對格）
   T0: number;                                         // 鏡頭到位、可以開始畫
 };
@@ -36,7 +39,7 @@ type Kit = {
 /* ---------- 9 種場景（區域內座標 0..1920 × 0..1080，內容放在 y<900，避開字幕） ---------- */
 const heading = (k: Kit, t: string | undefined, at: number) => {
   if (!t) return;
-  wrap(t, 20).slice(0, 2).forEach((ln, i) => k.text(at + i * 6, 960, 160 + i * 78, ln, fitW(ln, 1500, 72), {color: WB.blue}));
+  wrap(t, 20).slice(0, 2).forEach((ln, i) => k.text(at + i * 6, 960, 160 + i * 78, ln, fitW(ln, k.logo ? 1240 : 1500, 72), {color: WB.blue}));
 };
 
 const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
@@ -66,8 +69,8 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
     const p = r.p, big: string = p.bigText ?? '', hl: string = p.highlight ?? '';
     if (p.label) {
       const lw = wbTextW(String(p.label), 50) + 80;
-      k.shape(k.T0, 960, 190, 1, card(lw, 90, '#dff0f9'), 10, 'none');
-      k.text(k.T0 + 8, 960, 208, String(p.label), 50, {color: WB.blue, dur: 8});
+      k.shape(k.T0, 960, 190, 1, card(lw, 90, '#dff0f9'), 10, 'none', 0, k.id('label'));
+      k.text(k.T0 + 8, 960, 208, String(p.label), 50, {color: WB.blue, dur: 8, box: k.id('label')});
     }
     const lines = wrap(big, 13).slice(0, 2);
     const size = Math.min(...lines.map((ln) => fitW(ln, 1600, 124)));
@@ -81,8 +84,8 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
     const w = Math.min(520, 1600 / Math.max(1, notes.length) - 40);
     notes.forEach((n, i) => {
       const at = k.C(p.noteCues?.[i], 50 + i * 15), x = 960 + (i - (notes.length - 1) / 2) * (w + 40);
-      k.shape(at, x, 760, 1, card(w, 150, PASTEL[(i + 1) % 4]), 10, 'pop');
-      k.text(at + 8, x, 778, n, fitW(n, w - 50, 46), {dur: tdur(n)});
+      k.shape(at, x, 760, 1, card(w, 150, PASTEL[(i + 1) % 4]), 10, 'pop', 0, k.id(`note${i}`));
+      k.text(at + 8, x, 778, n, fitW(n, w - 50, 46), {dur: tdur(n), box: k.id(`note${i}`)});
     });
   },
   cards: (k, r) => {
@@ -91,11 +94,11 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
     const n = Math.max(1, cards.length), w = Math.min(500, 1700 / n - 40);
     cards.forEach((c, i) => {
       const at = k.C(p.cueMap?.[i], 20 + i * 30), x = 960 + (i - (n - 1) / 2) * (w + 40);
-      k.shape(at, x, 520, 1, card(w, 500, PASTEL[i % 4]), 10, 'none');
+      k.shape(at, x, 520, 1, card(w, 500, PASTEL[i % 4]), 10, 'none', 0, k.id(`card${i}`));
       k.shape(at + 2, x, 410, Math.min(1.25, w / 260), iconFor(c.sketch ?? c.icon), 14);
-      k.text(at + 4, x, 610, c.title, fitW(c.title, w - 50, 58), {bold: true, dur: tdur(c.title, 8)});
+      k.text(at + 4, x, 610, c.title, fitW(c.title, w - 50, 58), {bold: true, dur: tdur(c.title, 8), box: k.id(`card${i}`)});
       if (c.note) wrap(c.note, Math.max(4, Math.floor((w - 50) / 38))).slice(0, 2).forEach((ln, j) =>
-        k.text(at + 8 + j * 4, x, 680 + j * 50, ln, 38, {color: '#5b6672', dur: tdur(ln, 8)}));
+        k.text(at + 8 + j * 4, x, 680 + j * 50, ln, fitW(ln, w - 50, 38), {color: '#5b6672', dur: tdur(ln, 8), box: k.id(`card${i}`)}));
     });
     if (p.footer) k.text(k.C(r.cues.length - 1, 120) + 10, 960, 860, '★ ' + p.footer, fitW(p.footer, 1500, 54), {color: WB.red});
   },
@@ -104,9 +107,9 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
     const side = (sd: {frame?: string; icon?: string; sketch?: string; text: string}, i: number) => {
       const at = k.C(p.cueMap?.[i], i ? 40 : 6), x = i ? 1420 : 500;
       const bg = sd.frame === 'danger' ? '#fde3df' : sd.frame === 'success' ? '#e3f4e6' : '#dff0f9';
-      k.shape(at, x, 470, 1, card(760, 600, bg), 10, 'none');
+      k.shape(at, x, 470, 1, card(760, 600, bg), 10, 'none', 0, k.id(`side${i}`));
       k.shape(at + 2, x, 330, 1.35, iconFor(sd.sketch ?? sd.icon), 14);
-      wrap(sd.text ?? '', 11).slice(0, 3).forEach((ln, j) => k.text(at + 6 + j * 4, x, 560 + j * 70, ln, fitW(ln, 680, 58), {dur: tdur(ln)}));
+      wrap(sd.text ?? '', 11).slice(0, 3).forEach((ln, j) => k.text(at + 6 + j * 4, x, 560 + j * 70, ln, fitW(ln, 680, 58), {dur: tdur(ln), box: k.id(`side${i}`)}));
       if (sd.frame === 'danger') k.shape(at + 10, x + 300, 230, 1.1, cross(), 8, 'buzz');
       if (sd.frame === 'success') k.shape(at + 10, x + 300, 230, 1.1, check(), 8, 'ding');
     };
@@ -126,14 +129,15 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
   },
   quiz: (k, r) => {
     const p = r.p, opts: string[] = p.options ?? [], reveal = k.C(p.revealCue, Math.round(r.dur * 0.6));
-    k.shape(k.T0, 220, 150, 1.4, iconFor('tag'), 10);
-    k.text(k.T0 + 4, 212, 168, '小測驗', 40, {bold: true, color: '#fff', dur: 6});
+    const qw = wbTextW('小測驗', 42) + 70;                // 依字寬畫標籤（不借用吊牌圖示：字會壓到框與圓孔）
+    k.shape(k.T0, 90 + qw / 2, 150, 1, card(qw, 80, WB.orange), 10, 'none', 0, k.id('qlabel'));
+    k.text(k.T0 + 4, 90 + qw / 2, 165, '小測驗', 42, {bold: true, color: '#fff', dur: 6, box: k.id('qlabel')});
     wrap(p.question ?? '', 20).slice(0, 2).forEach((ln, i) => k.text(k.T0 + 8 + i * 6, 960, 320 + i * 80, ln, fitW(ln, 1600, 66)));
     const n = Math.max(1, opts.length), w = Math.min(620, 1700 / n - 50);
     opts.forEach((o, i) => {
       const x = 960 + (i - (n - 1) / 2) * (w + 50), at = k.T0 + 30 + i * 14;
-      k.shape(at, x, 600, 1, box(w, 200), 8, 'none');
-      k.text(at + 4, x, 620, `${String.fromCharCode(65 + i)}. ${o}`, fitW(o + 'AA', w - 60, 58), {dur: tdur(o, 8)});
+      k.shape(at, x, 600, 1, box(w, 200), 8, 'none', 0, k.id(`opt${i}`));
+      k.text(at + 4, x, 620, `${String.fromCharCode(65 + i)}. ${o}`, fitW(o + 'AA', w - 60, 58), {dur: tdur(o, 8), box: k.id(`opt${i}`)});
       if (i === p.answerIndex) k.shape(reveal, x, 600, 1, circleMark(w / 2 + 30, 130), 14, 'ding');
     });
     if (p.afterNote) k.text(reveal + 16, 960, 860, p.afterNote, fitW(p.afterNote, 1600, 54), {color: WB.red});
@@ -159,8 +163,8 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
     wrap(p.question ?? '', 22).slice(0, 2).forEach((ln, i) => k.text(r.from + 6 + i * 6, 960, 170 + i * 78, ln, fitW(ln, 1600, 64), {color: WB.blue, dur: 10}));
     opts.slice(0, 4).forEach((o, i) => {
       const x = 960 + ((i % 2) - 0.5) * 820, y = 420 + Math.floor(i / 2) * 230, at = r.from + 20 + i * 8;
-      k.shape(at, x, y, 1, box(740, 180), 6, 'none');
-      k.text(at + 2, x, y + 20, `${String.fromCharCode(65 + i)}. ${o}`, fitW(o + 'AA', 660, 54), {dur: 6, sfx: 'none'});
+      k.shape(at, x, y, 1, box(740, 180), 6, 'none', 0, k.id(`end${i}`));
+      k.text(at + 2, x, y + 20, `${String.fromCharCode(65 + i)}. ${o}`, fitW(o + 'AA', 660, 54), {dur: 6, sfx: 'none', box: k.id(`end${i}`)});
       if (i === p.answerIndex) k.shape(ans, x, y, 1, circleMark(400, 115), 12, 'ding');
     });
   },
@@ -175,10 +179,12 @@ const buildItems = (spec: TplSpec): Item[] => {
     const k: Kit = {
       T0,
       C: (ci, fb) => s.from + cue(s.cues, ci, fb),
-      shape: (at, x, y, sc, sh, dur = 16, sfx = 'pop', rot = 0) =>
-        items.push({kind: 'shape', at, dur, x: g.x + x, y: g.y + y, s: sc, rot, shape: sh, sfx: sh.fills?.length ? sfx : sfx === 'pop' ? 'none' : sfx}),
+      id: (name) => `${s.id}-${name}`,
+      logo: !!spec.brand?.logo,
+      shape: (at, x, y, sc, sh, dur = 16, sfx = 'pop', rot = 0, boxId) =>
+        items.push({kind: 'shape', at, dur, x: g.x + x, y: g.y + y, s: sc, rot, shape: sh, boxId, sfx: sh.fills?.length ? sfx : sfx === 'pop' ? 'none' : sfx}),
       text: (at, x, y, t, size, o = {}) =>
-        items.push({kind: 'text', at, dur: o.dur ?? tdur(t), x: g.x + x, y: g.y + y, text: t, size, color: o.color, bold: o.bold, anchor: o.anchor ?? 'middle', sfx: o.sfx}),
+        items.push({kind: 'text', at, dur: o.dur ?? tdur(t), x: g.x + x, y: g.y + y, text: t, size, color: o.color, bold: o.bold, anchor: o.anchor ?? 'middle', sfx: o.sfx, box: o.box}),
     };
     (SCENES[s.type] ?? SCENES.definition)(k, {p: s.props ?? {}, cues: s.cues ?? [], dur: s.dur, from: s.from});
     items.forEach((it) => { it.at = Math.max(it.at, T0); });   // 鏡頭到位前不畫；同時開始的照寫入順序（標題先、再卡片）
@@ -220,11 +226,12 @@ const camAt = (spec: TplSpec, f: number): Cam => {
   // 片尾：拉遠看整張白板
   const rows = Math.ceil(n / COLS), cols = Math.min(n, COLS);
   const W = (cols - 1) * SX + 1920, H = (rows - 1) * SY + 1080;
-  const zAll = Math.min(1920 / (W + 160), 880 / (H + 80));   // 全景放在字幕區上方
+  const lg = !!spec.brand?.logo;
+  const zAll = Math.min(1920 / (W + 160), (lg ? 720 : 880) / (H + 80));   // 全景放在字幕區上方（有 LOGO 時也讓開右上角）
   const q0 = outroStart(spec), q = lerp(f, q0, Math.min(spec.totalFrames - 12, q0 + 50), 0, 1, Easing.inOut(Easing.cubic));
   if (q > 0 && n > 1) {
     const z = Math.exp(Math.log(cam.z) + (Math.log(zAll) - Math.log(cam.z)) * q);
-    return {x: cam.x + (W / 2 - cam.x) * q, y: cam.y + (H / 2 - cam.y) * q, z, oy: 540 - 85 * q};
+    return {x: cam.x + (W / 2 - cam.x) * q, y: cam.y + (H / 2 - cam.y) * q, z, oy: 540 - (lg ? 5 : 85) * q};
   }
   return cam;
 };
@@ -275,7 +282,7 @@ export const TemplateD: React.FC<TplSpec> = (spec) => {
   const pen = penAt(spec, items, f, c);
   const cap = f < outroStart(spec) ? captionAt(spec, f, 8) : undefined;
   const capO = cap ? interpolate(f, [cap.from - 2, cap.from + 3], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}) : 0;
-  const fade = Math.max(0, 1 - f / 8, (f - (spec.totalFrames - 12)) / 12);
+  const fade = Math.max(0, spec.brand ? 0 : 1 - f / 8, (f - (spec.totalFrames - 12)) / 12);   // 有片頭時由片頭淡入白板，不從黑開場
   const vis = items.filter((it) => it.at <= f);
   return (
     <AbsoluteFill style={{backgroundColor: WB.paper, overflow: 'hidden'}}>
@@ -299,6 +306,7 @@ export const TemplateD: React.FC<TplSpec> = (spec) => {
         <div data-qa="caption" style={{position: 'absolute', left: 60, right: 60, top: 948, textAlign: 'center', opacity: capO, fontFamily: BOLD, fontWeight: 900,
           fontSize: 54, color: '#fff', letterSpacing: 2, WebkitTextStroke: '10px #1d232a', paintOrder: 'stroke fill', textShadow: '0 4px 10px rgba(0,0,0,0.25)'}}>{cap.text}</div>
       )}
+      <BrandLogo logo={spec.brand?.logo} />
       <AbsoluteFill style={{background: '#000', opacity: fade, pointerEvents: 'none'}} />
       {spec.qa && <QaProbe w={spec.width} h={spec.height} />}
       {spec.music && <Audio src={staticFile(spec.music)} volume={spec.musicVolume ?? 0.5} />}
