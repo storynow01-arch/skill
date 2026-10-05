@@ -24,6 +24,10 @@ NUM = re.compile(r"\d+(?:\.\d+)*%?(?:\s?(?:年代|年|毫秒|秒|分鐘|公尺|�
 SYM = re.compile(r"[%/:→—～~&@#=+*<>\[\]{}|\\]")
 
 
+def SPEC_WORDS():
+    return [w for w in json.loads((ROOT / "00_規範" / "多音字清單.json").read_text(encoding="utf-8"))["詞"]]
+
+
 def main(out: Path, ids: list[str]):
     cfg = json.loads((ROOT / "00_規範" / "配音設定.json").read_text(encoding="utf-8"))
     skip = set(cfg.get("skip_rules", []))
@@ -34,6 +38,8 @@ def main(out: Path, ids: list[str]):
     big = ENGINE / "qa" / "dict" / "dict.txt.big"
     if big.exists():
         jieba.set_dictionary(str(big))
+    for w in SPEC_WORDS():
+        jieba.add_word(w)                                  # 多音字清單的詞不要被拆開（鋪好、重問）
     rows, md = [], ["# 唸法清單", "", "Gemini 配音前逐項確認：「送 TTS」欄是程式轉換後真正送出的文字。", ""]
     for sid in ids:
         f = next(p for p in (ROOT / "01_腳本").glob(f"{sid}_*.md") if "_plan" not in p.name)

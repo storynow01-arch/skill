@@ -1,4 +1,5 @@
-"""一行做出範本影片：同步引擎 → 檢查圖示 → 建置（旁白、配樂、字幕）→ 範本音效 → 版面＋旁白品檢 → 算圖 → 響度 → 成片品檢。
+"""一行做出範本影片：同步引擎 → 檢查圖示 → ⓪文稿檢查 → 建置（旁白、配樂、字幕）→ 文不對題檢查 → 範本音效 →
+AI 耳朵聽檢 → 版面＋旁白品檢 → 算圖 → 響度 → 成片品檢。
 
 用法（在專案資料夾裡執行；專案由 new_project.py 建立，node_modules 已就緒）：
     python <skill>/engine/scripts/make_video.py storyboard.json --template B   # A／B／C／D
@@ -85,10 +86,22 @@ def main():
         print('✓ 配樂用範本預設：', info['music'])
     check_icons(sb)
     py = sys.executable
+    os.makedirs('qa', exist_ok=True)
+    if not a.no_qa:   # ⓪ 文稿檢查（2026-10-05）：網址／協定／產品名寫法、年份百分比、大陸用語、唸法寫進稿子
+        rc = sh([py, os.path.join(SKILL, 'final_qa', 'term_check.py'), a.storyboard, '--out', 'qa/文稿檢查'], check=False)
+        if rc != 0 and not a.force:
+            raise SystemExit('文稿檢查有「必改」，見 qa/文稿檢查/文稿檢查報告.html（改完重跑，或加 --force）')
     sh([py, os.path.join(HERE, 'build.py'), build_sb])
+    tc = json.load(open('qa/text_check.json', encoding='utf-8')) if os.path.exists('qa/text_check.json') else {}
+    if tc.get('文不對題') and not a.no_qa and not a.force:
+        raise SystemExit('物件文字跟旁白對不上（文不對題）：' + '；'.join(tc['文不對題'])
+                         + '\n→ 把物件文字改成旁白裡的說法；刻意不唸的場景在 storyboard 加 "allowStatic": true（或加 --force）')
     sh([py, os.path.join(HERE, 'tpl_sfx.py'), T])
     os.makedirs('out', exist_ok=True); os.makedirs('qa', exist_ok=True)
     comp = f'Template{T}'
+    if not a.no_qa:   # 配音後 AI 耳朵聽檢：只提醒，不擋（AI 標出的要人工聽過才算）
+        if sh([py, os.path.join(HERE, 'ai_listen.py'), '--out', 'qa/聽檢'], check=False) == 2:
+            print('⚠ AI 耳朵有疑問的場景，請聽 qa/聽檢/聽檢報告.html（確認唸錯就改稿或發音規範後重跑）')
     if not a.no_qa:
         rc = sh([py, os.path.join(HERE, 'qa.py'), '--comp', comp], check=False)
         shutil.copy('qa_report.md', f'qa/pre_{T}.md')

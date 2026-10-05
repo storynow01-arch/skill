@@ -1,5 +1,6 @@
 /* 品檢探針：只在 inputProps.qa=true 時掛上。字型載完後量測畫面上所有文字，輸出 QA:{json} 到瀏覽器 console，
-   由 scripts/qa_layout.mjs 收集。檢查：①超出畫面 ②文字互相重疊 ③內容闖進字幕區 ④元素內容溢出。 */
+   由 scripts/qa_layout.mjs 收集。檢查：①超出畫面 ②文字互相重疊 ③內容闖進字幕區 ④元素內容溢出
+   ⑤物件標點（畫面文字不放「，；—」、不以「。」結尾）⑥文字貼邊（壓到圓角框／膠囊的弧線）——⑤⑥ 2026-10-05 從範本E 移植。 */
 import React, {useLayoutEffect, useState} from 'react';
 import {continueRender, delayRender, useCurrentFrame} from 'remotion';
 
@@ -14,6 +15,38 @@ const visible = (el: Element) => {
     e = (e as Element).parentElement;
   }
   return op;
+};
+
+/** 文字所在的圓角框（往上 5 層內第一個有圓角、且有底色或邊框的元素） */
+const roundedCard = (el: Element) => {
+  let e = el.parentElement;
+  for (let k = 0; e && k < 5; k++, e = e.parentElement) {
+    const cs = getComputedStyle(e);
+    const rad = parseFloat(cs.borderTopLeftRadius || '0');
+    const bg = /rgba?\(([^)]+)\)/.exec(cs.backgroundColor);
+    const alpha = bg ? parseFloat(bg[1].split(',')[3] ?? '1') : 0;
+    const solid = alpha > 0.2 || parseFloat(cs.borderTopWidth) > 0;
+    if (rad > 0 && solid) {
+      const r = e.getBoundingClientRect();
+      return {r, rad: Math.min(rad, r.height / 2, r.width / 2)};
+    }
+  }
+  return null;
+};
+
+/** 文字框四角落在圓角框弧線外（至少要離弧線 8px）超出幾 px，0＝沒問題 */
+const curveOverflow = (b: {x: number; y: number; w: number; h: number}, card: {r: DOMRect; rad: number}) => {
+  const {r, rad} = card;
+  if (rad < 12) return 0;
+  const shrink = b.h * 0.15;
+  let worst = 0;
+  for (const x of [b.x, b.x + b.w]) for (const y of [b.y + shrink, b.y + b.h - shrink]) {
+    const cx = x < r.left + rad ? r.left + rad : x > r.right - rad ? r.right - rad : null;
+    const cy = y < r.top + rad ? r.top + rad : y > r.bottom - rad ? r.bottom - rad : null;
+    if (cx === null || cy === null) continue;
+    worst = Math.max(worst, Math.hypot(x - cx, y - cy) - (rad - 8));
+  }
+  return Math.round(worst);
 };
 
 const measure = (W: number, H: number) => {
@@ -37,6 +70,11 @@ const measure = (W: number, H: number) => {
     const he = el as HTMLElement;
     if (he.scrollWidth && he.clientWidth && he.scrollWidth > he.clientWidth + 6 && getComputedStyle(he).overflow !== 'visible')
       issues.push({kind: '內容溢出', detail: `「${b.text}」 scroll ${he.scrollWidth} > ${he.clientWidth}`});
+    if (/[\u4e00-\u9fff]/.test(own) && (/[，；—―]/.test(own) || /。$/.test(own)))
+      issues.push({kind: '物件標點', detail: `「${b.text}」`});
+    const card = roundedCard(el);
+    const over = card ? curveOverflow(b, card) : 0;
+    if (over > 0) issues.push({kind: '文字貼邊', detail: `「${b.text}」超出圓角安全範圍 ${over}px`});
   }
   for (let i = 0; i < leaves.length; i++) for (let j = i + 1; j < leaves.length; j++) {
     const a = leaves[i], c = leaves[j];

@@ -43,7 +43,10 @@ def checklist(narr: str) -> dict:
     import jieba
     big = ENGINE / "qa" / "dict" / "dict.txt.big"
     if big.exists() and getattr(jieba, "_tw_dict", None) != str(big):
-        jieba.set_dictionary(str(big)); jieba._tw_dict = str(big)
+        jieba.set_dictionary(str(big))
+        jieba._tw_dict = str(big)
+    for w in SPEC_WORDS():
+        jieba.add_word(w)                                  # 多音字清單的詞不要被拆開（鋪好、重問）
     chars = set(SPEC.get("字", ""))
     poly = {}
     for w in jieba.cut(narr.replace("\n", "")):
@@ -110,6 +113,10 @@ def problems(res: dict, check: dict | None = None) -> list[str]:
     if "_raw" in res:
         out.append("（AI 回覆不是 JSON，見 聽檢.json）")
     return out
+
+
+def SPEC_WORDS():
+    return [w for w in json.loads((ROOT / "00_規範" / "多音字清單.json").read_text(encoding="utf-8"))["詞"]]
 
 
 def main(out: Path, ids: list[str], audio_dir: Path, model: str):

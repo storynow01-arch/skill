@@ -232,7 +232,72 @@ def line_voice(raw, base, voices):
     return raw['text'], v
 
 
-def split_caption(text, mx=24):
+# ── 字幕與畫面文字（2026-10-05 從範本E 移植：Netflix 繁中字幕規範＋使用者抽檢的教訓）──────────
+CAP_TRAIL = re.compile(r"[。，、；：？！…—\s　]+$")
+CAP_INNER = re.compile(r"\s*(?:[。，、；：？！]|……|…|——|—)+\s*")
+SPOKEN_DOT = re.compile(r"(?<=[A-Za-z0-9])\s*點\s*(?=[A-Za-z])")
+SCREEN_DASH2 = re.compile(r"\s*(?:——|──|--)\s*")
+SCREEN_DASH1 = re.compile(r"\s*[—―]\s*")
+SCREEN_INNER = re.compile(r"\s*[，；。]\s*")
+SCREEN_TRAIL = re.compile(r"[。，、；：…\s　]+$")
+CJK = re.compile(r"[\u4e00-\u9fff]")
+SCREEN_SKIP = {"icon", "media", "src", "id", "type", "kind", "variant", "color", "accent", "font", "sketch", "url", "fallback", "en"}
+
+
+def written_form(text):
+    """稿子寫成唸法的網址（mail 點 google 點 com）→ 字幕顯示 mail.google.com"""
+    return SPOKEN_DOT.sub(".", text)
+
+
+def clean_caption(text):
+    """字幕不放標點：句尾刪掉，句中改全形空白（Netflix 繁中規範＋使用者要求）"""
+    t = CAP_TRAIL.sub("", written_form(text).strip())
+    return CAP_INNER.sub("　", t).strip("　 ")
+
+
+def clean_screen(obj, key=None):
+    """畫面物件文字比照字幕：，；。→空白、——→空白、 — →：、刪行尾標點（只處理含中文的字串）"""
+    if isinstance(obj, str):
+        if key in SCREEN_SKIP or not CJK.search(obj):
+            return obj
+        t = written_form(obj.strip())
+        t = SCREEN_DASH2.sub("　", t)
+        t = SCREEN_DASH1.sub("：", t)
+        t = SCREEN_TRAIL.sub("", t)
+        return SCREEN_INNER.sub("　", t)
+    if isinstance(obj, list):
+        return [clean_screen(x, key) for x in obj]
+    if isinstance(obj, dict):
+        return {k: clean_screen(v, k) for k, v in obj.items()}
+    return obj
+
+
+ITEM_KEYS = ("items", "cards", "pills", "steps", "points", "options", "rows", "layers", "bullets")
+
+
+def item_texts(props):
+    out = []
+    for k in ITEM_KEYS:
+        for it in props.get(k, []) or []:
+            if isinstance(it, str):
+                out.append(it)
+            elif isinstance(it, dict):
+                out.append(" ".join(str(it.get(f, "")) for f in ("title", "label", "text", "name", "note") if it.get(f)))
+    return [t for t in out if CJK.search(t)]
+
+
+def mismatch(items, narration):
+    """物件文字跟旁白對不上（文不對題）：物件裡的中文字有一半以上不在這一場的旁白裡"""
+    bad = []
+    pool = set(CJK.findall(narration))
+    for t in items:
+        cs = CJK.findall(t)
+        if cs and sum(c in pool for c in cs) / len(cs) < 0.5:
+            bad.append(t)
+    return bad
+
+
+def split_caption(text, mx=16):
     """超過 mx 字的旁白切成多頁字幕：優先在句號/問號，其次逗號/頓號斷開。"""
     if len(text) <= mx:
         return [text]
@@ -340,6 +405,7 @@ def main():
                 if not re.fullmatch(r'[.…。\s]+', ln): items.append((ln, lv))
         prefetch_gemini(items, cache, proj)
     t = 0.0; scenes = []; caps = []; duck = []; voice_parts = []; impacts = []; whooshes = []; blips = []; vlines = []
+    fast_caps = []; text_issues = []
     for i, sc in enumerate(sb['scenes']):
         start = t; cues = []
         lines = sc.get('lines', []) if mode == 'teach' and not a.no_tts else []
@@ -366,11 +432,15 @@ def main():
                 voice_parts.append((tt, x))
                 vlines.append({'scene': sc['id'], 'text': ln, 'say': say, 'from': round(tt, 3), 'to': round(tt + d, 3)})
                 cues.append(round((tt - start) * fps))
-                pages = split_caption(ln, sb.get('capMax', 24))
+                pages = split_caption(written_form(ln), sb.get('capMax', 16))   # Netflix 繁中：每頁 ≤16 字
                 n_all = sum(len(x) for x in pages); t0 = tt
                 for pg in pages:                     # 長句分頁，時間依字數比例分配
                     t1 = t0 + d * len(pg) / n_all
-                    caps.append({'text': pg, 'from': round(t0 * fps), 'to': round(t1 * fps)}); t0 = t1
+                    cap_txt = clean_caption(pg)
+                    cps = len(CJK.findall(cap_txt)) / max(t1 - t0, 0.01)
+                    if cps > 9.5:
+                        fast_caps.append(f"{sc['id']}「{cap_txt}」{cps:.1f} 字/秒")
+                    caps.append({'text': cap_txt, 'from': round(t0 * fps), 'to': round(t1 * fps)}); t0 = t1
                 duck.append([round(tt * fps), round((tt + d) * fps)])
                 print(f'  {sc["id"]}  {d:5.2f}s  {ln}')
                 tt += d + gap
@@ -381,8 +451,13 @@ def main():
         if sc.get('impact'): impacts.append(start)
         elif i > 0: whooshes.append(start)
         for b in sc.get('blips', []): blips.append(start + b)
-        props = json.loads(json.dumps(sc.get('props', {})))
+        props = clean_screen(json.loads(json.dumps(sc.get('props', {}))))
         walk_media(props, media_dir, pub, missing, sc['id'])
+        if mode == 'teach' and sc.get('lines') and not sc.get('allowStatic'):
+            narr = "".join(l if isinstance(l, str) else l.get('text', '') for l in sc['lines'])
+            bad = mismatch(item_texts(sc.get('props', {})), narr)
+            if bad:
+                text_issues.append(f"{sc['id']}：{'、'.join(bad[:4])}")
         scenes.append({'id': sc['id'], 'type': sc['type'], 'from': round(start * fps), 'dur': 0, 'accent': sc.get('accent'),
                        'code': sc.get('code', 0), 'hud': sc.get('hud'), 'props': props, 'cues': cues})
         t = start + dur
@@ -432,6 +507,13 @@ def main():
     if missing:
         print('\n⚠ 缺照片（這些位置會自動改用插畫，影片照常產出）：')
         for m in missing: print('   ', m)
+    os.makedirs(os.path.join(proj, 'qa'), exist_ok=True)
+    json.dump({"文不對題": text_issues, "字幕太快": fast_caps},
+              open(os.path.join(proj, 'qa', 'text_check.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    if text_issues:
+        print('  ⚠ 物件文字跟旁白對不上（文不對題，改成旁白裡的說法；刻意不唸的場景加 "allowStatic": true）：\n    ' + '\n    '.join(text_issues))
+    if fast_caps:
+        print(f'  ⚠ 字幕超過每秒 9 字 {len(fast_caps)} 頁（Netflix 繁中上限）：' + '；'.join(fast_caps[:5]))
     print(f'\nspec → src/data/spec.json   style={style}  mode={mode}  {total:.2f}s ({total_frames}f)  scenes={len(scenes)}')
     for s in scenes:
         print(f'  {s["id"]:<4} {s["type"]:<14} {s["from"] / fps:6.2f}s  +{s["dur"] / fps:5.2f}s')
