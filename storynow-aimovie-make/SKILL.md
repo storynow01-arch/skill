@@ -47,7 +47,7 @@ metadata:
 | ② 理解素材 | 產出 `01_事實清單.md`（宣傳類，逐條標來源頁碼）或 `01_內容分析.md`（教學類：觀念、比喻、迷思、**衝突→解答骨架**）。**列出資料衝突與敏感資訊** | |
 | ③ 定調問答 | AskUserQuestion 三輪、每輪 ≤4 題、選擇題＋推薦預設（題庫：[`references/question-bank.md`](references/question-bank.md)） | |
 | ④ 創意概念 | 產出 `02_三種創意概念.md`：3 個**全新**概念，各附英文提示詞（格式同 [`references/prompts/01_…原始提示詞.md`](references/prompts/01_旗艦科技宣傳片_原始提示詞.md)）＋中文對照＋比較表（方法：[`references/concept-design.md`](references/concept-design.md)） | ⛔ |
-| ⑤ 文本 | `03_分鏡文本.md`：每場景的畫面／旁白／大字卡／秒數＋**事實核對表**；多概念時同一旁白對照多種畫面 | ⛔ |
+| ⑤ 文本 | `03_分鏡文本.md`：每場景的畫面／旁白／大字卡／秒數＋**事實核對表**；多概念時同一旁白對照多種畫面。**交使用者審之前先跑文稿檢查** `python final_qa/term_check.py <文稿或 storyboard.json> --out 11_品檢/文稿檢查`（網址／協定／產品名寫法、年份與百分比、大陸用語、唸法寫進稿子；規則 `final_qa/用詞規範.json`；必改 0 才往下） | ⛔ |
 | ⑥ 動態試看 | 每概念 **10 秒**動態短片（新寫場景程式＋專屬配樂與音效），不是靜態圖 | ⛔ |
 | ⑦ 細節 | 旁白聲音試聽：依內容與使用者要求（性別、年齡、個性、粗細／深沉、語速）寫 3 段聲音描述，**`python engine/scripts/voice_preview.py --out 05_聲音試聽 --line "台詞" --voice "A=描述" --voice "B=描述" --voice "C=描述"`** 產出固定格式試聽頁（聲音內嵌、附音高與語速）；使用者選定後把 voices.json 的 voice_id 寫進 storyboard 的 voice；字幕樣式 | ⛔ |
 | ⑧ 製作 | 旁白 Gemini TTS（整支片的句子批次合成、whisper 對齊切回逐句）→ 時間軸（旁白長度補足到整數小節）→ 配樂＋事件音效＋人聲閃避 → Remotion 場景 → 算圖 | |
@@ -74,7 +74,8 @@ templates/資訊科範本1/   研習說明＋資訊科宣傳片（含宣傳片�
 templates/範本A～D_*/   範本風格（README：原始提示詞、忠實度檢查、範本設定）；範本風格_場景語彙.md＝四個範本共用的 9 種場景
 templates/範本E_教學課程產線/  整門課的教學影片產線（自成一包：engine／規範／examples，new_course.py 建新課程；含四關品檢＋自我測試；
                    tts_gemini.py＝Gemini 3.8 Flash TTS 配音＋whisper 對齊時間戳，tts.py＝edge-tts 備用；qa/poly_ab.py＝多音詞 AI 判讀）
-final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用）：final_qa.py、pron_check.py（唸法時長比對）、多音字清單.json
+final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用）：final_qa.py、pron_check.py（唸法時長比對）、多音字清單.json；
+                   term_check.py＋用詞規範.json＝第⑤步文稿檢查（第⓪關：配音前檢查專業用詞與寫法）
 ```
 
 ## 四項增強（2026-10-01）
@@ -91,6 +92,7 @@ final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用
 **響度**：`ffmpeg -i in.mp4 -c:v copy -af loudnorm=I=-14:TP=-1:LRA=9 -c:a aac out.mp4`
 
 ## 硬規則
+- **文稿寫專業寫法，唸法交給程式**：網址寫 mail.google.com（不寫「mail 點 google 點 com」）、年份與百分比用阿拉伯數字；配音前跑 `final_qa/term_check.py`，必改 0 才配音。
 - **配音一律用 Gemini Flash TTS 的最新正式版**（`gemini_tts.py` 的 `model="auto"` 自動挑；不要寫死舊模型名）。金鑰只放 `.env.local`，不可進 git。
 - 數字、校名、名次**逐條對資料**；資料與提示詞衝突時照資料，並明講差異。
 - 會轉傳的影片：手機、個人 Email、學生姓名等**先問再放**。

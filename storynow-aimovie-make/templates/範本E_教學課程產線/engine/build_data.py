@@ -46,8 +46,17 @@ CAP_TRAIL = re.compile(r"[。，、；：？！…—\s　]+$")
 CAP_INNER = re.compile(r"\s*(?:[。，、；：？！]|……|…|——|—)+\s*")
 
 
+SPOKEN_DOT = re.compile(r"(?<=[A-Za-z0-9])\s*點\s*(?=[A-Za-z])")
+
+
+def written_form(text: str) -> str:
+    """稿子為了唸法寫成「mail 點 google 點 com」「edu 點 tw」→ 字幕與畫面顯示正式寫法 mail.google.com、edu.tw。
+    聲音不受影響（配音照稿子唸）。2026-10-05 使用者抽檢 1-3。"""
+    return SPOKEN_DOT.sub(".", text)
+
+
 def clean_caption(text: str) -> str:
-    t = CAP_TRAIL.sub("", text.strip())
+    t = CAP_TRAIL.sub("", written_form(text).strip())
     t = CAP_INNER.sub("　", t)
     return t.strip("　 ")
 
@@ -162,19 +171,33 @@ def word_breaks(text: str) -> str:
 
 SCREEN_TRAIL = re.compile(r"[。，、；：…\s　]+$")
 SCREEN_INNER = re.compile(r"\s*[，；。]\s*")
+SCREEN_DASH2 = re.compile(r"\s*(?:——|──|--)\s*")
+SCREEN_DASH1 = re.compile(r"\s*[—―]\s*")
 
 
 def clean_screen_text(text: str) -> str:
     """畫面物件文字比照字幕規則（2026-10-04 使用者抽檢：兩行字還留著「，」）：
     行尾標點刪掉；句中的「，」「；」「。」改成全形空白（換行的機會點，不顯示標點）。
+    破折號（2026-10-05 使用者抽檢）：「——」改空白、「 — 」（標籤與說明之間）改「：」；範圍的「–」（0 – 65535）保留。
     保留：問號／驚嘆號（標題是問句）、「、」（列舉）、「：」（第二段：…）、引號、箭頭。"""
-    t = SCREEN_TRAIL.sub("", text.strip())
+    t = written_form(text.strip())
+    t = SCREEN_DASH2.sub("　", t)                 # 「沒寫不是沒有 —— http…」：雙破折號只是停頓 → 空白
+    t = SCREEN_DASH1.sub("：", t)                 # 「HTTP — 沒有加密」：標籤與說明 → 冒號
+    t = SCREEN_TRAIL.sub("", t)
     return SCREEN_INNER.sub("　", t)
+
+
+LATIN_HYPHEN = re.compile(r"(?<=[A-Za-z0-9])-(?=[A-Za-z0-9])")
+
+
+def keep_latin_whole(text: str) -> str:
+    """英數詞裡的連字號前後加 word joiner（U+2060），瀏覽器不會在「Wi-／Fi」這裡斷行（2026-10-05 版面探針 1-9）"""
+    return LATIN_HYPHEN.sub("⁠-⁠", text)
 
 
 def add_word_breaks(obj, key=None):
     if isinstance(obj, str):
-        return obj if key in NO_WRAP_KEYS else word_breaks(clean_screen_text(obj))
+        return obj if key in NO_WRAP_KEYS else keep_latin_whole(word_breaks(clean_screen_text(obj)))
     if isinstance(obj, list):
         return [add_word_breaks(x, key) for x in obj]
     if isinstance(obj, dict):

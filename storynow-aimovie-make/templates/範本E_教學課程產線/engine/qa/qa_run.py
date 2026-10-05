@@ -210,12 +210,15 @@ def check_captions(sid: str, data: dict, mp4: Path | None, scan) -> dict:
             if m.group(0).replace(" ", "") not in orig_all.replace(" ", "") or " " in m.group(0):
                 spoken.append(c["text"])
                 break
+    # 網址唸法外漏到字幕（mail點google點com）：不論稿子怎麼寫都算（2026-10-05）
+    spoken += [c["text"] for c in caps if re.search(r"[A-Za-z0-9]\s*點\s*[A-Za-z]", c["text"]) and c["text"] not in spoken]
     res["C5"] = {"count": len(spoken), "examples": spoken[:6]}
 
     # C6 字幕串起來要等於稿子旁白（去標點、空白後比對）
     orig = original_sentences(sid)
     flat = lambda s: re.sub(rf"[\s{re.escape(TRAIL_PUNCT)}「」『』（）()*]", "", s)
-    want = flat("".join("".join(v["lines"]) for v in orig.values()))
+    from build_data import written_form
+    want = flat(written_form("".join("".join(v["lines"]) for v in orig.values())))
     got = flat("".join(c["text"] for c in caps))
     res["C6"] = {"match": want == got, "script_chars": len(want), "caption_chars": len(got)}
     if want != got:

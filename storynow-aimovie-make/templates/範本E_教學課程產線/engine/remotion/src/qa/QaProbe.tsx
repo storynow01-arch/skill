@@ -169,8 +169,8 @@ const measure = (W: number, H: number) => {
     if (he.scrollWidth > he.clientWidth + 4 && getComputedStyle(he).overflow !== 'visible')
       issues.push({kind: '內容溢出', text: b.text, detail: `scroll ${he.scrollWidth} > ${he.clientWidth}`});
     // 物件標點（2026-10-04 使用者抽檢）：畫面物件文字比照字幕規則，不放「，」「；」、不以「。」結尾
-    if (!b.chrome && /[，；]|[。]$/u.test(own))
-      issues.push({kind: '物件標點', text: b.text, detail: `含「${(own.match(/[，；。]/u) ?? [''])[0]}」`});
+    if (!b.chrome && (/[，；—―]|[。]$/u.test(own) || /點(?=[A-Za-z])/u.test(own)))
+      issues.push({kind: '物件標點', text: b.text, detail: `含「${(own.match(/[，；。—―]|點(?=[A-Za-z])/u) ?? [''])[0]}」`});
     // 文字貼邊：文字壓到圓角框（膠囊）的弧線（2026-10-04 使用者抽檢 1-14 流程卡）
     const card = b.chrome ? null : roundedCard(el);
     const over = card ? curveOverflow(b, card) : 0;

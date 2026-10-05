@@ -30,6 +30,8 @@ closing_card  qa_endcard  flow_arrows  layer_stack  network_diagram  ui_mock
 ① 雙軌稿 01_腳本\<id>_<標題>.md     一行一句旁白＋VISUAL 畫面說明
 ② 分鏡   01_腳本\<id>_plan.json      場景型別＋內容；項目可寫 cue（沒寫會自動拿項目文字去旁白裡找）
        ⛔ 文稿一次審完再出片
+⓪ 文稿檢查 py qa\term_check.py       配音之前跑：網址／協定／產品名寫法、年份與百分比、大陸用語、唸法寫進稿子；
+                                     規則在 00_規範\用詞規範.json；有「必改」exit 1，改完再配音（報告 HTML＋MD）
 ③ 配音   py tts_gemini.py <稿>.md     Gemini 3.8 Flash TTS（預設）；設定 00_規範\配音設定.json，金鑰 .env.local
                                      一節只送 3～4 次請求；配額用完會停，隔天重跑同一指令從斷點接續
                                      沒有 Gemini 金鑰：py tts.py <稿>.md（edge-tts zh-TW-YunJheNeural，輸出格式相同）
@@ -56,6 +58,7 @@ closing_card  qa_endcard  flow_arrows  layer_stack  network_diagram  ui_mock
 
 | 關卡 | 指令 | 內容 |
 |---|---|---|
+| ⓪ 文稿 | `qa\term_check.py` | 專業用詞與寫法（用詞規範.json）：必改 0 才配音 |
 | ① 渲染前 | `build_data.py` | 字幕覆蓋 >85%、單頁 <40 字、有項目的場景 100% 對上旁白 |
 | ② 單節 | `qa_layout.mjs`、`qa_asr.py`、`qa_run.py` | 字幕 C1～C6、同步 S1～S4、唸法 P1～P4、版面 L、聲音 A、畫面 V |
 | ③ 整集 | `qa_run.py --ep` | 長度 28～33 分、整集響度、各節落差、接縫 |
