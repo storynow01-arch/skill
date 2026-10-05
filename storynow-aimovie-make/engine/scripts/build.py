@@ -24,7 +24,8 @@ PRON = json.load(open(os.path.join(HERE, 'pron_zh-TW.json'), encoding='utf-8'))
 SR = 48000
 _ZH = '零一二三四五六七八九'
 _IPV4 = re.compile(r'(?<![\d.])(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\d.])')
-_DOT2 = re.compile(r'(?<![\d.])(\d{1,3})\.(\d{1,3})(?![\d.])')
+# 2026-10-06：兩位數整數的小數（12.5、99.9）是一般數值，交給聲音唸；只有個位數（2.4）與三位數（IP 前綴 192.168）逐字唸
+_DOT2 = re.compile(r'(?<![\d.])(\d|\d{3})\.(\d{1,3})(?![\d.])')
 
 
 def _gemini_rules():

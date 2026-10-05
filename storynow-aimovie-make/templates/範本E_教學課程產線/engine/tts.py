@@ -28,7 +28,9 @@ _SPEC = json.loads((Path(__file__).resolve().parent.parent /
                     "00_規範" / "發音規範.json").read_text(encoding="utf-8"))
 _IPV4 = re.compile(r"(?<![\d.])(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\d.])")
 # 兩段式：IP 前綴 192.168 與版本號 2.4 都適用 —— 一律逐字唸
-_DOT2 = re.compile(r"(?<![\d.])(\d{1,3})\.(\d{1,3})(?![\d.])")
+# 2026-10-06：整數部分是兩位數的小數（12.5、99.9）不逐字唸 —— 那是一般數值，交給聲音唸「十二點五」「九十九點九」；
+# 只有個位數（2.4）與三位數（IP 前綴 192.168）才逐字。版本號 3.11 這類放在 數字詞典（先套用）。
+_DOT2 = re.compile(r"(?<![\d.])(\d|\d{3})\.(\d{1,3})(?![\d.])")
 
 
 def _digits(s: str) -> str:
@@ -39,15 +41,16 @@ def to_speech(text: str, skip: set | frozenset = frozenset()) -> str:
     """把專業寫法轉成 TTS 唸得對的形式。
     skip：要略過的規則（tts_gemini.py 用）——"多音詞替換" 整組，或 詞典 裡的單一詞（例如 ping、about）"""
     text = _IPV4.sub(lambda m: "點".join(_digits(g) for g in m.groups()), text)
+    # 數字詞典先套用（3.11＝三點十一、443＝四四三），再處理一般兩段式數字
+    for num, say in _SPEC.get("數字詞典", {}).items():
+        if not num.startswith("_"):
+            text = re.sub(rf"(?<![\d.]){re.escape(num)}(?![\d.])", say, text)
     text = _DOT2.sub(lambda m: f"{_digits(m.group(1))}點{_digits(m.group(2))}", text)
     # 規範裡 handler 為「literal:替換文字」的規則（例如單獨唸的 com → c o m）
     for r in _SPEC.get("regex_rules", []):
         h = r.get("handler", "")
         if h.startswith("literal:") and r.get("name") not in skip:
             text = re.sub(r["pattern"], h[len("literal:"):], text)
-    for num, say in _SPEC.get("數字詞典", {}).items():
-        if not num.startswith("_"):
-            text = re.sub(rf"(?<![\d.]){re.escape(num)}(?![\d.])", say, text)
     # 多音詞換成只有一種讀音的同音字（字幕仍用原字）
     for term, say in _SPEC.get("多音詞替換", {}).items():
         if not term.startswith("_") and "多音詞替換" not in skip:
