@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """唸法清單：逐節列出旁白裡所有「TTS 可能唸錯」的東西，給審稿逐項確認。
 
-  py qa\\read_check.py <輸出資料夾> <節...>        例：py qa\\read_check.py ..\\11_品檢\\文稿總審_單元一 1-1 1-2
+  py qa\\read_check.py <輸出資料夾> <節...>        例：py qa\\read_check.py ..\\11_品檢\\文稿審查\\文稿總審_單元一 1-1 1-2
 
 每節列出：
   英數詞（含網址、指令、型號）＋ 送給 TTS 的寫法（to_speech，Gemini 略過 skip_rules）

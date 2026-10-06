@@ -47,6 +47,8 @@ for (const id of ids) {
       found = {error: String(e.message ?? e).slice(0, 200), issues: []};
     }
     const rec = {...smp, ...(found ?? {error: '沒有收到量測結果', issues: []})};
+    // 渲染錯誤一律算問題（2026-10-06：測驗卡 revealAt 缺漏會整格報錯，原本只記 error、問題數 0 → 假通過）
+    if (rec.error) rec.issues = [...(rec.issues ?? []), {kind: '渲染錯誤', text: smp.scene, detail: rec.error}];
     // 畫面空白：場景開始 4 秒後畫面上還沒有任何內容文字（只剩字幕與 LOGO）
     if (smp.t >= 4 && rec.boxes && rec.boxes.length === 0)
       rec.issues = [...(rec.issues ?? []), {kind: '畫面空白', text: smp.scene, detail: `場景第 ${smp.t}s 沒有任何內容`}];

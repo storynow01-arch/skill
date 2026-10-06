@@ -225,6 +225,11 @@ def extra_timings(scene: dict, timeline: list[tuple[str, float, float]], items_e
             t = find(timeline, word, after=opts_end)
             if t is not None:
                 break
+        if t is None:
+            # 旁白沒說「答案是」（單元四：「是你的。」「不代表。」）→ 題目問句（？）之後的下一句就是揭曉（2026-10-06）
+            q = [k for k, (x, _, _) in enumerate(timeline) if "？" in x or "?" in x]
+            if q and q[-1] + 1 < len(timeline):
+                t = timeline[q[-1] + 1][1]
         if t is not None:
             out["revealAt"] = t
         if props.get("afterNote"):

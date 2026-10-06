@@ -29,7 +29,7 @@ import numpy as np
 ENGINE = Path(__file__).resolve().parent.parent
 ROOT = ENGINE.parent
 sys.path.insert(0, str(ENGINE))
-from subtitles import original_sentences          # noqa: E402
+from subtitles import original_sentences, match_lines          # noqa: E402
 from cues import scene_timeline, resolve, collect_cues, item_texts   # noqa: E402
 from tts import to_speech                         # noqa: E402
 from final_qa import jumps                        # noqa: E402
@@ -259,8 +259,7 @@ def check_sync(sid: str, data: dict) -> dict:
             srt = parse_srt(ROOT / "02_語音" / sid / f"{sc['id']}.srt", 0)
             opt = orig.get(sc["id"])
             if opt and srt:
-                lines = next((v for v in (opt["lines"], opt["parts"], opt["sents"]) if len(v) == len(srt)),
-                             opt["sents"])
+                lines = match_lines(opt, srt, opt["sents"])
                 tl = scene_timeline(srt, lines)
                 times, ms = resolve({**sc}, tl)
                 row["misses"] = ms

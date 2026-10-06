@@ -20,6 +20,9 @@ import {FlowArrows} from './scenes/FlowArrows';
 import {LayerStack} from './scenes/LayerStack';
 import {NetworkDiagram} from './scenes/NetworkDiagram';
 import {UiMock} from './scenes/UiMock';
+import {Terminal} from './scenes/Terminal';
+import {FxContext, FxFlags} from './fx';
+import {PushIn} from './PushIn';
 import {QaProbe} from './qa/QaProbe';
 import {QaFixture} from './qa/QaFixture';
 
@@ -30,7 +33,7 @@ const REG: Record<string, React.FC<any>> = {
   concept_cards: ConceptCards, comparison: Comparison, quiz: QuizCard,
   closing_card: ClosingCard, qa_endcard: QAEndCard,
   flow_arrows: FlowArrows, layer_stack: LayerStack, network_diagram: NetworkDiagram,
-  ui_mock: UiMock,
+  ui_mock: UiMock, terminal: Terminal,
   _qa_fixture: QaFixture,   // 只給品檢自我測試用
 };
 
@@ -38,6 +41,8 @@ export type SceneSpec = {id: string; type: string; startSec: number; durSec: num
 export type SectionData = {
   id: string; chapterLabel: string; audio: string; captions: Caption[];
   scenes: SceneSpec[]; style?: StyleName;
+  /** 特效試作（fx.tsx）；沒設＝正式版原樣 */
+  fx?: FxFlags;
 };
 
 /** qa=true 只在版面品檢時傳入（04_引擎/qa/qa_layout.mjs），正式渲染不帶 */
@@ -55,6 +60,7 @@ export const Section: React.FC<{data: SectionData; qa?: boolean}> = ({data, qa})
   }, [data, glyphs]);
 
   return (
+    <FxContext.Provider value={data.fx ?? {}}>
     <AbsoluteFill style={{background: C.bg}}>
       {/* 多行文字平均分配每行長度，避免標題換行後最後一行只剩「給你。」兩三個字（1-6 實測） */}
       {/* keep-all：中文只在詞邊界（build_data.py 插入的零寬空白）、空白、標點處換行；
@@ -74,11 +80,14 @@ export const Section: React.FC<{data: SectionData; qa?: boolean}> = ({data, qa})
           <Sequence key={s.id} from={Math.round(s.startSec * fps)}
                     durationInFrames={frames}>
             <SceneFade holdSec={(frames - 1) / fps} fadeSec={TRANSITION}>
-              <Cmp {...s.props} durSec={s.durSec} />
+              {data.fx?.pushIn
+                ? <PushIn durSec={s.durSec + extra}><Cmp {...s.props} durSec={s.durSec} /></PushIn>
+                : <Cmp {...s.props} durSec={s.durSec} />}
             </SceneFade>
           </Sequence>
         );
       })}
+      {data.fx?.sfx && <Sfx data={data} fps={fps} />}
       <AbsoluteFill data-qa="chrome" style={{pointerEvents: 'none'}}>
         <ProgressBar />
         <ChapterIndicator label={data.chapterLabel} />
@@ -87,5 +96,23 @@ export const Section: React.FC<{data: SectionData; qa?: boolean}> = ({data, qa})
       <Subtitles captions={data.captions} />
       {qa && <QaProbe w={width} h={height} />}
     </AbsoluteFill>
+    </FxContext.Provider>
   );
+};
+
+
+/** ⑤ 輕音效：卡片／項目亮起「噠」、測驗揭曉「叮」。音量約 −20dB，只在 data.fx.sfx 時加。
+ *  2026-10-06 拿掉換場「咻」（whoosh.wav 是白噪音合成，使用者聽起來像雜音）。 */
+const Sfx: React.FC<{data: SectionData; fps: number}> = ({data, fps}) => {
+  const v = data.fx?.sfxVolume ?? 0.1;
+  const hits: {at: number; src: string; vol: number}[] = [];
+  data.scenes.forEach((s, i) => {
+    for (const [at] of (s.props?.focusPlan ?? []) as [number, number][]) hits.push({at: s.startSec + at, src: 'sfx/tick.wav', vol: v});
+    if (s.type === 'quiz' && Number.isFinite(s.props?.revealAt)) hits.push({at: s.startSec + s.props.revealAt, src: 'sfx/reveal.wav', vol: v * 1.3});
+    if (s.type === 'terminal') for (const l of s.props?.lines ?? []) hits.push({at: s.startSec + l.at, src: 'sfx/tick.wav', vol: v * 0.6});
+  });
+  return <>{hits.map((h, k) => (
+    <Sequence key={k} from={Math.round(h.at * fps)} durationInFrames={Math.round(1.2 * fps)}>
+      <Audio src={staticFile(h.src)} volume={h.vol} />
+    </Sequence>))}</>;
 };

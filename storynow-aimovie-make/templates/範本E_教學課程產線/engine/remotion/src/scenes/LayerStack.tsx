@@ -26,8 +26,10 @@ export const LayerStack: React.FC<{
   const fAt = footerAt ?? Math.max(durSec - 3.5, durSec * 0.72);
 
   // 2026-10-04：說明字放大到 38px 後會換行、貼到下一層 → 列加寬到 1320（安全區內）、列高 112，說明行距 1.25
-  const ROW_H = 112;
-  const GAP = 14;
+  // 2026-10-06：6 層以上（3-6 S2 完整技術堆疊）原尺寸會頂出安全區、壓到字幕 → 縮列高、整體上移
+  const dense = layers.length >= 6;
+  const ROW_H = dense ? 92 : 112;
+  const GAP = dense ? 10 : 14;
   // 光點標示目前唸到的那一層：切換時用 0.5 秒滑過去，之後停住；全部唸完就收起來
   const rowY = (i: number) => i * (ROW_H + GAP) + ROW_H / 2 - 5;
   let prev = -1, cur = -1, sw = 0;
@@ -36,9 +38,9 @@ export const LayerStack: React.FC<{
   const dropY = active < 0 ? 0 : prev < 0 ? rowY(active) : rowY(prev) + (rowY(active) - rowY(prev)) * k;
 
   return (
-    <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center', fontFamily: FONT}}>
+    <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center', fontFamily: FONT, paddingBottom: dense ? 60 : 0}}>
       {heading && (
-        <div style={{...rise(f, fps, 0), color: C.text, fontSize: T.h2, fontWeight: 700, marginBottom: 54}}>
+        <div style={{...rise(f, fps, 0), color: C.text, fontSize: T.h2, fontWeight: 700, marginBottom: dense ? 28 : 54}}>
           <Phrases text={heading} />
         </div>
       )}
@@ -91,7 +93,7 @@ export const LayerStack: React.FC<{
       </div>
 
       {footer && (
-        <div style={{...rise(f, fps, fAt), color: C.body, fontSize: T.h3, marginTop: 48}}>
+        <div style={{...rise(f, fps, fAt), color: C.body, fontSize: T.h3, marginTop: dense ? 24 : 48}}>
           <Phrases text={footer} />
         </div>
       )}

@@ -3,6 +3,7 @@ import {Phrases} from '../Phrases';
 import {C, T, FONT, R} from '../theme';
 import {rise} from '../anim';
 import {narrate, FocusPlan} from '../beats';
+import {useFx, kineticText} from '../fx';
 
 export type Card = {n?: number; icon?: string; title: string; note?: string;
   /** 旁白講到這個詞時才亮起；由 build_data.py 查詞級時間戳轉成 focusAt */
@@ -18,6 +19,8 @@ export const ConceptCards: React.FC<{
   const f = useCurrentFrame();
   const {fps} = useVideoConfig();
   const t = f / fps;
+  const fx = useFx();
+  const kin = (s: string | undefined, at: number) => (s && fx.kinetic ? kineticText(s, t - at) : s ?? '');
 
   const n = narrate(t, focusPlan, cards.length, 1.2);
   const active = n.active;
@@ -43,7 +46,7 @@ export const ConceptCards: React.FC<{
           return (
             <div key={i} style={{
               ...enter,
-              opacity: (enter.opacity as number) * (0.38 + 0.62 * n.weight(i)),
+              opacity: (enter.opacity as number) * (fx.pushIn ? 0.24 + 0.76 * n.weight(i) : 0.38 + 0.62 * n.weight(i)),   // ① 聚光燈：特效版非焦點更暗
               transform: `${enter.transform} scale(${hot ? 1 + p * 0.018 : 1})`,
               background: C.card,
               border: `1px solid ${hot ? C.primary : C.border}`,
@@ -58,10 +61,10 @@ export const ConceptCards: React.FC<{
                 <div style={{fontSize: 76, marginTop: 30, marginBottom: 24, lineHeight: 1,
                              transform: `translateY(${hot ? -p * 5 : 0}px)`}}>{c.icon}</div>
               )}
-              <div style={{color: C.text, fontSize: T.cardTitle, fontWeight: 600}}><Phrases text={c.title} /></div>
+              <div style={{color: C.text, fontSize: T.cardTitle, fontWeight: 600}}><Phrases text={kin(c.title, n.appear(i))} /></div>
               {c.note && (
                 <div style={{color: hot ? C.body : C.muted, fontSize: T.cardNote,
-                             marginTop: 14, lineHeight: 1.5}}><Phrases text={c.note} /></div>
+                             marginTop: 14, lineHeight: 1.5}}><Phrases text={kin(c.note, n.appear(i))} /></div>
               )}
             </div>
           );
@@ -70,7 +73,7 @@ export const ConceptCards: React.FC<{
 
       {footer && (
         <div style={{...rise(f, fps, fAt), color: C.body, fontSize: T.h3, marginTop: 54}}>
-          <Phrases text={footer} />
+          <Phrases text={kin(footer, fAt)} />
         </div>
       )}
     </AbsoluteFill>

@@ -7,9 +7,10 @@
 """
 from __future__ import annotations
 import json, math, re, shutil, sys
+import os
 from pathlib import Path
 
-from subtitles import original_sentences, restore
+from subtitles import original_sentences, restore, match_lines
 from cues import scene_timeline, resolve, build_plan, extra_timings, item_texts, narration_matches
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -74,8 +75,12 @@ def to_captions(cues):
     """
     out = []
     for ci, c in enumerate(cues):
+        text = clean_caption(c["text"])
+        if not text:
+            # 「……」停頓行：Gemini 配音會把它當一句、給一段時間，清完標點變空頁（2026-10-05 1-1 S6）→ 不出字幕
+            continue
         out.append({
-            "text": clean_caption(c["text"]),
+            "text": text,
             "startMs": int(c["start"] * 1000),
             "endMs": int(c["end"] * 1000),
             "timestampMs": int((c["start"] + c["end"]) / 2 * 1000),
@@ -170,20 +175,25 @@ def word_breaks(text: str) -> str:
 
 
 SCREEN_TRAIL = re.compile(r"[。，、；：…\s　]+$")
-SCREEN_INNER = re.compile(r"\s*[，；。]\s*")
+SCREEN_INNER = re.compile(r"\s*[；。]\s*")
+# 「，」換成 EN SPACE（U+2002）當記號：Phrases 排版後，同一行內顯示「，」，在換行處就隱藏（2026-10-05 F10：單行標題逗號換全形空白會空一大格）
+SCREEN_COMMA = re.compile(r"\s*，\s*")
+COMMA_MARK = " "
 SCREEN_DASH2 = re.compile(r"\s*(?:——|──|--)\s*")
 SCREEN_DASH1 = re.compile(r"\s*[—―]\s*")
 
 
 def clean_screen_text(text: str) -> str:
     """畫面物件文字比照字幕規則（2026-10-04 使用者抽檢：兩行字還留著「，」）：
-    行尾標點刪掉；句中的「，」「；」「。」改成全形空白（換行的機會點，不顯示標點）。
+    行尾標點刪掉；句中的「；」「。」改成全形空白（換行的機會點，不顯示標點）；
+    「，」改成 COMMA_MARK，由 Phrases 決定：同一行內顯示「，」、換行處隱藏（2026-10-05 F10）。
     破折號（2026-10-05 使用者抽檢）：「——」改空白、「 — 」（標籤與說明之間）改「：」；範圍的「–」（0 – 65535）保留。
     保留：問號／驚嘆號（標題是問句）、「、」（列舉）、「：」（第二段：…）、引號、箭頭。"""
     t = written_form(text.strip())
     t = SCREEN_DASH2.sub("　", t)                 # 「沒寫不是沒有 —— http…」：雙破折號只是停頓 → 空白
     t = SCREEN_DASH1.sub("：", t)                 # 「HTTP — 沒有加密」：標籤與說明 → 冒號
     t = SCREEN_TRAIL.sub("", t)
+    t = SCREEN_COMMA.sub(COMMA_MARK, t)
     return SCREEN_INNER.sub("　", t)
 
 
@@ -194,6 +204,28 @@ def keep_latin_whole(text: str) -> str:
     """英數詞裡的連字號前後加 word joiner（U+2060），瀏覽器不會在「Wi-／Fi」這裡斷行（2026-10-05 版面探針 1-9）"""
     return LATIN_HYPHEN.sub("⁠-⁠", text)
 
+
+
+def resolve_terminal(scenes, captions):
+    """③ 終端機（2026-10-06）：每一行寫 cue（旁白片語）＋dt（唸到後幾秒出現），換算成場景內秒數 at。
+    找不到 cue 就中止建置（跟測驗缺揭曉時間一樣，不讓它悄悄跑出錯的時間）。"""
+    norm = lambda x: re.sub(r"[\s　，。、：；！？「」—]", "", x or "")
+    for sc in scenes:
+        if sc["type"] != "terminal":
+            continue
+        for ln in sc["props"].get("lines", []):
+            if isinstance(ln.get("at"), (int, float)):
+                continue
+            cue, hit = norm(ln.get("cue")), None
+            for c in captions:
+                st, txt = c["startMs"] / 1000, norm(c["text"])
+                if sc["startSec"] <= st < sc["startSec"] + sc["durSec"] and cue and (cue in txt or (len(txt) >= 4 and txt in cue)):
+                    hit = st
+                    break
+            if hit is None:
+                raise SystemExit(f"  ✗ 缺必要時間點：{sc['id']} 終端機「{ln.get('text')}」的 cue「{ln.get('cue')}」旁白裡找不到")
+            ln["at"] = round(hit - sc["startSec"] + ln.get("dt", 0.3), 2)
+            ln.pop("cue", None); ln.pop("dt", None)
 
 def add_word_breaks(obj, key=None):
     if isinstance(obj, str):
@@ -343,10 +375,14 @@ def check_motion(scenes: list[dict]) -> list[str]:
     return bad
 
 
+# VOICE_DIR：分鏡驗證用的暫配資料夾（2026-10-06）；正式出片不設，讀 02_語音
+VOICE = Path(os.environ["VOICE_DIR"]) if os.environ.get("VOICE_DIR") else ROOT / "02_語音"
+
+
 def main(sid: str, dry: bool = False):
     """dry=True：只算、只檢查，不寫任何檔案（品檢或其他程序正在讀資料檔時用）"""
     plan = json.loads((ROOT / "01_腳本" / f"{sid}_plan.json").read_text(encoding="utf-8"))
-    marks = json.loads((ROOT / "02_語音" / sid / "marks.json").read_text(encoding="utf-8"))
+    marks = json.loads((VOICE / sid / "marks.json").read_text(encoding="utf-8"))
     dur = {r["scene"]: r["seconds"] for r in marks["scenes"]}
 
     originals = original_sentences(plan.get("scriptId", sid))
@@ -358,7 +394,7 @@ def main(sid: str, dry: bool = False):
         if d is None:
             raise SystemExit(f"缺少 {s['id']} 的語音，請先跑 tts.py（或在 plan 加 fixedSec）")
         scenes.append({**s, "startSec": round(t, 3), "durSec": round(d, 3)})
-        sc = parse_srt(ROOT / "02_語音" / sid / f"{s['id']}.srt", t)
+        sc = parse_srt(VOICE / sid / f"{s['id']}.srt", t)
         by_scene[s["id"]] = sc
         cues += sc
         t += d
@@ -376,8 +412,7 @@ def main(sid: str, dry: bool = False):
             continue
         # 與 subtitles.restore() 用同一組候選、同一個順序，兩邊才會對到同一份文字
         srt = by_scene.get(sc["id"], [])
-        lines = next((v for v in (opt["lines"], opt["parts"], opt["sents"])
-                      if len(v) == len(srt)), opt["sents"])
+        lines = match_lines(opt, srt, opt["sents"])
         tl = scene_timeline(srt, lines)
         times, ms = resolve(sc, tl)
         cue_misses += ms
@@ -425,16 +460,24 @@ def main(sid: str, dry: bool = False):
             if first > 3.0 and titles.get(sc["id"]):
                 p["heading"] = titles[sc["id"]]
     # 畫面文字加詞邊界（cue 已經解析完，不影響旁白對時）
-    scenes = [{**sc, "props": add_word_breaks(sc.get("props", {}))} for sc in scenes]
+    # 終端機的指令／輸出是原樣顯示的程式文字，不加詞邊界
+    scenes = [{**sc, "props": {**add_word_breaks({k: v for k, v in sc.get("props", {}).items() if k != "lines"}),
+                               **({"lines": sc["props"]["lines"]} if sc["type"] == "terminal" else {})}}
+              for sc in scenes]
+    captions = to_captions(split_cues(cues))
+    resolve_terminal(scenes, captions)
     data = {"id": sid, "chapterLabel": plan["chapterLabel"], "audio": f"{sid}.mp3",
             "style": plan.get("style", "garychen-dark"),
-            "captions": to_captions(split_cues(cues)), "scenes": scenes}
+            "captions": captions, "scenes": scenes}
+    fx_f = ROOT / "00_規範" / "特效設定.json"   # 沒有這份（舊課程）＝不加特效，畫面跟以前一樣
+    if fx_f.exists():
+        data["fx"] = {k: v for k, v in json.loads(fx_f.read_text(encoding="utf-8")).items() if not k.startswith("_")}
     ddir = ROOT / "04_引擎" / "remotion" / "src" / "data"
     out = ddir / f"{sid}.json"
     if not dry:
         pub = ROOT / "04_引擎" / "remotion" / "public"
         pub.mkdir(parents=True, exist_ok=True)
-        shutil.copy(ROOT / "02_語音" / sid / "full.mp3", pub / f"{sid}.mp3")
+        shutil.copy(VOICE / sid / "full.mp3", pub / f"{sid}.mp3")
         shutil.copy(ROOT / "03_素材" / "brand" / "cover.jpg", pub / "cover.jpg")
         shutil.copy(ROOT / "03_素材" / "brand" / "logo.png", pub / "logo.png")
 
@@ -467,6 +510,17 @@ def main(sid: str, dry: bool = False):
     if unsynced:
         raise SystemExit(f"  ✗ 這些場景的項目沒有對上旁白（請在 plan 補 cue）：{', '.join(unsynced)}")
     print(f"  ✓ 同步檢查通過：{len(with_items)} 個有項目的場景全部依旁白出場")
+    # 必要時間點（品檢 N4，2026-10-06）：缺了元件會整格報錯或亂跳，建置就擋下
+    missing = []
+    for s in scenes:
+        p = s.get("props", {})
+        if s["type"] == "quiz" and not isinstance(p.get("revealAt"), (int, float)):
+            missing.append(f"{s['id']} 測驗沒有揭曉時間（旁白要有「答案是」或問句後接答案）")
+        if s["type"] == "qa_endcard" and not isinstance(p.get("answerSec"), (int, float)):
+            missing.append(f"{s['id']} 片尾測驗沒有 answerSec")
+    if missing:
+        raise SystemExit("  ✗ 缺必要時間點：" + "；".join(missing))
+    print("  ✓ 必要時間點齊全（測驗揭曉、片尾測驗）")
     for s in scenes:
         print(f"   {s['id']:3} {s['type']:14} {s['startSec']:6.2f}s +{s['durSec']:5.2f}s")
     print(f"→ {out}")

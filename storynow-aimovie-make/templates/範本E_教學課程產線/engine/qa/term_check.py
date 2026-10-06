@@ -71,6 +71,8 @@ def check(files: list[Path], rules: dict) -> list[dict]:
             for r in rules["rules"]:
                 if r.get("only_screen") and not screen:
                     continue
+                if r.get("only_narration") and screen:       # 2026-10-06：只檢查旁白（畫面上的節編號標籤沒問題）
+                    continue
                 if r.get("skip") and re.search(r["skip"], line):
                     continue
                 for m in re.finditer(r["pattern"], line):
@@ -145,7 +147,7 @@ def main():
         sys.exit("找不到要檢查的文稿（給檔案或資料夾路徑；資料夾只看 <單元>-<節>_*.md 與 *_plan.json）")
     rules = json.loads(Path(a.rules).read_text(encoding="utf-8"))
     found = check(files, rules)
-    out = Path(a.out) if a.out else ROOT / "11_品檢" / f"文稿檢查_{datetime.now():%Y%m%d_%H%M}"
+    out = Path(a.out) if a.out else ROOT / "11_品檢" / "文稿審查" / f"文稿檢查_{datetime.now():%Y%m%d_%H%M}"
     must = report(found, files, out)
     print(f"檔案 {len(files)} 個：必改 {must} 處、建議 {len(found) - must} 處 → {out / '文稿檢查報告.html'}")
     sys.exit(1 if must else 0)

@@ -16,6 +16,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 SENT_SPLIT = re.compile(r"(?<=[。？！])")
+# Gemini 配音的句級時間（faster-whisper 對齊）也會在「；」切句（2026-10-05 1-3 S4）
+SENT_SPLIT_SEMI = re.compile(r"(?<=[。？！；])")
 # 至少要有一個中日文字、字母或數字才算唸得出聲音
 SPEAKABLE = re.compile(r"[\w㐀-鿿]")
 SCENE_HEAD = re.compile(r"(S\d+)")
@@ -57,6 +59,7 @@ def original_sentences(script_id: str) -> dict[str, list[str]]:
         out[m.group(1)] = {
             "lines": lines,
             "parts": parts,
+            "parts_semi": [p.strip() for ln in lines for p in SENT_SPLIT_SEMI.split(ln) if p.strip()],
             "sents": [x for x in SENT_SPLIT.split("".join(lines)) if x.strip()],
         }
     return out
@@ -70,8 +73,10 @@ def restore(cues_by_scene: dict[str, list[dict]],
         opt = originals.get(scene)
         if not opt:
             continue
-        # 先試按行，再試逐行切句，最後才試整段切句 —— 哪個句數對得上就用哪個
-        src = next((v for v in (opt["lines"], opt["parts"], opt["sents"])
+        # Gemini 配音會把「……」停頓也當一句（edge-tts 不會）：唸不出聲音的句子不出字幕（2026-10-05 1-1 S6、1-3 S11）
+        cues[:] = [c for c in cues if SPEAKABLE.search(c["text"])]
+        # 先試按行，再試逐行切句（再含分號），最後才試整段切句 —— 哪個句數對得上就用哪個
+        src = next((v for v in (opt["lines"], opt["parts"], opt["parts_semi"], opt["sents"])
                     if len(v) == len(cues)), None)
         if src is None:
             misses.append(f"{scene}: 原文 {len(opt['lines'])} 行 / "
@@ -82,3 +87,11 @@ def restore(cues_by_scene: dict[str, list[dict]],
             c["text"] = o.strip()
         fixed += 1
     return fixed, misses
+
+
+def match_lines(opt: dict, srt: list[dict], default=None):
+    """原文與 SRT 對句（build_data、restore、各支品檢共用同一組候選與順序，兩邊才會對到同一份文字）。
+    先拿掉唸不出聲音的句子（Gemini 會把「……」當一句），就地修改 srt。"""
+    srt[:] = [c for c in srt if SPEAKABLE.search(c["text"])]
+    return next((v for v in (opt["lines"], opt["parts"], opt["parts_semi"], opt["sents"])
+                 if len(v) == len(srt)), default)

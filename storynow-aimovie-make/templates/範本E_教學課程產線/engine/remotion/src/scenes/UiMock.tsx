@@ -38,7 +38,8 @@ export type UiPanel = {
   action?: string;
 };
 
-const CHROME_H = 52;
+// 2026-10-06 單元四首次使用，版面探針修正：網址列字級 24、視窗避開標題與字幕區、項目間距 ≥12
+const CHROME_H = 60;
 
 export const UiMock: React.FC<{
   heading?: string;
@@ -61,8 +62,8 @@ export const UiMock: React.FC<{
   const p = focusPlan ? focusPulse(t, focusPlan) : pulse(t, beats);
 
   // 視窗尺寸
-  const W = 1480, H = 700;
-  const X = (1920 - W) / 2, Y = 210;
+  const W = 1480, H = 560;
+  const X = (1920 - W) / 2, Y = 270;
 
   // 游標：在前一步與當前步之間平滑移動
   const cur = steps[Math.max(active, 0)] ?? {};
@@ -89,7 +90,7 @@ export const UiMock: React.FC<{
     <AbsoluteFill style={{justifyContent: 'flex-start', alignItems: 'center', fontFamily: FONT}}>
       {heading && (
         <div style={{...rise(f, fps, 0), color: C.text, fontSize: T.h2,
-                     fontWeight: 700, marginTop: 92}}>
+                     fontWeight: 700, marginTop: 150}}>
           {heading}
         </div>
       )}
@@ -111,10 +112,10 @@ export const UiMock: React.FC<{
           <div style={{flex: 1, margin: '0 18px', height: 30, borderRadius: R.pill,
                        background: C.bg, border: `1px solid ${C.border}`,
                        display: 'flex', alignItems: 'center', padding: '0 16px',
-                       color: C.muted, fontSize: 20, fontFamily: MONO}}>
+                       color: C.muted, fontSize: 24, fontFamily: MONO}}>
             {url}
           </div>
-          <div style={{color: C.muted, fontSize: 20}}>{title}</div>
+          <div style={{color: C.muted, fontSize: 24}}>{title}</div>
         </div>
 
         <div style={{display: 'flex', height: H - CHROME_H}}>
@@ -123,7 +124,7 @@ export const UiMock: React.FC<{
             <div style={{width: 280, borderRight: `1px solid ${C.border}`,
                          padding: '24px 0', background: C.bg}}>
               {panel.nav.map((n, i) => (
-                <div key={i} style={{padding: '15px 26px', color: C.body, fontSize: 24,
+                <div key={i} data-qa-row="1" style={{padding: '12px 26px', marginBottom: 12, color: C.body, fontSize: 24,
                                      borderLeft: `3px solid transparent`}}>
                   {n}
                 </div>
@@ -132,25 +133,26 @@ export const UiMock: React.FC<{
           )}
 
           {/* 主區塊 */}
-          <div style={{flex: 1, padding: '28px 34px'}}>
+          <div style={{flex: 1, padding: '24px 34px'}}>
             {panel.action && (
-              <div style={{display: 'flex', justifyContent: 'flex-end', marginBottom: 24}}>
+              <div style={{display: 'flex', justifyContent: 'flex-end', marginBottom: 20}}>
                 <div style={{background: C.primary, color: C.bg, fontWeight: 700,
-                             fontSize: 22, borderRadius: R.sm, padding: '12px 26px'}}>
+                             fontSize: 24, borderRadius: R.sm, padding: '10px 24px'}}>
                   {panel.action}
                 </div>
               </div>
             )}
             {(panel.rows ?? []).map((r, i) => (
-              <div key={i} style={{display: 'flex', alignItems: 'center', gap: 20,
-                                   padding: '18px 22px', marginBottom: 12,
+              <div key={i} data-qa-row="1" style={{display: 'flex', alignItems: 'center', gap: 20,
+                                   height: 66, boxSizing: 'border-box', padding: '0 22px', marginBottom: 14,   // 列高固定 66，高亮框座標才算得準（有標籤的列原本會被撐高）
+
                                    background: C.card, borderRadius: R.sm,
                                    border: `1px solid ${C.border}`}}>
                 <div style={{flex: 1, color: C.text, fontSize: 24}}>{r.label}</div>
-                {r.value && <div style={{color: C.muted, fontSize: 22, fontFamily: MONO}}>{r.value}</div>}
+                {r.value && <div style={{color: C.muted, fontSize: 24, fontFamily: MONO}}>{r.value}</div>}
                 {r.tag && (
-                  <div style={{color: C.success, fontSize: 19, border: `1px solid ${C.success}`,
-                               borderRadius: R.pill, padding: '5px 14px'}}>{r.tag}</div>
+                  <div style={{color: C.success, fontSize: 24, lineHeight: 1.2, border: `1px solid ${C.success}`,
+                               borderRadius: R.pill, padding: '3px 14px'}}>{r.tag}</div>
                 )}
               </div>
             ))}
@@ -166,7 +168,7 @@ export const UiMock: React.FC<{
 
         {/* 重點方框 */}
         {box && (
-          <div style={{position: 'absolute',
+          <div data-qa="chrome" data-qa-hl="1" style={{position: 'absolute',
                        left: box[0] * W, top: CHROME_H + box[1] * (H - CHROME_H),
                        width: box[2] * W, height: box[3] * (H - CHROME_H),
                        border: `2px solid ${C.primary}`, borderRadius: R.sm,
@@ -175,7 +177,7 @@ export const UiMock: React.FC<{
       </div>
 
       {/* 游標 */}
-      <div style={{position: 'absolute', left: cx, top: cy, pointerEvents: 'none'}}>
+      <div data-qa="chrome" style={{position: 'absolute', left: cx, top: cy, pointerEvents: 'none'}}>
         {ripple > 0 && (
           <div style={{position: 'absolute', left: -ripple / 2, top: -ripple / 2,
                        width: ripple, height: ripple, borderRadius: '50%',

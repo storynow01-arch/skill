@@ -127,6 +127,29 @@ const opacityOf = (el: Element) => {
   return op;
 };
 
+// 高亮框對準（品檢 N3，2026-10-06）：ui_mock 的重點方框要完整框住某一列（或連續幾列），不能壓在兩列之間。
+// 4-9 樣張實測：座標估錯時方框偏下半列，文字探針量不到（方框不是文字）。
+const highlightIssues = () => {
+  const out: {kind: string; text: string; detail: string}[] = [];
+  const rows = Array.from(document.querySelectorAll('[data-qa-row]')).map((e) => e.getBoundingClientRect());
+  for (const el of Array.from(document.querySelectorAll('[data-qa-hl]'))) {
+    if (opacityOf(el) < 0.3) continue;
+    const b = el.getBoundingClientRect();
+    let full = 0, partial = 0;
+    for (const r of rows) {
+      const ih = Math.max(0, Math.min(b.bottom, r.bottom) - Math.max(b.top, r.top));
+      const iw = Math.max(0, Math.min(b.right, r.right) - Math.max(b.left, r.left));
+      // 只看上下：方框可以只框一欄（例：4-9「來源」欄），但上下要完整蓋住那一列
+      const ratio = iw > 4 ? ih / Math.max(1, r.height) : 0;
+      if (ratio >= 0.8) full++; else if (ratio > 0.15) partial++;
+    }
+    if (rows.length && (full === 0 || partial > 0))
+      out.push({kind: '高亮框沒對準', text: `(${Math.round(b.left)},${Math.round(b.top)})`,
+                detail: `完整框住 ${full} 列、壓到一半 ${partial} 列`});
+  }
+  return out;
+};
+
 const measure = (W: number, H: number) => {
   const issues: {kind: string; text: string; detail: string}[] = [];
   const leaves: Box[] = [];
@@ -147,7 +170,7 @@ const measure = (W: number, H: number) => {
     const ratio = he.offsetHeight ? r.height / he.offsetHeight : 1;
     const b: Box = {text: own.slice(0, 28), x: r.left, y: r.top, w: r.width, h: r.height, el,
                     font: Math.round(font * ratio), chrome: !!el.closest('[data-qa="chrome"]')};
-    leaves.push(b);
+    if (!(el as HTMLElement).dataset?.sep) leaves.push(b);   // 逗號屬於前一個短語，不算獨立物件（不量間距）
     const box = `(${Math.round(r.left)},${Math.round(r.top)})-(${Math.round(r.right)},${Math.round(r.bottom)})`;
     if (r.left < -2 || r.top < -2 || r.right > W + 2 || r.bottom > H + 2)
       issues.push({kind: '超出畫面', text: b.text, detail: box});
@@ -169,7 +192,13 @@ const measure = (W: number, H: number) => {
     if (he.scrollWidth > he.clientWidth + 4 && getComputedStyle(he).overflow !== 'visible')
       issues.push({kind: '內容溢出', text: b.text, detail: `scroll ${he.scrollWidth} > ${he.clientWidth}`});
     // 物件標點（2026-10-04 使用者抽檢）：畫面物件文字比照字幕規則，不放「，」「；」、不以「。」結尾
-    if (!b.chrome && (/[，；—―]|[。]$/u.test(own) || /點(?=[A-Za-z])/u.test(own)))
+    // 2026-10-05（F10）：Phrases 的「，」只在同一行內顯示（data-sep="mid"）；實際換到行尾還看得見才算問題
+    const sep = (el as HTMLElement).dataset?.sep;
+    if (sep) {
+      const host = el.parentElement, nxt = host?.nextElementSibling as HTMLElement | null;
+      if (sep === 'mid' && host && (!nxt || nxt.offsetTop > host.offsetTop + host.offsetHeight / 2))
+        issues.push({kind: '物件標點', text: b.text, detail: '「，」出現在行尾'});
+    } else if (!b.chrome && (/[，；—―]|[。]$/u.test(own) || /點(?=[A-Za-z])/u.test(own)))
       issues.push({kind: '物件標點', text: b.text, detail: `含「${(own.match(/[，；。—―]|點(?=[A-Za-z])/u) ?? [''])[0]}」`});
     // 文字貼邊：文字壓到圓角框（膠囊）的弧線（2026-10-04 使用者抽檢 1-14 流程卡）
     const card = b.chrome ? null : roundedCard(el);
@@ -211,6 +240,8 @@ const measure = (W: number, H: number) => {
     if (a.chrome || c.chrome || a.el.contains(c.el) || c.el.contains(a.el)) continue;
     const blockOfEl = (e: Element) => { let p: Element | null = e; while (p && getComputedStyle(p).display.startsWith('inline')) p = p.parentElement; return p; };
     if (blockOfEl(a.el) === blockOfEl(c.el)) continue;      // 同一句話裡的強調片段
+    const mono = (e: Element) => e.closest('[data-qa-mono]');
+    if (mono(a.el) && mono(a.el) === mono(c.el)) continue;  // 終端機輸出：一行接一行是正常的（特效試作 2026-10-06）
     if (a.el.parentElement === c.el.parentElement && a.el.tagName === 'SPAN' && c.el.tagName === 'SPAN') continue;  // 同一段文字切成的短語（flex 容器會把 inline-block 變成 block）
     const ox = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x);
     const oy = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
@@ -261,6 +292,7 @@ const measure = (W: number, H: number) => {
     if (hx > 10 && b.y + b.h > cap.top + 2 && b.y < cap.bottom)
       issues.push({kind: '闖進字幕區', text: b.text, detail: `文字底 ${Math.round(b.y + b.h)} > 字幕頂 ${Math.round(cap.top)}`});
   }
+  issues.push(...highlightIssues());
   return {
     texts: leaves.length,
     issues,

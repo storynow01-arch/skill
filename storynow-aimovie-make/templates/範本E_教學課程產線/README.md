@@ -11,20 +11,25 @@
 |---|---|
 | 一門課、很多節，每節 3～5 分鐘，要合併成 30 分鐘左右的集 | 一支宣傳片、招生片、活動說明 |
 | 風格已定、要穩定量產，重點是**內容正確、字幕與唸法零錯誤** | 要創意、要驚喜、每支概念不同 |
-| 只有旁白，不需要配樂 | 需要配樂、音效、對拍剪接 |
+| 只有旁白＋極輕的提示音（卡片亮起「噠」、測驗揭曉「叮」），不需要配樂 | 需要配樂、對拍剪接 |
 
 ## 畫面風格：garychen-dark
 
 深色科技風（底色 #181818、主色橘 #F89800、綠 #20C058、紫 #604098），字型 Noto Sans TC。
-規格與拉片依據在 `規範\styles\garychen-dark\`。12 種場景型別：
+規格與拉片依據在 `規範\styles\garychen-dark\`。13 種場景型別：
 
 ```
 title_card  scenario  definition  concept_cards  comparison  quiz
-closing_card  qa_endcard  flow_arrows  layer_stack  network_diagram  ui_mock
+closing_card  qa_endcard  flow_arrows  layer_stack  network_diagram  ui_mock  terminal
 ```
 
 **動態原則（2026-10-03 定案）**：畫面上的每個項目在**旁白唸到時才出現並亮起，全部唸完後固定**，
 不做任何循環動畫（焦點輪播、光點循環、整塊沉降都已移除）。
+
+**特效（2026-10-06 定案，`規範\特效設定.json`，build_data 寫進每節 data.fx）**：
+② 數字滾動（卡片／footer 數字出現時 0.8 秒滾到目標值）、③ 終端機打字（`terminal` 場景，每行寫 `cue`＋`dt`，建置時換算時間，找不到 cue 就中止）、
+④ 前後呼應（結語卡 `callback: [{icon,label}×2]`，帶回開頭比喻；開頭沒有比喻的節不加）、⑤ 輕音效（噠／叮，約 −20dB；**不要換場咻聲**，白噪音聽起來像雜音）、
+⑥ 測驗小儀式（思考倒數圈＋揭曉光暈一次）。① 聚光燈／微推近 試作後不採用（`pushIn: false`）。
 
 ## 流程
 
@@ -66,6 +71,13 @@ closing_card  qa_endcard  flow_arrows  layer_stack  network_diagram  ui_mock
 | ③ 整集 | `qa_run.py --ep` | 長度 28～33 分、整集響度、各節落差、接縫 |
 | ④ 看圖 | `make_report.py`、`compare.py` | HTML 報告：截圖總覽、修改前後對照、試聽清單 |
 | ⓪ 自我測試 | `selftest.py` | 規則有改就跑：故意做壞 13 種，每種都要被抓到 |
+| 配音前 | `qa\pron_test.py` | 唸法標準題 30 題（數字、網址、IP、縮寫），沒全過就不配音 |
+| 配音後 | `qa\listen_crosscheck.py` | 兩個 AI 交叉聽：AI 耳朵的疑點再用 whisper 聽一次，分確定／待聽／可接受／誤報（接受清單 `規範\唸法接受清單.json`），只有確定＋待聽要人聽 |
+| 配音後 | `qa\pause_check.py` | 句內停頓 >1.2 秒提醒（測驗思考停頓除外） |
+| 配音後 | `qa\ep_estimate.py` | 配完音就估整集長度（封面片頭＋各節＋片尾測驗），不用等合併 |
+| 配音前 | `qa\storyboard_page.py`＋`remotion\storyboard_stills.mjs` | 分鏡預覽頁：每場景一張截圖＋旁白，給業主先看內容 |
+| 探針 | `qa_layout.mjs` | 另加：渲染錯誤算問題；ui_mock 高亮框要完整框住目標列（含側欄） |
+| 建置 | `build_data.py` | 另加：測驗缺揭曉時間、終端機 cue 找不到 → 中止 |
 
 完整項目與門檻：`規範\品檢規範.md`。
 

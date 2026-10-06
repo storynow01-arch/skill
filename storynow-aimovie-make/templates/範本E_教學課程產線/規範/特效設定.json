@@ -1,0 +1,9 @@
+{
+  "_說明": "2026-10-06 使用者看 1-9fx／1-12fx 試作後決定：採用 ②③④⑤⑥，不要 ①聚光燈／微推近。build_data.py 把這份寫進每節 data.fx。③終端機是場景型別（分鏡 type: terminal），不靠開關。換場「咻」已拿掉（像雜音）。",
+  "pushIn": false,
+  "kinetic": true,
+  "callback": true,
+  "sfx": true,
+  "quiz": true,
+  "sfxVolume": 0.1
+}

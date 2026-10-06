@@ -3,13 +3,13 @@
   "engine": "gemini",
   "model": "auto",
   "_model說明": "auto＝每次自動用最新的正式版 Flash TTS（排除 lite、preview）；要固定版本就寫完整名稱，例如 gemini-3.8-flash-tts",
-  "voice_name": "02 沉穩專業・50 歲",
-  "voice_id": "voice_km2g006xq4f0",
-  "_voice說明": "2026-10-05 使用者從 20 個試聽選定（11_品檢/聲音試聽_付費版/試聽.html 第 02 組下方）。存在付費專案（.env.local key 指紋 ff300a38）裡，最後一次使用後保留一年；換 key 會找不到，要清空 voice_id 依描述重新設計（聲音只會相似、不會完全一樣）。試聽量測：平均音高 122 Hz、語速 4.1 字/秒。",
+  "voice_name": "storynow01（使用者克隆）",
+  "voice_id": "voice_nnlcixjak9lc",
+  "_voice說明": "2026-10-05 使用者改用自己的克隆聲音 storynow01（AI Studio 克隆，付費專案 key 指紋 ff300a38），風格選 style_presets 的 11（台灣口音＋輕鬆講解）。最後一次使用後保留一年；換 key 會找不到。 語速：克隆＋風格 11 約 4.3 字/秒，整集會超過 33 分 → 使用者選 C（風格 11 加「語速稍快、停頓短」，約 5.2 字/秒）。",
   "gender": "male",
   "language_code": "zh-TW",
   "voice_description": "50 歲左右的台灣資深男老師，個性年輕有活力，說標準台灣華語（台灣口音、不捲舌、不帶北京腔兒化音），咬字清楚，聲音清楚有穿透力、教室後排也聽得清楚，沉穩專業、有自信，聲音中低、飽滿有磁性。",
-  "style": "像講座講師，沉穩有自信、語氣篤定，語速適中，台灣華語口音，不要播音腔、不要太戲劇化",
+  "style": "道地台灣華語口音，不捲舌、不兒化，像跟學生面對面輕鬆講解，口語自然但咬字清楚，語速稍快、節奏明快，句與句之間停頓短",
   "chunk_chars": 700,
   "skip_rules": [
     "多音詞替換",
@@ -22,5 +22,48 @@
     "單獨唸的 com"
   ],
   "_skip_rules說明": "這些是 edge-tts 時代的權宜寫法（中文聲音唸英文不準才改），Gemini 唸得好，送 Gemini 時跳過：多音詞同音字替換、ping→聘、about→額抱特、mail/GET/gov→逐字母、Mega→Megah、單獨的 com→c o m。名稱對應 發音規範.json 的「詞典」鍵與 regex_rules 的 name。",
+  "_style_舊版_20261005": "像講座講師，沉穩有自信、語氣篤定，語速適中，台灣華語口音，不要播音腔、不要太戲劇化",
+  "gemini_replace": [
+    {
+      "name": "網址中的點唸「點」",
+      "pattern": "(?<=[A-Za-z])\\.(?=[A-Za-z])",
+      "repl": "點",
+      "說明": "mail.google.com → mail點google點com。2026-10-05 1-3 實測：寫成 . 時 Gemini 有時唸中文「點」、有時英文 dot，直接寫中文最穩"
+    },
+    {
+      "name": "www 唸 triple W",
+      "pattern": "(?<![A-Za-z])www(?![A-Za-z])",
+      "repl": "triple W",
+      "說明": "2026-10-05 使用者：www 不要唸「三 W」，改唸 triple W"
+    },
+    {
+      "name": "單獨的網域尾碼前加「點」",
+      "pattern": "(?<![A-Za-z.點])(com|edu|gov|org|net)(?=點tw|[^A-Za-z0-9]|$)",
+      "repl": "點\\g<1>",
+      "說明": "2026-10-05 使用者決定：單獨的 com、edu.tw、gov.tw 統一唸「點 com」「點 edu 點 tw」。1-3 S5 第一次改成 .com 時 Gemini 仍唸英文 dot com。字幕照稿子"
+    },
+    {
+      "name": "edu／gov／tw 逐字母",
+      "pattern": "(?<=點)(edu|gov|tw)(?![A-Za-z])",
+      "repl": "__SPELL__",
+      "說明": "2026-10-05 使用者抽檢 1-3 1:30：Gemini 把 edu、gov 唸成單字不對 → 逐字母 E D U、G O V、T W"
+    }
+  ],
+  "style_presets": {
+    "_說明": "2026-10-05 使用者聽克隆聲音 storynow01 的 10 種風格（11_品檢/聲音試聽/克隆_storynow01/10種風格試聽.html）後標記「蠻像的」。要換風格就把下面其中一段文字填進上面的 style。",
+    "05_輕鬆聊天": "像跟學生面對面聊天，口語、放鬆，語氣隨性但清楚",
+    "09_台灣口音加強": "道地台灣華語口音，不捲舌、不兒化，輕聲自然，像台灣本地老師說話",
+    "11_台灣口音＋輕鬆講解（05＋09 合併）": "道地台灣華語口音，不捲舌、不兒化，像跟學生面對面輕鬆講解，口語自然但咬字清楚",
+    "11C_風格11＋語速稍快（選定）": "道地台灣華語口音，不捲舌、不兒化，像跟學生面對面輕鬆講解，口語自然但咬字清楚，語速稍快、節奏明快，句與句之間停頓短"
+  },
+  "voice_presets": {
+    "storynow01（使用者克隆）": "voice_nnlcixjak9lc",
+    "02 沉穩專業・50 歲（設計聲音）": "voice_km2g006xq4f0"
+  },
+  "_前一組聲音_20261005": {
+    "voice_name": "02 沉穩專業・50 歲",
+    "voice_id": "voice_km2g006xq4f0",
+    "style": "像講座講師，沉穩有自信、語氣篤定，語速偏快、節奏明快（大約每秒五個半字），句與句之間停頓短，台灣華語口音，不要播音腔、不要太戲劇化"
+  },
   "_voice_id說明": "voice_id 屬於原作者的付費 Gemini 專案。用同一把 key（.env.local）可直接使用同一個聲音；其他人的 key 會找不到（HTTP 404）→ 把 voice_id 清成空字串，第一次配音會依 voice_description 設計相似的聲音"
 }

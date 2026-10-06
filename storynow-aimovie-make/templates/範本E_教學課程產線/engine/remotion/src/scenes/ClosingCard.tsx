@@ -18,7 +18,9 @@ import {useSweep} from '../chrome/Shimmer';
 export const ClosingCard: React.FC<{
   takeaway: string | string[]; recap?: string[]; nextTeaser?: string; durSec?: number;
   lineAts?: number[]; recapAts?: number[]; teaserAt?: number;
-}> = ({takeaway, recap = [], nextTeaser, durSec = 14, lineAts, recapAts, teaserAt: teaserCue}) => {
+  /** ④ 前後呼應（特效版）：本節開頭的比喻圖示，在第一句帶走重點時從左右飄回來 */
+  callback?: {icon: string; label: string}[];
+}> = ({takeaway, recap = [], nextTeaser, durSec = 14, lineAts, recapAts, teaserAt: teaserCue, callback}) => {
   const f = useCurrentFrame();
   const {fps} = useVideoConfig();
   const t = f / fps;
@@ -44,6 +46,18 @@ export const ClosingCard: React.FC<{
                           // 下方留 80px 給字幕帶：內容在「安全區頂 100～字幕頂 940」之間置中
                           fontFamily: FONT, padding: '0 160px 80px'}}>
       <StarField count={44} />
+      {callback?.map((cb, i) => {
+        const at = (lineAts?.[0] ?? 0) + 0.6 + i * 0.5;
+        const k = interpolate(t, [at, at + 0.7], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+        const side = i % 2 === 0 ? -1 : 1;
+        return (
+          <div key={i} style={{position: 'absolute', top: 210, [side < 0 ? 'left' : 'right']: 150, opacity: k,
+                               transform: `translateX(${side * (1 - k) * 60}px)`, textAlign: 'center'}}>
+            <div style={{fontSize: 96, lineHeight: 1}}>{cb.icon}</div>
+            <div style={{color: C.muted, fontSize: 24, marginTop: 18}}>{cb.label}</div>
+          </div>
+        );
+      })}
 
       <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center',
                    transform: `translateY(${-drop}px)`}}>

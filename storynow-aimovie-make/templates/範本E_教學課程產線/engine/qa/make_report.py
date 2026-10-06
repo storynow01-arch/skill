@@ -261,7 +261,35 @@ def build(label: str, title: str, changes: Path | None) -> Path:
     out.append("</main></body></html>")
     f = d / "品檢報告.html"
     f.write_text("\n".join(out), encoding="utf-8")
+    (d / "品檢報告.md").write_text(html_to_md("\n".join(out)), encoding="utf-8")   # 使用者要求 HTML＋MD 兩份
     return f
+
+
+def html_to_md(src: str) -> str:
+    """把報告 HTML 轉成 MD（標題、表格、重點數字；圖片與樣式略過）"""
+    import re
+    src = re.sub(r"(?s)<style.*?</style>|<head.*?</head>|<details>.*?</details>", "", src)
+
+    def cell(x):
+        return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", x))).strip().replace("|", "／")
+
+    def tab(m):
+        rows = re.findall(r"(?s)<tr>(.*?)</tr>", m.group(0))
+        lines = []
+        for i, r in enumerate(rows):
+            cs = [cell(c) for c in re.findall(r"(?s)<t[hd][^>]*>(.*?)</t[hd]>", r)]
+            lines.append("| " + " | ".join(cs) + " |")
+            if i == 0:
+                lines.append("|" + "---|" * len(cs))
+        return "\n" + "\n".join(lines) + "\n"
+    s = re.sub(r"(?s)<table.*?</table>", tab, src)
+    for n in (1, 2, 3):
+        s = re.sub(rf"(?s)<h{n}[^>]*>(.*?)</h{n}>", lambda m, n=n: "\n" + "#" * n + " " + cell(m.group(1)) + "\n", s)
+    s = re.sub(r"(?s)<div class=.kpi.>(.*?)</div>", lambda m: "- " + cell(m.group(1)) + "\n", s)
+    s = re.sub(r"<br\s*/?>|</p>|</div>|</li>", "\n", s)
+    s = re.sub(r"<li[^>]*>", "- ", s)
+    s = html.unescape(re.sub(r"<[^>]+>", "", s))
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(l.rstrip() for l in s.splitlines())).strip() + "\n"
 
 
 if __name__ == "__main__":

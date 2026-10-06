@@ -10,6 +10,7 @@
 """
 from __future__ import annotations
 import asyncio, json, re, sys, subprocess
+import os
 from pathlib import Path
 
 import edge_tts
@@ -114,7 +115,8 @@ def dur(p: Path) -> float:
 
 async def main(md: Path):
     sid = md.stem.split("_")[0]
-    out = md.parent.parent / "02_語音" / sid
+    # VOICE_DIR：暫配（分鏡驗證）寫到別的資料夾，不動 02_語音 裡已交付的配音（2026-10-06）
+    out = Path(os.environ["VOICE_DIR"]) / sid if os.environ.get("VOICE_DIR") else md.parent.parent / "02_語音" / sid
     out.mkdir(parents=True, exist_ok=True)
 
     scenes = parse(md)

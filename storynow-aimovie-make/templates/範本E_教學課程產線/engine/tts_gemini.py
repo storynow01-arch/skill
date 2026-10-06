@@ -48,7 +48,14 @@ def load_cfg() -> dict:
 def gemini_text(text: str, cfg: dict) -> str:
     """送 Gemini 的文字：數字、IP、縮寫照 to_speech 轉；但 edge-tts 專用的權宜寫法
     （多音詞同音字替換、英文詞的中文近似音）Gemini 不需要，在 配音設定.json 的 skip_rules 列出。"""
-    return to_speech(text, skip=set(cfg.get("skip_rules", [])))
+    text = to_speech(text, skip=set(cfg.get("skip_rules", [])))
+    # Gemini 專用的唸法統一（配音設定.json 的 gemini_replace），例如單獨的 com → .com 唸「點 com」
+    for r in cfg.get("gemini_replace", []):
+        if r["repl"] == "__SPELL__":           # 逐字母：edu → E D U
+            text = re.sub(r["pattern"], lambda m: " ".join(m.group(0).upper()), text)
+        else:
+            text = re.sub(r["pattern"], r["repl"], text)
+    return text
 
 
 def synth(text: str, cfg: dict, wav: Path):

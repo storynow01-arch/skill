@@ -15,7 +15,7 @@ from pathlib import Path
 ENGINE = Path(__file__).resolve().parent.parent
 ROOT = ENGINE.parent
 sys.path.insert(0, str(ENGINE))
-from subtitles import original_sentences          # noqa: E402
+from subtitles import original_sentences, match_lines          # noqa: E402
 from build_data import parse_srt                  # noqa: E402
 from tts import to_speech                         # noqa: E402
 
@@ -36,7 +36,7 @@ def main(out: Path, ids: list[str]):
     for sid in ids:
         for scn, opt in original_sentences(sid).items():
             srt = parse_srt(ROOT / "02_語音" / sid / f"{scn}.srt", 0)
-            lines = next((v for v in (opt["lines"], opt["parts"], opt["sents"]) if len(v) == len(srt)), None)
+            lines = match_lines(opt, srt, None)
             if not lines:
                 continue
             for k, (ln, cue) in enumerate(zip(lines, srt)):
@@ -71,7 +71,7 @@ def poly(out: Path, ids: list[str], per_word: int = 2):
     for sid in ids:
         for scn, opt in original_sentences(sid).items():
             srt = parse_srt(ROOT / "02_語音" / sid / f"{scn}.srt", 0)
-            lines = next((v for v in (opt["lines"], opt["parts"], opt["sents"]) if len(v) == len(srt)), None)
+            lines = match_lines(opt, srt, None)
             if not lines:
                 continue
             for k, (ln, cue) in enumerate(zip(lines, srt)):

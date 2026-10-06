@@ -48,7 +48,8 @@ def call(method: str, path: str, body: dict | None = None, query: str = "") -> d
                                  headers={"x-goog-api-key": api_key(), "Content-Type": "application/json"})
     for attempt in range(5):
         try:
-            return json.load(urllib.request.urlopen(req, timeout=600))
+            # 2026-10-06：逾時 600 → 240 秒（連線卡住時要等 10 分鐘才重試，1-4 實測卡 30 分鐘）
+            return json.load(urllib.request.urlopen(req, timeout=240))
         except urllib.error.HTTPError as e:
             msg = e.read().decode(errors="replace")
             if e.code == 429:
