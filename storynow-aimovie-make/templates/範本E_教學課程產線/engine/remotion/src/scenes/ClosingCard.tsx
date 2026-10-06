@@ -44,7 +44,8 @@ export const ClosingCard: React.FC<{
   return (
     <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center',
                           // 下方留 80px 給字幕帶：內容在「安全區頂 100～字幕頂 940」之間置中
-                          fontFamily: FONT, padding: '0 160px 80px'}}>
+                          // 有④前後呼應圖示（左右 150px 起、寬約 150px）時，左右多讓出空間，結語不會壓到圖示（2026-10-06 探針：2-4、2-8、3-1）
+                          fontFamily: FONT, padding: callback?.length ? '0 330px 80px' : '0 160px 80px'}}>
       <StarField count={44} />
       {callback?.map((cb, i) => {
         const at = (lineAts?.[0] ?? 0) + 0.6 + i * 0.5;
