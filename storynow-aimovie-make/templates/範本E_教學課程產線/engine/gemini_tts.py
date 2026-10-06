@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Gemini TTS 共用模組（storynow-aimovie-make 各流程、範本 A～E 共用同一份）。
 
-  - 金鑰：環境變數 GEMINI_API_KEY，或從目前資料夾往上找 .env.local 的 GEMINI_API_KEY=…
+  - 金鑰（2026-10-06 規則）：**只讀「這個專案」自己的 .env.local**（GEMINI_API_KEY=…）。
+          專案根目錄＝從目前資料夾往上，第一個有 .env.local／storyboard.json／CLAUDE.md／00_規範／.git 的資料夾；
+          不讀系統環境變數、不再往更上層找（別的專案的付費金鑰不能被借用）。沒有金鑰 → 呼叫端改用 edge-tts
   - 模型：model="auto"（預設）→ 查 /v1beta/models，自動用「最新的正式版 Flash TTS」
           （排除 lite、preview；目前是 gemini-3.8-flash-tts）。想固定版本就寫完整名稱，或設環境變數 GEMINI_TTS_MODEL
   - 聲音：voice 可以是 Gemini 現成聲音名（Puck、Achird…）、設計過的 voice id（voice_…），
@@ -26,20 +28,43 @@ class Quota(Exception):
 
 
 # ── 金鑰 ─────────────────────────────────────────────────────
-def api_key(start: str | Path | None = None) -> str:
-    if os.environ.get("GEMINI_API_KEY"):
-        return os.environ["GEMINI_API_KEY"]
+_MARKERS = (".env.local", "storyboard.json", "CLAUDE.md", "00_規範", ".git")
+_KEY: dict[str, str] = {}
+
+
+def project_root(start: str | Path | None = None) -> Path:
     d = Path(start or os.getcwd()).resolve()
     for p in [d, *d.parents]:
-        env = p / ".env.local"
-        if env.exists():
-            for line in env.read_text(encoding="utf-8").splitlines():
-                if line.startswith("GEMINI_API_KEY="):
-                    k = line.split("=", 1)[1].strip()
-                    if k and "請貼" not in k:
-                        os.environ["GEMINI_API_KEY"] = k
-                        return k
-    raise SystemExit("找不到 GEMINI_API_KEY：在專案資料夾的 .env.local 寫一行 GEMINI_API_KEY=你的key")
+        if any((p / m).exists() for m in _MARKERS):
+            return p
+    return d
+
+
+def project_key(start: str | Path | None = None) -> str:
+    """這個專案 .env.local 的 GEMINI_API_KEY；沒有（或還是範本的「請貼上」）回傳空字串"""
+    env = project_root(start) / ".env.local"
+    if env.exists():
+        for line in env.read_text(encoding="utf-8").splitlines():
+            if line.startswith("GEMINI_API_KEY="):
+                k = line.split("=", 1)[1].strip()
+                if k and "請貼" not in k:
+                    return k
+    return ""
+
+
+def has_key(start: str | Path | None = None) -> bool:
+    """配音選擇規則：True＝用 Gemini Flash TTS；False＝用 edge-tts"""
+    return bool(project_key(start))
+
+
+def api_key(start: str | Path | None = None) -> str:
+    if "k" in _KEY and start is None:
+        return _KEY["k"]
+    k = project_key(start)
+    if not k:
+        raise SystemExit(f"這個專案（{project_root(start)}）的 .env.local 沒有 GEMINI_API_KEY → 依規則改用 edge-tts")
+    _KEY["k"] = k
+    return k
 
 
 def call(method: str, path: str, body: dict | None = None, query: str = "") -> dict:
@@ -219,3 +244,27 @@ if __name__ == "__main__":
     # 自我檢查：py gemini_tts.py  → 印出目前會用的模型
     print("Flash TTS:", resolve_model("auto"))
     print("Flash-Lite TTS:", resolve_model("auto", lite=True))
+
+
+# ── 壞音檔關卡（2026-10-06：Gemini 偶爾回傳「後半段整段無聲」的音檔，2-8、2-14 實際遇到）──
+def bad_audio(wav_bytes: bytes, text: str, *, silence_db: float = -38.0) -> str:
+    """回傳問題說明（空字串＝正常）。每秒不到 2 字（30 字以上），或中間空白超過 6 秒（稿子有「……」思考停頓放寬到 12 秒）"""
+    import numpy as np
+    with wave.open(io.BytesIO(wav_bytes)) as w:
+        sr, x = w.getframerate(), np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
+    dur = len(x) / sr if sr else 0
+    chars = len(re.sub(r"[^一-鿿A-Za-z0-9]", "", text))
+    if chars >= 30 and dur and chars / dur < 2.0:
+        return f"{chars} 字配了 {dur:.1f} 秒（{chars / dur:.1f} 字/秒）"
+    hop = int(sr * 0.05) or 1
+    frames = x[:len(x) // hop * hop].reshape(-1, hop)
+    db = 20 * np.log10(np.sqrt((frames ** 2).mean(axis=1)) + 1e-9)
+    run = best = 0
+    for v in db:
+        run = run + 1 if v < silence_db else 0
+        best = max(best, run)
+    longest = best * hop / sr
+    limit = 12.0 if "……" in text else 6.0
+    if longest > limit:
+        return f"中間有 {longest:.1f} 秒空白（上限 {limit:.0f} 秒）"
+    return ""

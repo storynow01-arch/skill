@@ -8,11 +8,12 @@
   mode = "promo"  場景長度由 bars（小節數）決定，所有切點對齊音樂節拍，無旁白
 
 旁白聲音（storyboard 的 "voice"／"voices"）：
-  預設 provider = "gemini"：金鑰放專案資料夾 .env.local（GEMINI_API_KEY=…），模型 auto＝最新正式版 Flash TTS。
+  **配音選擇規則（2026-10-06）**：專案自己的 .env.local 有 GEMINI_API_KEY 才用 Gemini（模型 auto＝最新正式版 Flash TTS），
+  沒有就用 edge-tts（不讀系統環境變數、不借上層資料夾的金鑰）。
     {"description": "聲音描述（第一次自動設計，id 記在 .gemini_voices.json）", "style": "講話方式", "voice_id": "選填"}
     也可用 Gemini 現成聲音名：{"gemini_voice": "Achird"}
   所有句子先一次批次合成（一次請求約 2 分鐘的稿，省配額），再用 whisper 對齊切回每一句。
-  provider = "edge"／"azure" 仍可用（備用）；沒有 GEMINI_API_KEY 時自動退回 edge-tts 並警告。
+  provider = "edge"／"azure" 可指定；Gemini 音檔會過壞音檔關卡（長時間無聲、語速異常 → 不進快取、停下來重跑）。
 """
 import argparse, asyncio, hashlib, json, os, re, shutil, subprocess, sys, wave
 import numpy as np
@@ -102,7 +103,7 @@ def _provider(voice):
     p = voice.get('provider', 'gemini')
     if p == 'gemini' and not _gemini_ready():
         if not getattr(_provider, 'warned', False):
-            print('  ⚠ 找不到 GEMINI_API_KEY（專案 .env.local），這次改用 edge-tts')
+            print('  （這個專案的 .env.local 沒有 GEMINI_API_KEY → 依配音規則用 edge-tts）')
             _provider.warned = True
         return 'edge'
     if p == 'azure' and not (os.environ.get('AZURE_SPEECH_KEY') and os.environ.get('AZURE_SPEECH_REGION')):
@@ -171,8 +172,13 @@ def prefetch_gemini(items, cache, proj):
             outs = G.synth_lines([r[0] for r in uniq], gid, style=style, model=model, workdir=cache)
         except G.Quota as e:
             raise SystemExit(f'⛔ Gemini 今日配額用完；已完成的句子都在快取，明天重跑同一指令會接續。\n{e}')
+        bad = []
         for (say, wav), data in zip(uniq, outs):
-            _to_cache(data, wav)
+            why = G.bad_audio(data, say)      # 壞音檔關卡（2026-10-06）：壞的句子不進快取，重跑只會重新要這幾句
+            if why: bad.append(f'「{say[:20]}」{why}')
+            else: _to_cache(data, wav)
+        if bad:
+            raise SystemExit('⛔ Gemini 回傳的音檔異常（沒寫進快取，重跑同一指令會重新合成這幾句）：\n  ' + '\n  '.join(bad))
 
 
 def synth_line(text, cache, voice, proj='.'):
@@ -185,8 +191,10 @@ def synth_line(text, cache, voice, proj='.'):
     if not os.path.exists(wav):
         if provider == 'gemini':
             import gemini_tts as G
-            _to_cache(G.synth_lines([say], voice['_gid'], style=voice['style'], model=voice['_model'],
-                                    workdir=cache)[0], wav)
+            data = G.synth_lines([say], voice['_gid'], style=voice['style'], model=voice['_model'], workdir=cache)[0]
+            why = G.bad_audio(data, say)
+            if why: raise SystemExit(f'⛔ Gemini 回傳的音檔異常：「{say[:20]}」{why}（沒寫進快取，重跑會重新合成）')
+            _to_cache(data, wav)
         elif provider == 'azure':
             raw = wav[:-4] + '_az.wav'
             _tts_azure(say, raw, voice)

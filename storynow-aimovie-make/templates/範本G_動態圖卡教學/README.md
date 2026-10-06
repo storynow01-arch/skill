@@ -73,7 +73,7 @@
 | 進場 | 主角 outBack（0.6→1 倍回彈 0.55 秒）；次要 outExpo（下方 46px 上滑 0.6 秒）；同組錯開 0.07～0.08 秒 |
 | 轉場 | 下一段開始前 0.3 秒，舊段往上飄 110px、0.45 秒淡出；新段標題提前 0.1 秒進場 |
 | 字幕 | 底部深色膠囊（y=958、高 78）、象牙白 44px、按標點（含破折號）切句 |
-| 配音 | edge-tts `zh-TW-YunJheNeural` +4%，段間 0.45 秒（原提示詞要求用 F5-TTS 克隆自己的聲音，要用時改 build_audio.py） |
+| 配音 | 專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS（自動最新正式版），沒有就用 edge-tts（Gemini 可用設計過的聲音或克隆聲音 `voice.voice_id`，過壞音檔關卡）；edge-tts 為 `zh-TW-YunJheNeural` +4%，段間 0.45 秒（原提示詞提到 F5-TTS 克隆聲音） |
 | 聲音 | 不加配樂；loudnorm I=-16、TP=-2＋限幅 |
 | 規格 | 1920×1080、30 fps、H.264 CRF 16、AAC 192k |
 
@@ -109,7 +109,7 @@ storyboard 最外層：`name`、`voice`、`pron`、`segments: [{say, tts?, scene
    成片在 `<專案>/out/<name>.mp4`。
 6. 照上面的忠實度表用連續格核對。
 
-需要：Node.js、ffmpeg、Python（edge-tts）。第一次執行會在專案裡 `npm install playwright`。
+需要：Node.js、ffmpeg、Python（edge-tts；用 Gemini 時另需 numpy、faster-whisper）。第一次執行會在專案裡 `npm install playwright`。
 
 ## 檔案
 ```

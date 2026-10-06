@@ -6,6 +6,7 @@
 設定:
     00_規範/配音設定.json   模型、聲音 id（或聲音描述，第一次自動設計並寫回）、講課風格、每段字數
     .env.local（專案根目錄） GEMINI_API_KEY=...   ← 金鑰只放這裡，不進 git
+    **配音選擇規則（2026-10-06）**：專案自己的 .env.local 有金鑰才用 Gemini；沒有就自動改跑 tts.py（edge-tts），輸出格式相同
 輸出（與 tts.py 相同格式，下游 build_data.py 不用改）:
     02_語音/<id>/S1.mp3 S1.srt …、full.mp3、marks.json
 
@@ -212,6 +213,11 @@ def main(md: Path, force: bool = False, out_dir: str = ""):
 
 
 if __name__ == "__main__":
+    if not G.has_key(ROOT):
+        print(f"這個專案（{ROOT}）的 .env.local 沒有 GEMINI_API_KEY → 依配音規則改用 edge-tts（tts.py）")
+        import asyncio, tts
+        asyncio.run(tts.main(Path([a for a in sys.argv[1:] if not a.startswith("--")][0]).resolve()))
+        sys.exit(0)
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     od = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--out=")), "")
     main(Path(args[0]).resolve(), force="--force" in sys.argv, out_dir=od)

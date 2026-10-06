@@ -1,6 +1,6 @@
 ---
 name: storynow-aimovie-make
-description: 「從內容長出影片」的 AI 影片工作流——使用者給一句話＋資料（PDF、講義、純文字稿、活動通知），先理解內容、問三輪定調問題，再從內容產生 3 個完全不同的創意概念（含英文提示詞），經過文本審閱與 10 秒動態試看後，用程式手刻（Remotion 畫面＋numpy 配樂＋Gemini Flash TTS 旁白）做出成片並自動品檢。適用：宣傳片、招生影片、科系形象片、教學影片、微課、研習／活動說明影片。也在使用者說「做影片」「做一支宣傳片／招生片／教學影片」「手刻影片」「程式做影片」「產生創意概念」「做試看」，或輸入「資訊科範本1」「範本F」「範本G」時觸發。使用者問「我的語音有哪些／目前有哪些聲音可以選／用我的聲音」時也觸發（跑 engine/scripts/list_voices.py 列出克隆與設計聲音）。
+description: 「從內容長出影片」的 AI 影片工作流——使用者給一句話＋資料（PDF、講義、純文字稿、活動通知），先理解內容、問三輪定調問題，再從內容產生 3 個完全不同的創意概念（含英文提示詞），經過文本審閱與 10 秒動態試看後，用程式手刻（Remotion 畫面＋numpy 配樂＋Gemini Flash TTS 或 edge-tts 旁白，依專案 .env.local 有無金鑰）做出成片並自動品檢。適用：宣傳片、招生影片、科系形象片、教學影片、微課、研習／活動說明影片。也在使用者說「做影片」「做一支宣傳片／招生片／教學影片」「手刻影片」「程式做影片」「產生創意概念」「做試看」，或輸入「資訊科範本1」「範本F」「範本G」時觸發。使用者問「我的語音有哪些／目前有哪些聲音可以選／用我的聲音」時也觸發（跑 engine/scripts/list_voices.py 列出克隆與設計聲音）。
 metadata:
   tags: video, remotion, numpy-audio, gemini-tts, creative-concept, recruitment, lesson, trailer, workflow
   author: storynow01-arch
@@ -92,7 +92,7 @@ final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用
 | **真實照片／影片** | storyboard 設 `"mediaDir": "./素材"`；場景 props 寫 `"media": "檔名或關鍵字"`；場景型別 `photo`／`gallery`／`split`，或在自訂場景用 `lib/media` 的 `<Photo>` | **自動退回插畫**（`fallback: {icon, label, colors}`），build 會列出缺哪幾張，影片照常產出 |
 | **概念元件庫** | `engine/template/src/lib/`：camera（一鏡到底）、iso（等角世界）、character（角色劇）、kinetic（動態字體）、pixel（像素遊戲）、tunnel（縱深隧道）、draw（手繪描線）、penkit（筆跟著筆跡）、sketches（線稿庫）、whiteboard（白板手繪引擎＋彩色圖示庫，範本D）、media | — |
 | **自動品檢** | `python engine/scripts/qa.py [--video out/x.mp4]` | — |
-| **聲音升級** | 預設 **Gemini Flash TTS**（自動用最新正式版；金鑰放專案 `.env.local` 的 `GEMINI_API_KEY`）；聲音用 `"description"` 描述、第一次自動設計；逐句覆寫 `{"text", "voice", "style"}`；`"voices"` 定義角色聲音；旁白自動 EQ＋壓縮；音樂用旁白包絡做側鏈閃避；配樂母帶；備用 edge-tts／Azure（`"provider"`） | 沒有金鑰自動退回 edge-tts 並警告 |
+| **聲音升級** | 專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS（自動最新正式版），沒有就用 edge-tts（Gemini 自動用最新正式版）；聲音用 `"description"` 描述、第一次自動設計；逐句覆寫 `{"text", "voice", "style"}`；`"voices"` 定義角色聲音；旁白自動 EQ＋壓縮；音樂用旁白包絡做側鏈閃避；配樂母帶；備用 edge-tts／Azure（`"provider"`） | 沒有金鑰自動退回 edge-tts 並警告 |
 
 **建專案**：`python engine/scripts/new_project.py <資料夾> --example teach|promo`（同機已有專案可用 junction 共用 `node_modules`）
 **建置**：`python engine/scripts/build.py storyboard.json [--style X]`
@@ -101,7 +101,7 @@ final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用
 
 ## 硬規則
 - **文稿寫專業寫法，唸法交給程式**：網址寫 mail.google.com（不寫「mail 點 google 點 com」）、年份與百分比用阿拉伯數字；配音前跑 `final_qa/term_check.py`，必改 0 才配音。
-- **配音一律用 Gemini Flash TTS 的最新正式版**（`gemini_tts.py` 的 `model="auto"` 自動挑；不要寫死舊模型名）。金鑰只放 `.env.local`，不可進 git。
+- **配音選擇規則（2026-10-06，外層工作流與所有範本一致）**：專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS（自動最新正式版），沒有就用 edge-tts。只看這個專案的 `.env.local`，不讀系統環境變數、不借上層資料夾別的專案的金鑰。用 Gemini 時 `model="auto"` 自動挑最新版，不要寫死；金鑰不可進 git。Gemini 音檔一律過**壞音檔關卡**（`gemini_tts.bad_audio`：長時間無聲、語速異常 → 不進快取、重跑重新要）。
 - **配音前先讀 [`references/gemini-voice-lessons.md`](references/gemini-voice-lessons.md)**：網址唸法（字母間的 . → 點、單獨 com 前加點、edu／gov／tw 逐字母）、「；」與「……」的切句坑、AI 耳朵唸法約定。使用者說「用我的聲音／克隆聲音」→ 照 `engine/scripts/voices.json` 的 `storynow01`（voice_id＋選定風格）。
 - **使用者問「目前我的語音有哪些可以選擇」**（或「我有哪些聲音」「列出我的語音」）→ 在專案資料夾跑 `python <skill>/engine/scripts/list_voices.py`（要 `.env.local` 的 GEMINI_API_KEY），把結果整理成表格回覆：名稱、類型（克隆／文字設計）、voice_id、選定風格與其他風格、語速、到期日，★標預設；最後告訴使用者怎麼指定（「用 storynow01 配音，風格 11C」）。要給人看的頁面加 `--html 我的語音.html`。只列這把金鑰專案裡的聲音，不列 Google 內建的 prebuilt。
 - 數字、校名、名次**逐條對資料**；資料與提示詞衝突時照資料，並明講差異。

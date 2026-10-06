@@ -51,6 +51,7 @@ closing_card  qa_endcard  flow_arrows  layer_stack  network_diagram  ui_mock  te
 
 ## 配音（Gemini 3.8 Flash TTS）
 
+- **配音選擇規則**：專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS（自動最新正式版），沒有就用 edge-tts（`tts_gemini.py` 沒有金鑰會自動改跑 `tts.py`）。
 - **金鑰**：課程根目錄 `.env.local` 一行 `GEMINI_API_KEY=…`（new_course.py 會建好空白檔與 .gitignore）。
 - **聲音**：`00_規範\配音設定.json`。`voice_id` 空白時，第一次配音會依 `voice_description` 用 Gemini「聲音設計」做出聲音並寫回
   （聲音存在你的 Gemini 專案裡一年）。預設描述是「25 歲台灣年輕男老師、熱情開朗、溫暖中音」，`_其他候選` 另有明亮高音、低沉渾厚兩種。

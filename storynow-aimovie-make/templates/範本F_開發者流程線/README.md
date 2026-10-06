@@ -72,7 +72,7 @@
 | 進場 | 主角 outBack（0.65→1 倍回彈 0.5 秒）；次要 outExpo（下方 40px 上滑 0.55 秒）；同組錯開 0.08 秒 |
 | 同步 | 元素在旁白念到關鍵詞時出現（字元位置 ÷ 句長 × 該段秒數）；念到太晚就主體先出、細節跟關鍵詞 |
 | 字幕 | 底部深色膠囊（y=962、高 74）、象牙白 42px、按標點切句一次一句 |
-| 配音 | edge-tts `zh-TW-YunJheNeural` +8%，段間 0.18 秒（`voice` 可改；要用 Gemini 克隆聲音請改 build_audio.py） |
+| 配音 | 專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS（自動最新正式版），沒有就用 edge-tts（Gemini 聲音寫 `voice.voice_id`／`description`／`style`，過壞音檔關卡）；edge-tts 為 `zh-TW-YunJheNeural` +8%，段間 0.18 秒 |
 | 配樂 | numpy 合成 96 BPM 輕柔電子（Fmaj7–Am7–Dm7–B♭maj7）；節點點亮提示音逐步升高；轉場／收尾兩聲高音；人聲閃避最多壓 70% |
 | 響度 | loudnorm I=-14.5、TP=-2＋限幅（實測約 -16 LUFS、峰值 -1.9 dBFS） |
 | 規格 | 1920×1080、30 fps、H.264 CRF 16、AAC 192k |
@@ -115,7 +115,7 @@ storyboard 最外層：`name`（成片檔名）、`voice`、`pron`（只改配�
    會配音（有快取）→ 配樂 → 抽格 → 整支渲染 → 合成聲音＋響度，最後印出長度、響度、峰值。成片在 `<專案>/out/<name>.mp4`。
 6. 照上面的忠實度表用連續格核對。
 
-需要：Node.js、ffmpeg、Python（edge-tts、numpy、scipy）。第一次執行會在專案裡 `npm install playwright`；本機沒有 Playwright 的 Chromium 時會自動下載（同機已有專案可以用 junction 共用 `node_modules`）。
+需要：Node.js、ffmpeg、Python（edge-tts、numpy、scipy；用 Gemini 時另需 faster-whisper 對齊）。第一次執行會在專案裡 `npm install playwright`；本機沒有 Playwright 的 Chromium 時會自動下載（同機已有專案可以用 junction 共用 `node_modules`）。
 
 ## 檔案
 ```
