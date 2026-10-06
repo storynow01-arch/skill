@@ -16,7 +16,7 @@
   4. 每段音檔依文字雜湊快取在 02_語音/<id>/_gemini_cache/，配額用完（429）就停，隔天重跑會從斷點接續
 """
 from __future__ import annotations
-import hashlib, json, re, shutil, subprocess, sys
+import hashlib, time, json, re, shutil, subprocess, sys
 from pathlib import Path
 
 ENGINE = Path(__file__).resolve().parent
@@ -74,6 +74,13 @@ def srt_time(x: float) -> str:
     ms = int(round(max(x, 0) * 1000))
     return f"{ms // 3600000:02d}:{ms // 60000 % 60:02d}:{ms // 1000 % 60:02d},{ms % 1000:03d}"
 
+
+
+def max_silence(mp3: Path, db: int = -38) -> float:
+    """場內最長空白秒數（頭尾 0.5 秒不算）"""
+    r = subprocess.run(["ffmpeg", "-v", "info", "-i", str(mp3), "-af", f"silencedetect=noise={db}dB:d=1.5", "-f", "null", "-"],
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    return max((float(m) for m in re.findall(r"silence_duration: ([\d.]+)", r.stderr)), default=0.0)
 
 def main(md: Path, force: bool = False, out_dir: str = ""):
     cfg = load_cfg()
@@ -153,7 +160,8 @@ def main(md: Path, force: bool = False, out_dir: str = ""):
             total += d
             chars = len(re.sub(r"\s", "", narr))
             rows.append({"scene": s, "slug": slug, "seconds": round(d, 2), "chars": chars,
-                         "cps": round(chars / d, 1) if d else 0})
+                         "cps": round(chars / d, 1) if d else 0, "group": g, "wav": str(wav),
+                         "max_silence": max_silence(mp3), "think_pause": "……" in narr})
             print(f"  {s:3} {slug:14} {d:6.2f}s  {chars:4d}字  {chars / d if d else 0:4.1f}字/秒")
 
     lst = out / "concat.txt"
@@ -170,6 +178,20 @@ def main(md: Path, force: bool = False, out_dir: str = ""):
         print(f"\n⚠ 對齊可疑 {len(warnings)}／{sent_total} 句（可能漏唸或唸錯）：")
         for w in warnings[:10]:
             print(f"   第{w['group']}段 {w['seconds']}s「{w['sentence'][:30]}」")
+    # 壞音檔關卡（2026-10-06：2-8 第 3 段 Gemini 回傳的音檔，S9 在 6 秒後整整 102 秒空白，可疑 6 句沒超過一成門檻就過了）：
+    # 任一場每秒不到 2 字（30 字以上的場）或場內空白超過 6 秒（稿子有「……」測驗思考停頓的場放寬到 12 秒，實測 2-11、2-12 約 10.5 秒）
+    # → 那一段的快取移走、不覆寫，重跑會重新要一次
+    bad = [r for r in rows if (r["chars"] >= 30 and r["cps"] < 2.0)
+           or r["max_silence"] > (12.0 if r["think_pause"] else 6.0)]
+    if bad and "--accept" not in sys.argv:
+        trash = cache / f"_壞掉的段落_{time.strftime('%Y%m%d')}"
+        trash.mkdir(exist_ok=True)
+        for r in bad:
+            print(f"⛔ {r['scene']} 音檔異常：{r['chars']} 字 {r['seconds']} 秒（{r['cps']} 字/秒），最長空白 {r['max_silence']:.1f} 秒")
+            if Path(r["wav"]).exists():
+                shutil.move(r["wav"], str(trash / Path(r["wav"]).name))
+        print(f"  已把壞掉的段落移到 {trash}，沒有覆寫 {final}；重跑同一指令會重新配那一段")
+        sys.exit(5)
     if len(warnings) > max(2, sent_total * 0.1) and "--accept" not in sys.argv:
         print(f"⛔ 可疑句太多，沒有覆寫 {final}（新音檔留在 _staging，聽過沒問題可加 --accept 重跑）")
         sys.exit(4)
