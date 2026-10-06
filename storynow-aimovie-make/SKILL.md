@@ -1,6 +1,6 @@
 ---
 name: storynow-aimovie-make
-description: 「從內容長出影片」的 AI 影片工作流——使用者給一句話＋資料（PDF、講義、純文字稿、活動通知），先理解內容、問三輪定調問題，再從內容產生 3 個完全不同的創意概念（含英文提示詞），經過文本審閱與 10 秒動態試看後，用程式手刻（Remotion 畫面＋numpy 配樂＋Gemini Flash TTS 旁白）做出成片並自動品檢。適用：宣傳片、招生影片、科系形象片、教學影片、微課、研習／活動說明影片。也在使用者說「做影片」「做一支宣傳片／招生片／教學影片」「手刻影片」「程式做影片」「產生創意概念」「做試看」，或輸入「資訊科範本1」時觸發。使用者問「我的語音有哪些／目前有哪些聲音可以選／用我的聲音」時也觸發（跑 engine/scripts/list_voices.py 列出克隆與設計聲音）。
+description: 「從內容長出影片」的 AI 影片工作流——使用者給一句話＋資料（PDF、講義、純文字稿、活動通知），先理解內容、問三輪定調問題，再從內容產生 3 個完全不同的創意概念（含英文提示詞），經過文本審閱與 10 秒動態試看後，用程式手刻（Remotion 畫面＋numpy 配樂＋Gemini Flash TTS 旁白）做出成片並自動品檢。適用：宣傳片、招生影片、科系形象片、教學影片、微課、研習／活動說明影片。也在使用者說「做影片」「做一支宣傳片／招生片／教學影片」「手刻影片」「程式做影片」「產生創意概念」「做試看」，或輸入「資訊科範本1」「範本F」「範本G」時觸發。使用者問「我的語音有哪些／目前有哪些聲音可以選／用我的聲音」時也觸發（跑 engine/scripts/list_voices.py 列出克隆與設計聲音）。
 metadata:
   tags: video, remotion, numpy-audio, gemini-tts, creative-concept, recruitment, lesson, trailer, workflow
   author: storynow01-arch
@@ -28,8 +28,10 @@ metadata:
 | 「範本C」「快剪範本」 | 照 [`templates/範本C_動態字體快剪/README.md`](templates/範本C_動態字體快剪/README.md)：任何文本 → 動態字體快剪 |
 | 「範本D」「白板手繪」「手繪範本」 | 照 [`templates/範本D_白板手繪/README.md`](templates/範本D_白板手繪/README.md)：任何文本 → 白板手繪（一支馬克筆先描線再上色，一鏡到底） |
 | 「範本E」「教學課程產線」「整門課的教學影片」 | 照 [`templates/範本E_教學課程產線/README.md`](templates/範本E_教學課程產線/README.md)：一整門課 → 幾十節風格一致（garychen-dark 深色科技風）的教學影片，合併成集；附四關品檢；配音用 **Gemini Flash TTS（自動最新版）**；**完整 14 步流程（建課程→寫稿分鏡→文稿檢查→逐字審稿→使用者審稿＋分鏡預覽頁→選聲音→配音（唸法標準題、壞音檔關卡）→配音後聽檢（兩個 AI 交叉聽）→建置→版面探針→渲染合併→品檢→使用者抽檢→收工紀錄）見 [`templates/範本E_教學課程產線/規範/完整工作流程.md`](templates/範本E_教學課程產線/規範/完整工作流程.md)** |
+| 「範本F」「開發者流程線」「01 風格」 | 照 [`templates/範本F_開發者流程線/README.md`](templates/範本F_開發者流程線/README.md)：有步驟的文本 → 深色開發者風（點陣底、上方流程節點列講到哪亮到哪、下方舞台換成對話氣泡／文件卡／任務卡／紅轉綠／檢查列，雙色標語收尾）＋輕柔配樂；可兩段式（活動說明→單位介紹）。寫 `storyboard.json` 後 `engine/make.py` 一行出片（edge-tts，不走 Remotion） |
+| 「範本G」「動態圖卡教學」「06 風格」 | 照 [`templates/範本G_動態圖卡教學/README.md`](templates/範本G_動態圖卡教學/README.md)：教學文本 → 深藍光暈＋格線，段落標題膠囊，圖卡／圓環／打字機／分鏡格／要點膠囊／時間軸／問題→解法**在旁白念到時彈出**，段落上飄重疊轉場；只有旁白。寫 `storyboard.json` 後 `engine/make.py` 一行出片 |
 | 「加封面／片頭／LOGO」 | **選用**：只有使用者要求時才在 storyboard 加 `"brand": {"dir": "<素材資料夾>"}`（cover.jpg、intro.mp4、logo.png）；沒寫就不加任何封面片頭。範本 A～D 的引擎都支援（10/5 在範本D 實作時使用者要求加入），範本E 用自己的 `assemble.py` 接封面片頭，細節見 [`templates/範本風格_場景語彙.md`](templates/範本風格_場景語彙.md) 的「品牌素材」 |
-| 「用範本做」＋文本（沒指定哪個） | AskUserQuestion 讓使用者選 A／B／C／D（附一句特色），或「全部都做」 |
+| 「用範本做」＋文本（沒指定哪個） | AskUserQuestion 讓使用者選 A／B／C／D（附一句特色），或「全部都做」；有明確步驟的內容可另外推薦 F，觀念教學可推薦 G（F／G 用自己的 storyboard 格式，不吃 A～D 的 storyboard） |
 | 「做影片」＋資料 | 走完整十一步流程（下方） |
 | 「用 XX 概念做這份內容」 | 從第 ② 步開始，第 ④ 步直接採用指定概念，但仍要重新設計分鏡 |
 
@@ -77,6 +79,9 @@ templates/範本E_教學課程產線/  整門課的教學影片產線（自成�
                    tts_gemini.py＝Gemini 配音（整節成功才覆寫、對齊檢查），tts.py＝edge-tts 備用；qa/term_check.py＝文稿檢查、
                    qa/read_check.py＝唸法清單、qa/ai_listen.py＝配音後 AI 耳朵聽檢、qa/poly_ab.py＝多音詞判讀（edge 用）；
                    規範/配音設定.json 已填選定聲音「02 沉穩專業・50 歲」（同一把付費 key 才叫得到））
+templates/範本F_開發者流程線/  01 風格（自成一包）：engine（make.py 一行出片、lib_F.js 畫面庫、render.mjs 逐格截圖、build_audio.py、make_music.py）、
+                   examples（04 研習＋資訊科兩段式、01 Matt Pocock）、截圖（逐段截圖）、原始提示詞與完整版提示詞
+templates/範本G_動態圖卡教學/  06 風格（自成一包）：engine（make.py、lib_G.js、render.mjs、build_audio.py）、examples（06 教學動畫）、截圖、原始提示詞與完整版提示詞
 final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用）：final_qa.py、pron_check.py（唸法時長比對）、多音字清單.json；
                    term_check.py＋用詞規範.json＝第⑤步文稿檢查（第⓪關：配音前檢查專業用詞與寫法）
 ```

@@ -1,0 +1,8 @@
+我大概是這樣做
+我想用作一支30秒的影片
+主題是介紹 Matt Pocock 的 skill
+流程是介紹 他的skill 開發流程像是 /grill-with-docs ->/to-spec ->/to—tickets>/implement->/code-review
+請用溫暖的台灣男生來配音
+請上網搜尋跟研究 或參考 https://www.aihero.dev/skills
+在最後提到由 林穎俊製作
+請先給我看rundown 跟分竟，我確認後才開始動手

@@ -1,0 +1,34 @@
+{
+ "name": "01_MattPocock的Skill開發流程",
+ "voice": {"name": "zh-TW-YunJheNeural", "rate": "+8%", "gap": 0.18, "lead": 0.4, "tail": 1.8},
+ "pron": {"grill-with-docs": "grill with docs", "to-spec": "to spec", "to-tickets": "to tickets", "code-review": "code review"},
+ "parts": [
+  {"steps": [["/grill-with-docs", "追問釐清"], ["/to-spec", "寫成規格"], ["/to-tickets", "拆成任務"], ["/implement", "測試實作"], ["/code-review", "雙軸審查"]]}
+ ],
+ "segments": [
+  {"say": "AI 寫程式很快，但怎麼確保它做對？",
+   "scene": {"type": "terminal", "stampWord": "但怎麼確保", "errorFrom": 5,
+     "code": ["const app = await ai.build(idea)", "app.addFeature(\"payments\")", "app.refactor({ everything: true })", "app.addFeature(\"auth\")", "app.deploy()  // 🤞", "ai.fix(bug)", "ai.fix(bug2)", "ai.fix(bugFromFix)"]}},
+  {"say": "Matt Pocock 的 skills，把開發拆成五步。",
+   "scene": {"type": "overview", "title": "Matt Pocock's Skills", "subtitle": "從想法到上線的五個步驟"}},
+  {"say": "grill-with-docs，把需求和用語問清楚。",
+   "scene": {"type": "qa", "step": 0, "qa": [["Q", "「使用者」指的是誰？"], ["A", "付費會員，不含訪客"], ["Q", "「訂單取消」可以退款嗎？"]],
+     "doc": {"title": "GLOSSARY.md", "lines": ["使用者 = 付費會員", "訂單 = 已結帳購物車", "ADR-007 退款規則"], "word": "用語"}}},
+  {"say": "to-spec，把對話整理成規格。",
+   "scene": {"type": "mergeDoc", "step": 1, "doc": {"title": "SPEC  #42  會員退款", "lines": ["目標：付費會員可在 7 天內取消訂單", "範圍：退款、通知、後台紀錄", "驗收：3 項測試全數通過"]}}},
+  {"say": "to-tickets，拆成一張張小任務。",
+   "scene": {"type": "split4", "step": 2, "cards": [["T1", "資料表欄位"], ["T2", "退款 API"], ["T3", "通知信"], ["T4", "後台紀錄"]],
+     "deps": [[0, 1], [1, 2], [1, 3]], "depWord": "小任務", "note": "虛線 = 被誰卡住（blocked by）"}},
+  {"say": "implement，用測試驅動，逐張完成。",
+   "scene": {"type": "tdd", "step": 3, "pill": ["tests  3 failed", "tests  3 passed"], "word": "用測試驅動", "doneWord": "逐張完成",
+     "cards": [["T1", "資料表欄位"], ["T2", "退款 API"], ["T3", "通知信"], ["T4", "後台紀錄"]]}},
+  {"say": "最後 code-review，檢查規範和規格。",
+   "scene": {"type": "checkRows", "step": 4, "mono": true, "note": "兩位審查員平行檢查 → 才提交", "rows": [
+     {"title": "Standards", "desc": "程式規範、設計異味", "word": "規範"},
+     {"title": "Spec", "desc": "是否忠於原始規格", "word": "規格"}]}},
+  {"say": "從想法到上線，步步有依據。由林穎俊製作。",
+   "scene": {"type": "slogan", "left": "idea", "right": "ship", "word": "從想法到上線", "allWord": "從想法到上線",
+     "line": "每一步都有依據", "lineWord": "步步有依據", "credit": "由 林穎俊 製作", "creditWord": "由林穎俊製作",
+     "source": "資料來源：aihero.dev/skills · github.com/mattpocock/skills"}}
+ ]
+}
