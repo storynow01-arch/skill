@@ -470,8 +470,9 @@ def main(sid: str, dry: bool = False):
             "style": plan.get("style", "garychen-dark"),
             "captions": captions, "scenes": scenes}
     fx_f = ROOT / "00_規範" / "特效設定.json"   # 沒有這份（舊課程）＝不加特效，畫面跟以前一樣
-    if fx_f.exists():
-        data["fx"] = {k: v for k, v in json.loads(fx_f.read_text(encoding="utf-8")).items() if not k.startswith("_")}
+    fx = json.loads(fx_f.read_text(encoding="utf-8")) if fx_f.exists() else {}
+    if fx and sid not in fx.get("不套用的節", []):
+        data["fx"] = {k: v for k, v in fx.items() if not k.startswith("_") and k != "不套用的節"}
     ddir = ROOT / "04_引擎" / "remotion" / "src" / "data"
     out = ddir / f"{sid}.json"
     if not dry:
