@@ -10,3 +10,10 @@ __pycache__/
 *.wav
 *.mp3
 src/data/spec.json
+# 範本示範片（2026-10-06）：每個範本 示範/ 資料夾的 10 秒示範片要進 git（網站與 README 用）
+!templates/*/示範/*.mp4
+# 範本網站
+site/node_modules/
+site/dist/
+site/.env*
+site/.vercel/

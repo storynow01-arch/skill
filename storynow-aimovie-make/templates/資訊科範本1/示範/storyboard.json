@@ -1,0 +1,80 @@
+{
+ "title": "資訊科範本1 測試範本",
+ "mode": "teach",
+ "style": "cyber-neon",
+ "hud": {
+  "left": "資訊科範本1",
+  "right": "測試範本"
+ },
+ "lineGap": 0.3,
+ "lead": 0.3,
+ "tail": 0.5,
+ "voice": {
+  "name": "zh-TW-YunJheNeural",
+  "rate": "+12%",
+  "pitch": "+2Hz"
+ },
+ "scenes": [
+  {
+   "id": "A1",
+   "type": "title",
+   "impact": true,
+   "props": {
+    "eyebrow": "資訊科範本1",
+    "title": "活動說明＋宣傳片",
+    "size": 100,
+    "subtitle": "測試範本",
+    "en": "EVENT NOTICE × PROMO"
+   },
+   "lines": [
+    "這是資訊科範本1的測試範本。"
+   ]
+  },
+  {
+   "id": "A2",
+   "type": "flow",
+   "props": {
+    "heading": "一支影片兩段",
+    "en": "TWO PARTS",
+    "cueMap": [
+     0,
+     0,
+     0
+    ],
+    "result": "＝ 現場播放用",
+    "steps": [
+     {
+      "title": "活動說明",
+      "sub": "約兩分半"
+     },
+     {
+      "title": "宣傳片",
+      "sub": "60 秒"
+     },
+     {
+      "title": "串接",
+      "sub": "一支成片"
+     }
+    ]
+   },
+   "lines": [
+    "活動說明、宣傳片，串接成一支。"
+   ]
+  },
+  {
+   "id": "A3",
+   "type": "closing",
+   "impact": true,
+   "props": {
+    "title": "換上你的活動",
+    "size": 96,
+    "subtitle": "就是這個風格",
+    "lines": [],
+    "en": "YOUR EVENT HERE"
+   },
+   "lines": [
+    "換上你的活動，就是這個風格。"
+   ]
+  }
+ ]
+}

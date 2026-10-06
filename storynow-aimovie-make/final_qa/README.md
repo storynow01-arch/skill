@@ -63,3 +63,12 @@ python final_qa/final_qa.py out/成片.mp4 --lufs -14 \
 
 **為什麼不用語音辨識判斷唸法**：中文模式的 whisper 對英文縮寫、數字唸法分辨不出來（實測 HTTP 21 次都沒聽出），只能當試聽清單。
 **字幕帶位置**：預設 y 930～1020（本 skill 的字幕區在 y>930）。字幕在別處時用 `--band-y`、`--band-h`。
+
+## 配音前後的共用工具（2026-10-06，從範本E 移植，所有範本都用）
+| 工具 | 什麼時候 | 做什麼 |
+|---|---|---|
+| `review_prep.py`＋`review_report.py` | 交使用者審稿前 | 逐字審稿：審稿表（每句＋唸法要注意的地方）→ Claude 逐句審 → 審稿報告 HTML＋MD |
+| `storyboard_page.py` | 配音前 | 分鏡預覽頁（截圖＋旁白）；截圖由 `engine/scripts/preview_stills.mjs` 或範本F／G 的 `make.py --preview` 產生 |
+| `listen_crosscheck.py`＋`唸法接受清單.json` | 配音後 | 兩個 AI 交叉聽：AI 耳朵的疑點再用 whisper 聽，分確定／待聽／可接受／誤報 |
+| `pause_check.py` | 配音後 | 句內超過 1.2 秒的停頓（只提醒） |
+唸法標準題在 `engine/scripts/pron_test.py`（測 build.py 的 Gemini 唸法；專案可加 `唸法標準題.json`）；壞音檔關卡在 `engine/scripts/gemini_tts.py` 的 `bad_audio()`。

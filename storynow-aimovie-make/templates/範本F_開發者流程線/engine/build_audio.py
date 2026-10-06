@@ -51,7 +51,7 @@ def phrases(text):
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'engine', 'scripts')))
 try:
     import gemini_tts as G
-    USE_GEMINI = V.get('provider') != 'edge' and G.has_key(os.getcwd())
+    USE_GEMINI = V.get('provider') != 'edge' and os.environ.get('TTS_FORCE_EDGE') != '1' and G.has_key(os.getcwd())
 except ImportError:
     G, USE_GEMINI = None, False
 print('配音：' + ('Gemini Flash TTS（專案 .env.local 有金鑰）' if USE_GEMINI else 'edge-tts（專案沒有 Gemini 金鑰）'))

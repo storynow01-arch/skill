@@ -33,7 +33,7 @@ def main():
     if add:
         open(gi, 'a', encoding='utf-8').write(('\n' if old and not old.endswith('\n') else '') + '\n'.join(add) + '\n')
     print('專案 →', dest)
-    print('  ⚠ 打開 .env.local 填入 GEMINI_API_KEY（配音用 Gemini Flash TTS；沒填會退回 edge-tts）')
+    print('  ⚠ 配音規則：.env.local 填了 GEMINI_API_KEY 就用 Gemini Flash TTS，沒填就用 edge-tts')
     if not a.no_install:
         subprocess.check_call('npm install --no-audit --no-fund', cwd=dest, shell=True)
     print('下一步：\n  1. 編輯 storyboard.json\n  2. python', os.path.join(HERE, 'build.py'), 'storyboard.json\n  3. npx remotion studio  或  npm run render')

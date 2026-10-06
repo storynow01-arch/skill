@@ -4,6 +4,14 @@
 > 觸發：使用者說「**範本B／手稿範本／筆記本風**」，或在選範本時選 B。
 > 用法：**丟任何文本 → 拆成共用場景語彙 → 選本範本 → 產出同一風格的影片**。
 
+## 長什麼樣（10 秒示範片）
+
+[![點開看示範片](示範/poster.jpg)](示範/示範.mp4)
+
+![示範片三格總覽](示範/總覽.jpg)
+
+示範片：[`示範/示範.mp4`](示範/示範.mp4)（主題「測試範本」、edge-tts 配音）；示範分鏡：[`示範/storyboard.json`](示範/storyboard.json)；沒有這個 skill 時用：[`提示詞_範本B完整版.md`](提示詞_範本B完整版.md)
+
 ## 適合
 觀念教學、微課、「我也做得到」的溫暖內容；最後會拉遠看整本筆記
 
@@ -26,6 +34,15 @@ the camera never cuts — it pans, zooms and rotates across one huge canvas.
 Audio: warm lo-fi / acoustic hip-hop at 90 BPM with pencil-scribble, paper-slide and tape sound effects.
 Narration: a senior student, calm and encouraging, like showing you their own notebook.
 ```
+
+## 流程與品檢（2026-10-06，所有範本一致）
+不改畫面風格，只是讓影片更順、少出錯：
+1. **逐字審稿**：`final_qa/review_prep.py storyboard.json` → Claude 逐句審 → `final_qa/review_report.py` → 給使用者 ⛔
+2. **分鏡預覽**：`make_video.py storyboard.json --template B --preview`（edge-tts 暫配、不花額度）→ `qa/分鏡預覽/分鏡預覽.html` ⛔
+3. **正式出片**：`make_video.py storyboard.json --template B`，自動跑唸法標準題 → 建置（Gemini 過壞音檔關卡）→ AI 耳朵 → 兩個 AI 交叉聽 → 句內停頓 → 版面品檢
+4. 概念忠實度（下表）→ 抽檢回報加進品檢規則 → 收工紀錄（`進度.md`）
+
+配音：專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS，否則 edge-tts。
 
 ## 概念忠實度檢查（交付前逐項打勾，用「連續格」看，不是只看單格）
 自動品檢只管技術正確（重疊、出界、唸錯），**管不到「這還是不是原本那個概念」**。以下是本範本的招牌特徵，少一項就不算這個範本。

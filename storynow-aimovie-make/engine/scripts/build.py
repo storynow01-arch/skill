@@ -100,6 +100,8 @@ def _gemini_ready():
 
 
 def _provider(voice):
+    if os.environ.get('TTS_FORCE_EDGE') == '1':   # 分鏡預覽（make_video.py --preview）：暫配不花 Gemini 額度
+        return 'edge'
     p = voice.get('provider', 'gemini')
     if p == 'gemini' and not _gemini_ready():
         if not getattr(_provider, 'warned', False):

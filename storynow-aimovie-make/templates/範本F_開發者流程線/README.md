@@ -4,6 +4,12 @@
 > 觸發：使用者說「**範本F／開發者流程線／01 風格**」，或在選範本時選 F。
 > 用法：**丟任何「有步驟」的文本 → 寫成 `storyboard.json` → `engine/make.py` 一行出片**。畫面元件已寫死在引擎裡，換文本也是同一種風格與動態。
 
+## 10 秒示範片
+
+[![點開看示範片](示範/poster.jpg)](示範/示範.mp4)
+
+示範片：[`示範/示範.mp4`](示範/示範.mp4)（主題「測試範本」、edge-tts 配音）；示範分鏡：[`示範/storyboard.json`](示範/storyboard.json)
+
 ## 長什麼樣
 
 ![範例 04 總覽](截圖/範例04_00_總覽.jpg)
@@ -142,3 +148,12 @@ examples/ 04_研習與資訊科.storyboard.json（兩段式，16 段，89.5 秒�
 | 數字跑動 | 數字從 0 跑到目標值，在旁白念到該數字時剛好停住 |
 | 雙色標語 | 結尾大字標語用等寬字體，左詞黃色、右詞綠色，中間灰色箭頭，outBack 彈出 |
 | 署名膠囊 | 片尾署名放在白色細框膠囊內，右下角加一行資料來源小字 |
+
+## 流程與品檢（2026-10-06，跟外層工作流一致）
+不改畫面風格，只是讓影片更順、少出錯：
+1. **逐字審稿**：`python <skill>/final_qa/review_prep.py storyboard.json` → Claude 逐句審 → `final_qa/review_report.py` → 給使用者 ⛔
+2. **分鏡預覽**：`python engine/make.py <專案> --preview`（edge-tts 暫配、不花額度，每段 75% 處截圖）→ `抽格/分鏡預覽.html` ⛔
+3. **正式出片**：`python engine/make.py <專案>`，配音後自動跑 AI 耳朵（有 Gemini 金鑰才跑）→ 兩個 AI 交叉聽 → 句內停頓（都只提醒）
+4. 概念忠實度（上表）→ 抽檢回報加進品檢規則 → 收工紀錄（`進度.md`）
+
+配音：專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS（批次合成＋壞音檔關卡），否則 edge-tts。

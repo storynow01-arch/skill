@@ -1,0 +1,16 @@
+{
+  "id": "1-1",
+  "style": "garychen-dark",
+  "chapterLabel": "1-1  範本E 測試範本",
+  "scenes": [
+    {"id": "S1", "type": "title_card",
+     "props": {"title": "教學課程產線", "subtitleEn": "TEACHING PIPELINE", "eyebrow": "範本E"}},
+    {"id": "S2", "type": "concept_cards",
+     "props": {"heading": "一整門課，風格一致", "cards": [
+       {"n": 1, "icon": "🎨", "title": "風格一致", "note": "深色科技風", "cue": "風格一致"},
+       {"n": 2, "icon": "💡", "title": "念到才亮", "note": "跟著旁白出現", "cue": "念到才亮"},
+       {"n": 3, "icon": "🎬", "title": "整集合併", "note": "幾十節合成一集", "cue": "整集合併"}]}},
+    {"id": "S3", "type": "closing_card",
+     "props": {"takeaway": ["換上你的課程，就是這個風格。"], "callback": [{"icon": "🎨", "label": "風格一致"}, {"icon": "🎬", "label": "整集合併"}]}}
+  ]
+}

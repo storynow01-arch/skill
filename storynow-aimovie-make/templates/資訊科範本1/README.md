@@ -4,6 +4,14 @@
 > 結構：**活動說明（約 2 分 30 秒，賽博霓虹＋旁白字幕）→ 資訊科宣傳片「攜手築夢·智造未來」（60 秒）**
 > 使用者輸入「資訊科範本1」時，照本檔執行。
 
+## 長什麼樣（10 秒示範片）
+
+[![點開看示範片](示範/poster.jpg)](示範/示範.mp4)
+
+![示範片三格總覽](示範/總覽.jpg)
+
+示範片：[`示範/示範.mp4`](示範/示範.mp4)（主題「測試範本」、edge-tts 配音）；示範分鏡：[`示範/storyboard.json`](示範/storyboard.json)；沒有這個 skill 時用：[`提示詞_資訊科範本1完整版.md`](提示詞_資訊科範本1完整版.md)
+
 ## 執行步驟
 
 ### 1. 問三件事（AskUserQuestion）
@@ -65,3 +73,9 @@ python <skill>/engine/scripts/make_info1.py storyboard.json --name <活動簡稱
 ## 本機專用檔（不進 git）
 - `notice/notice_0930.local.json`：0930 研習的完整分鏡（含講師姓名、分機、Email），本機示範用
 - `cache/`：算好的宣傳片 mp4
+
+## 流程與品檢（2026-10-06，跟外層工作流一致）
+- 第 3 步「先給文本」之前先做**逐字審稿**（`final_qa/review_prep.py storyboard.json` → Claude 逐句審 → `final_qa/review_report.py`）
+- 第 4 步之前先做**分鏡預覽**：`make_info1.py storyboard.json --preview`（edge-tts 暫配）→ `qa/分鏡預覽/分鏡預覽.html` ⛔
+- `make_info1.py` 正式出片時自動跑唸法標準題 → 建置（Gemini 過壞音檔關卡）→ AI 耳朵 → 兩個 AI 交叉聽 → 句內停頓 → 版面品檢
+- 配音：專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS，否則 edge-tts

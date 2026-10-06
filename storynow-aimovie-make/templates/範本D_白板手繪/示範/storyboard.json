@@ -1,0 +1,79 @@
+{
+ "title": "範本D 測試範本",
+ "mode": "teach",
+ "snapBars": false,
+ "narrator": "小助手",
+ "hud": {
+  "left": "範本D",
+  "right": "測試範本"
+ },
+ "voice": {
+  "name": "zh-TW-YunJheNeural",
+  "rate": "+8%",
+  "pitch": "+0Hz"
+ },
+ "lineGap": 0.4,
+ "lead": 0.2,
+ "tail": 2.2,
+ "scenes": [
+  {
+   "id": "S1",
+   "type": "title",
+   "sec": 1.8,
+   "props": {
+    "eyebrow": "範本D",
+    "title": "白板手繪",
+    "en": "WHITEBOARD"
+   }
+  },
+  {
+   "id": "S2",
+   "type": "cards",
+   "props": {
+    "heading": "比喻教學",
+    "cueMap": [
+     0,
+     0,
+     0
+    ],
+    "cards": [
+     {
+      "icon": "document",
+      "title": "馬克筆",
+      "note": ""
+     },
+     {
+      "icon": "ruler",
+      "title": "先描線",
+      "note": ""
+     },
+     {
+      "icon": "magnifier",
+      "title": "再拉遠",
+      "note": ""
+     }
+    ]
+   },
+   "lines": [
+    "範本D白板手繪：馬克筆、先描線、再拉遠。"
+   ]
+  },
+  {
+   "id": "S3",
+   "type": "recap",
+   "props": {
+    "takeaway": [
+     "換上你的內容",
+     "就是這個風格"
+    ],
+    "takeCues": [
+     0,
+     0
+    ]
+   },
+   "lines": [
+    "換上你的內容，就是這個風格。"
+   ]
+  }
+ ]
+}

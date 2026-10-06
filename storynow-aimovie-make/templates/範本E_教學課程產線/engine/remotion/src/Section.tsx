@@ -43,6 +43,8 @@ export type SectionData = {
   scenes: SceneSpec[]; style?: StyleName;
   /** 特效試作（fx.tsx）；沒設＝正式版原樣 */
   fx?: FxFlags;
+  /** 有沒有 LOGO（03_素材/brand/logo.png）；沒有就不畫右上角 LOGO */
+  logo?: boolean;
 };
 
 /** qa=true 只在版面品檢時傳入（04_引擎/qa/qa_layout.mjs），正式渲染不帶 */
@@ -91,7 +93,7 @@ export const Section: React.FC<{data: SectionData; qa?: boolean}> = ({data, qa})
       <AbsoluteFill data-qa="chrome" style={{pointerEvents: 'none'}}>
         <ProgressBar />
         <ChapterIndicator label={data.chapterLabel} />
-        <Logo />
+        {data.logo !== false && <Logo />}
       </AbsoluteFill>
       <Subtitles captions={data.captions} />
       {qa && <QaProbe w={width} h={height} />}

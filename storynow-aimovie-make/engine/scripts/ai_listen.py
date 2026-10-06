@@ -3,9 +3,11 @@
 
   python <skill>/engine/scripts/ai_listen.py [--out qa/聽檢] [--model auto]     （在專案資料夾執行，build.py 之後）
 
-讀 src/data/spec.json 的 voiceLines（每句旁白的文字與起訖秒數）＋ public/voice.wav，依場景切出旁白片段，
+讀 src/data/spec.json 的 voiceLines（每句旁白的文字與起訖秒數）＋ public/voice.wav，依場景切出旁白片段
+（範本F／G 讀 timings.json 的每段配音檔），
 連同文稿與檢查清單（多音詞的應唸、英數詞、數字）送最新 Gemini Flash（一般多模態模型）聽，回報唸錯、漏字、多字。
 輸出：qa/聽檢/聽檢報告.html（只列有疑問的場景、附音檔）、.md、聽檢.json；有疑問時 exit 2（不擋流程，提醒人工確認）。
+接著跑 final_qa/listen_crosscheck.py qa/聽檢/聽檢.json（兩個 AI 交叉聽），只有「確定／待聽」要人聽。
 金鑰：專案 .env.local 的 GEMINI_API_KEY；沒有金鑰就跳過（exit 0）。
 """
 from __future__ import annotations
@@ -86,22 +88,29 @@ def main():
     except SystemExit:
         print("  （沒有 GEMINI_API_KEY，跳過 AI 耳朵聽檢）")
         return 0
-    spec = json.loads(Path("src/data/spec.json").read_text(encoding="utf-8"))
-    voice = Path("public") / (spec.get("voice") or "voice.wav")
-    if not spec.get("voiceLines") or not voice.exists():
+    out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
+    clips = []                                   # (場景, 文字, 音檔, 起, 訖)
+    if Path("src/data/spec.json").exists():      # 十一步流程、範本 A～D
+        spec = json.loads(Path("src/data/spec.json").read_text(encoding="utf-8"))
+        voice = Path("public") / (spec.get("voice") or "voice.wav")
+        scenes = {}
+        for vl in spec.get("voiceLines") or []:
+            scenes.setdefault(vl["scene"], []).append(vl)
+        if voice.exists():
+            clips = [(scn, "".join(v["text"] for v in vls), voice, vls[0]["from"] - 0.1, vls[-1]["to"] + 0.25)
+                     for scn, vls in scenes.items()]
+    elif Path("timings.json").exists():          # 範本F／G（2026-10-06）：每段配音檔
+        for sg in json.loads(Path("timings.json").read_text(encoding="utf-8"))["segs"]:
+            clips.append((f"第{sg['i']}段", sg["text"], Path(sg["wav"]), 0.0, None))
+    if not clips:
         print("  （沒有旁白，跳過 AI 耳朵聽檢）")
         return 0
     m = listen_model(a.model)
-    out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
-    scenes = {}
-    for vl in spec["voiceLines"]:
-        scenes.setdefault(vl["scene"], []).append(vl)
     rows = []
-    for scn, vls in scenes.items():
-        text = "".join(v["text"] for v in vls)
-        a0, a1 = vls[0]["from"] - 0.1, vls[-1]["to"] + 0.25
+    for scn, text, src, a0, a1 in clips:
         mp3 = out / f"{scn}.mp3"
-        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{max(a0, 0):.2f}", "-to", f"{a1:.2f}", "-i", str(voice),
+        cut = ["-ss", f"{max(a0, 0):.2f}"] + (["-to", f"{a1:.2f}"] if a1 is not None else [])
+        subprocess.run(["ffmpeg", "-v", "error", "-y", *cut, "-i", str(src),
                         "-c:a", "libmp3lame", "-q:a", "4", str(mp3)], check=True)
         chk = checklist(text)
         body = {"contents": [{"role": "user", "parts": [

@@ -1,0 +1,79 @@
+{
+ "title": "範本B 測試範本",
+ "mode": "teach",
+ "snapBars": false,
+ "narrator": "小助手",
+ "hud": {
+  "left": "範本B",
+  "right": "測試範本"
+ },
+ "voice": {
+  "name": "zh-TW-YunJheNeural",
+  "rate": "+18%",
+  "pitch": "+0Hz"
+ },
+ "lineGap": 0.2,
+ "lead": 0.2,
+ "tail": 0.3,
+ "scenes": [
+  {
+   "id": "S1",
+   "type": "title",
+   "sec": 1.8,
+   "props": {
+    "eyebrow": "範本B",
+    "title": "創客手稿",
+    "en": "MAKER'S NOTEBOOK"
+   }
+  },
+  {
+   "id": "S2",
+   "type": "cards",
+   "props": {
+    "heading": "觀念微課",
+    "cueMap": [
+     0,
+     0,
+     0
+    ],
+    "cards": [
+     {
+      "icon": "book",
+      "title": "筆記本",
+      "note": ""
+     },
+     {
+      "icon": "tag",
+      "title": "便利貼",
+      "note": ""
+     },
+     {
+      "icon": "bulb",
+      "title": "邊畫邊講",
+      "note": ""
+     }
+    ]
+   },
+   "lines": [
+    "範本B創客手稿：筆記本、便利貼、邊畫邊講。"
+   ]
+  },
+  {
+   "id": "S3",
+   "type": "recap",
+   "props": {
+    "takeaway": [
+     "換上你的內容",
+     "就是這個風格"
+    ],
+    "takeCues": [
+     0,
+     0
+    ]
+   },
+   "lines": [
+    "換上你的內容，就是這個風格。"
+   ]
+  }
+ ]
+}

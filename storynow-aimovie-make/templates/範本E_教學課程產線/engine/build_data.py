@@ -469,6 +469,7 @@ def main(sid: str, dry: bool = False):
     data = {"id": sid, "chapterLabel": plan["chapterLabel"], "audio": f"{sid}.mp3",
             "style": plan.get("style", "garychen-dark"),
             "captions": captions, "scenes": scenes}
+    data["logo"] = (ROOT / "03_素材" / "brand" / "logo.png").exists()
     fx_f = ROOT / "00_規範" / "特效設定.json"   # 沒有這份（舊課程）＝不加特效，畫面跟以前一樣
     fx = json.loads(fx_f.read_text(encoding="utf-8")) if fx_f.exists() else {}
     if fx and sid not in fx.get("不套用的節", []):
@@ -479,8 +480,10 @@ def main(sid: str, dry: bool = False):
         pub = ROOT / "04_引擎" / "remotion" / "public"
         pub.mkdir(parents=True, exist_ok=True)
         shutil.copy(VOICE / sid / "full.mp3", pub / f"{sid}.mp3")
-        shutil.copy(ROOT / "03_素材" / "brand" / "cover.jpg", pub / "cover.jpg")
-        shutil.copy(ROOT / "03_素材" / "brand" / "logo.png", pub / "logo.png")
+        # 封面、LOGO 是選用的業主素材（2026-10-06）：有才複製；沒有 LOGO 時畫面不畫右上角 LOGO
+        for name in ("cover.jpg", "logo.png"):
+            if (ROOT / "03_素材" / "brand" / name).exists():
+                shutil.copy(ROOT / "03_素材" / "brand" / name, pub / name)
 
         out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
         # Remotion --props 要的外層包裝

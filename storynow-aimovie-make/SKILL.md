@@ -37,10 +37,14 @@ metadata:
 
 ## 範本流程（使用者丟文本、選範本時用；比十步流程快）
 1. 讀文本 → 依 [`templates/範本風格_場景語彙.md`](templates/範本風格_場景語彙.md) 拆成 9 種場景（title／scenario／definition／cards／vs／stat／quiz／recap／qaEnd），寫 `storyboard.json`
-2. 給使用者審文本 ⛔（事實、旁白、場景型別）
-3. `new_project.py <專案>` → **`make_video.py storyboard.json --template A|B|C|D`**（一行：同步範本程式→檢查圖示→建置→音效→品檢→算圖→響度→成片品檢）
-4. **概念忠實度**：照 make_video 最後印出的清單，用連續格逐項核對招牌特徵（技術品檢管不到這個）
-5. 同一份 storyboard 可以換範本重算，分鏡與旁白不用改（`snapBars` 依範本曲速重新對拍）；圖示欄位寫 emoji 或線稿名都可（見 `lib/sketches.ts`）
+2. **逐字審稿**：`python final_qa/review_prep.py storyboard.json` 產出審稿表 → Claude 逐句審（清單見 workflow.md「逐字審稿」）寫進 `審稿筆記.json` → `python final_qa/review_report.py qa/逐字審稿` → 連同文本給使用者審 ⛔（事實、旁白、場景型別、審稿建議）
+3. `new_project.py <專案>` → **分鏡預覽** `make_video.py storyboard.json --template A|B|C|D --preview`（edge-tts 暫配、不花 Gemini 額度，每場一張截圖＋旁白 → `qa/分鏡預覽/分鏡預覽.html`）給使用者看畫面 ⛔
+4. **`make_video.py storyboard.json --template A|B|C|D`**（一行：同步範本程式→檢查圖示→文稿檢查→**唸法標準題**→建置（Gemini 過**壞音檔關卡**）→音效→AI 耳朵→**兩個 AI 交叉聽**→**句內停頓**→品檢→算圖→響度→成片品檢）
+5. **概念忠實度**：照 make_video 最後印出的清單，用連續格逐項核對招牌特徵（技術品檢管不到這個）
+6. **抽檢回報 → 品檢規則**：使用者看片回報「第幾秒、看到什麼」→ 找根因修好 → **把這類問題加進品檢規則或標準題**，不只修這一支
+7. **收工紀錄**：專案的 `進度.md` 寫做了什麼、為什麼、踩到的坑、下一步（可直接照跑的指令）；多次對話接續才找得回來
+8. 範本F／G、資訊科範本1 也是同樣的步驟：`make.py <專案> --preview`／`make_info1.py --preview` 做分鏡預覽，正式出片時自動跑交叉聽與停頓檢查
+9. 同一份 storyboard 可以換範本重算，分鏡與旁白不用改（`snapBars` 依範本曲速重新對拍）；圖示欄位寫 emoji 或線稿名都可（見 `lib/sketches.ts`）
 
 ## 十一步流程（細節見 [`references/workflow.md`](references/workflow.md)）
 
@@ -50,12 +54,12 @@ metadata:
 | ② 理解素材 | 產出 `01_事實清單.md`（宣傳類，逐條標來源頁碼）或 `01_內容分析.md`（教學類：觀念、比喻、迷思、**衝突→解答骨架**）。**列出資料衝突與敏感資訊** | |
 | ③ 定調問答 | AskUserQuestion 三輪、每輪 ≤4 題、選擇題＋推薦預設（題庫：[`references/question-bank.md`](references/question-bank.md)） | |
 | ④ 創意概念 | 產出 `02_三種創意概念.md`：3 個**全新**概念，各附英文提示詞（格式同 [`references/prompts/01_…原始提示詞.md`](references/prompts/01_旗艦科技宣傳片_原始提示詞.md)）＋中文對照＋比較表（方法：[`references/concept-design.md`](references/concept-design.md)） | ⛔ |
-| ⑤ 文本 | `03_分鏡文本.md`：每場景的畫面／旁白／大字卡／秒數＋**事實核對表**；多概念時同一旁白對照多種畫面。**交使用者審之前先跑文稿檢查** `python final_qa/term_check.py <文稿或 storyboard.json> --out 11_品檢/文稿檢查`（網址／協定／產品名寫法、年份與百分比、大陸用語、唸法寫進稿子；規則 `final_qa/用詞規範.json`；必改 0 才往下） | ⛔ |
+| ⑤ 文本 | `03_分鏡文本.md`：每場景的畫面／旁白／大字卡／秒數＋**事實核對表**；多概念時同一旁白對照多種畫面。**交使用者審之前先做逐字審稿**（`final_qa/review_prep.py` 審稿表 → Claude 逐句審 → `final_qa/review_report.py` 報告）**並跑文稿檢查** `python final_qa/term_check.py <文稿或 storyboard.json> --out 11_品檢/文稿檢查`（網址／協定／產品名寫法、年份與百分比、大陸用語、唸法寫進稿子；規則 `final_qa/用詞規範.json`；必改 0 才往下） | ⛔ |
 | ⑥ 動態試看 | 每概念 **10 秒**動態短片（新寫場景程式＋專屬配樂與音效），不是靜態圖 | ⛔ |
 | ⑦ 細節 | 旁白聲音試聽：依內容與使用者要求（性別、年齡、個性、粗細／深沉、語速）寫 3 段聲音描述，**`python engine/scripts/voice_preview.py --out 05_聲音試聽 --line "台詞" --voice "A=描述" --voice "B=描述" --voice "C=描述"`** 產出固定格式試聽頁（聲音內嵌、附音高與語速）；使用者選定後把 voices.json 的 voice_id 寫進 storyboard 的 voice；字幕樣式 | ⛔ |
-| ⑧ 製作 | 旁白 Gemini TTS（整支片的句子批次合成、whisper 對齊切回逐句）→ 時間軸（旁白長度補足到整數小節）→ 配樂＋事件音效＋人聲閃避 → Remotion 場景 → 算圖 | |
-| ⑨ 品檢 | **`qa.py` 自動品檢**：版面（瀏覽器內量測重疊／超出畫面／闖進字幕區）、旁白回聽（whisper 比對稿子）、黑畫面／無聲／響度／長度、總覽圖＋`qa_report.md`；有「必修」就修正重算（[`references/production.md`](references/production.md)）；**再做概念忠實度檢查**：用連續格逐項核對範本 README 的招牌特徵（技術全過≠概念還在） | |
-| ⑩ 交付沉澱 | 成片＋把使用者喜歡的概念存進 `references/prompts/`、場景程式存進 `concepts/` | |
+| ⑧ 製作 | **先做分鏡預覽**（`--preview`：edge-tts 暫配、每場截圖＋旁白 → 使用者看過 ⛔）→ **唸法標準題**（`engine/scripts/pron_test.py`，沒全過不配音）→ 旁白（配音規則：專案 `.env.local` 有 Gemini 金鑰才用 Gemini，否則 edge-tts；Gemini 整支片的句子批次合成、whisper 對齊切回逐句、**壞音檔關卡**）→ 時間軸（旁白長度補足到整數小節）→ 配樂＋事件音效＋人聲閃避 → Remotion 場景 → 算圖 | |
+| ⑨ 品檢 | **配音後**：AI 耳朵（`ai_listen.py`）→ **兩個 AI 交叉聽**（`final_qa/listen_crosscheck.py`，只有確定／待聽要人聽）→ **句內停頓**（`final_qa/pause_check.py`，只提醒）；**`qa.py` 自動品檢**：版面（瀏覽器內量測重疊／超出畫面／闖進字幕區）、旁白回聽（whisper 比對稿子）、黑畫面／無聲／響度／長度、總覽圖＋`qa_report.md`；有「必修」就修正重算（[`references/production.md`](references/production.md)）；**再做概念忠實度檢查**：用連續格逐項核對範本 README 的招牌特徵（技術全過≠概念還在） | |
+| ⑩ 交付沉澱 | 成片＋把使用者喜歡的概念存進 `references/prompts/`、場景程式存進 `concepts/`；**抽檢回報 → 把這類問題加進品檢規則**；**收工紀錄**（`進度.md`：做了什麼、為什麼、坑、下一步） | |
 | ⑪ 最終品檢 | **對要交出去的那支 mp4 再量一次**（⑨ 量的是製作中的版本，重新算圖、合併、響度處理都可能帶進新問題）：`python final_qa/final_qa.py out/成片.mp4 --lufs -14 --spec src/data/spec.json --layout qa_layout.json --terms <英數詞> --text <旁白全文>`，交出 `final_qa.html`＋`final_qa.md`——字幕閃爍／抖動、字幕＝旁白與同步、黑畫面、規格、響度、無聲、長度、版面、英數詞唸法（時長比對）、多音詞試聽清單；有字幕就依 Netflix 繁中字幕規範（每行 ≤16 字、每秒 ≤9 字）。全部通過才算交付（[`final_qa/README.md`](final_qa/README.md)） | |
 
 使用者回答模糊（例如選項沒有的「1 和 4」）時，**用下一輪問題確認，不要猜**。
@@ -68,7 +72,8 @@ engine/
   scripts/         new_project.py（建專案）、build.py（storyboard→照片解析→旁白→時間軸→配樂→側鏈閃避→spec.json）、
                    gemini_tts.py（Gemini 配音共用模組：自動用最新 Flash TTS）、voice_preview.py（第⑦步聲音試聽頁）、qa.py＋qa_layout.mjs（自動品檢）、
                    make_music.py（13 種曲風 numpy 合成＋音效）、from_ai_pipeline.py（舊產線 .md+plan → storyboard，選用）、
-                   pron_zh-TW.json（唸法：IP 逐字、縮寫拆字母）
+                   pron_zh-TW.json（唸法：IP 逐字、縮寫拆字母）、pron_test.py（唸法標準題）、preview_stills.mjs（分鏡預覽截圖）、
+                   ai_listen.py（配音後 AI 耳朵；A～D、F、G、資訊科範本1 共用）
   examples/        storyboard 範例（教學、宣傳、活動說明、舊產線轉換）
 concepts/          做過的概念場景程式（參考實作，新影片要依內容改寫，不要直接套）
   levelup/ notebook/ kinetic/ lesson-logistics/ lesson-sitcom/ lesson-cable/ audio/
@@ -83,7 +88,9 @@ templates/範本F_開發者流程線/  01 風格（自成一包）：engine（ma
                    examples（04 研習＋資訊科兩段式、01 Matt Pocock）、截圖（逐段截圖）、原始提示詞與完整版提示詞
 templates/範本G_動態圖卡教學/  06 風格（自成一包）：engine（make.py、lib_G.js、render.mjs、build_audio.py）、examples（06 教學動畫）、截圖、原始提示詞與完整版提示詞
 final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用）：final_qa.py、pron_check.py（唸法時長比對）、多音字清單.json；
-                   term_check.py＋用詞規範.json＝第⑤步文稿檢查（第⓪關：配音前檢查專業用詞與寫法）
+                   term_check.py＋用詞規範.json＝第⑤步文稿檢查（第⓪關：配音前檢查專業用詞與寫法）；
+                   review_prep.py＋review_report.py＝逐字審稿、storyboard_page.py＝分鏡預覽頁、listen_crosscheck.py＋唸法接受清單.json＝兩個 AI 交叉聽、
+                   pause_check.py＝句內停頓（2026-10-06 從範本E 移植，所有範本共用）
 ```
 
 ## 四項增強（2026-10-01）
@@ -92,7 +99,7 @@ final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用
 | **真實照片／影片** | storyboard 設 `"mediaDir": "./素材"`；場景 props 寫 `"media": "檔名或關鍵字"`；場景型別 `photo`／`gallery`／`split`，或在自訂場景用 `lib/media` 的 `<Photo>` | **自動退回插畫**（`fallback: {icon, label, colors}`），build 會列出缺哪幾張，影片照常產出 |
 | **概念元件庫** | `engine/template/src/lib/`：camera（一鏡到底）、iso（等角世界）、character（角色劇）、kinetic（動態字體）、pixel（像素遊戲）、tunnel（縱深隧道）、draw（手繪描線）、penkit（筆跟著筆跡）、sketches（線稿庫）、whiteboard（白板手繪引擎＋彩色圖示庫，範本D）、media | — |
 | **自動品檢** | `python engine/scripts/qa.py [--video out/x.mp4]` | — |
-| **聲音升級** | 專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS（自動最新正式版），沒有就用 edge-tts（Gemini 自動用最新正式版）；聲音用 `"description"` 描述、第一次自動設計；逐句覆寫 `{"text", "voice", "style"}`；`"voices"` 定義角色聲音；旁白自動 EQ＋壓縮；音樂用旁白包絡做側鏈閃避；配樂母帶；備用 edge-tts／Azure（`"provider"`） | 沒有金鑰自動退回 edge-tts 並警告 |
+| **聲音升級** | 專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS（自動最新正式版），沒有就用 edge-tts；聲音用 `"description"` 描述、第一次自動設計；逐句覆寫 `{"text", "voice", "style"}`；`"voices"` 定義角色聲音；旁白自動 EQ＋壓縮；音樂用旁白包絡做側鏈閃避；配樂母帶；備用 edge-tts／Azure（`"provider"`） | 沒有金鑰自動退回 edge-tts 並警告 |
 
 **建專案**：`python engine/scripts/new_project.py <資料夾> --example teach|promo`（同機已有專案可用 junction 共用 `node_modules`）
 **建置**：`python engine/scripts/build.py storyboard.json [--style X]`

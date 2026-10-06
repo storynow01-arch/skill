@@ -1,0 +1,109 @@
+{
+ "name": "示範_範本G_動態圖卡教學",
+ "voice": {
+  "name": "zh-TW-YunJheNeural",
+  "rate": "+4%",
+  "gap": 0.45,
+  "lead": 0.6,
+  "tail": 0.9
+ },
+ "pron": {},
+ "segments": [
+  {
+   "say": "這是範本G，動態圖卡教學的測試範本。",
+   "scene": {
+    "type": "hook",
+    "title": [
+     [
+      [
+       "範本G ",
+       "ivory"
+      ],
+      [
+       "動態圖卡教學",
+       "coral"
+      ]
+     ],
+     [
+      [
+       "測試範本",
+       "ivory"
+      ]
+     ]
+    ],
+    "ring": {
+     "big": "10",
+     "small": "秒",
+     "word": "測試範本"
+    },
+    "chips": {
+     "items": [
+      "圖卡",
+      "光暈",
+      "彈出"
+     ],
+     "word": "動態圖卡教學"
+    }
+   }
+  },
+  {
+   "say": "旁白念到哪裡，圖卡就彈出到哪裡。",
+   "scene": {
+    "type": "iconCards",
+    "header": {
+     "label": "特色",
+     "title": "念到才出現"
+    },
+    "cards": [
+     {
+      "name": "旁白",
+      "icon": "term",
+      "word": "旁白"
+     },
+     {
+      "name": "圖卡",
+      "icon": "film",
+      "word": "圖卡"
+     },
+     {
+      "name": "彈出",
+      "icon": "hex",
+      "iconText": "G",
+      "word": "彈出"
+     }
+    ]
+   }
+  },
+  {
+   "say": "換上你的內容，就是同樣風格的影片。",
+   "scene": {
+    "type": "finale",
+    "nodes": [
+     {
+      "name": "換內容",
+      "icon": "💬",
+      "word": "換上你的內容"
+     },
+     {
+      "name": "同風格",
+      "icon": "</>",
+      "word": "同樣風格"
+     },
+     {
+      "name": "出影片",
+      "icon": "▶",
+      "word": "影片"
+     }
+    ],
+    "cta": {
+     "text": "開始做影片  ▶",
+     "word": "影片"
+    },
+    "line": {
+     "text": "同樣風格的影片",
+     "word": "同樣風格"
+    }
+   }
+  }
+ ]
+}

@@ -4,6 +4,12 @@
 > 觸發：使用者說「**範本G／動態圖卡教學／06 風格**」，或在選範本時選 G。
 > 用法：**丟任何「教學、說明」文本 → 寫成 `storyboard.json` → `engine/make.py` 一行出片**。
 
+## 10 秒示範片
+
+[![點開看示範片](示範/poster.jpg)](示範/示範.mp4)
+
+示範片：[`示範/示範.mp4`](示範/示範.mp4)（主題「測試範本」、edge-tts 配音）；示範分鏡：[`示範/storyboard.json`](示範/storyboard.json)
+
 ## 長什麼樣
 
 ![範例 06 總覽](截圖/範例06_00_總覽.jpg)
@@ -141,3 +147,12 @@ examples/ 06_如何用ClaudeOpus做影片.storyboard.json（8 段，74.7 秒）
 | 重點框公式 | 重點用珊瑚色外框的強調框 outBack 彈出，裡面一行大字，下面一行多色公式 |
 | 問題→解法 | 每列左邊紅框寫問題、中間箭頭延伸、右邊青綠框寫解法，由上往下逐列出現 |
 | 呼吸按鈕 | 結尾珊瑚色大按鈕彈出後，以 ±3% 大小持續呼吸脈動 |
+
+## 流程與品檢（2026-10-06，跟外層工作流一致）
+不改畫面風格，只是讓影片更順、少出錯：
+1. **逐字審稿**：`python <skill>/final_qa/review_prep.py storyboard.json` → Claude 逐句審 → `final_qa/review_report.py` → 給使用者 ⛔
+2. **分鏡預覽**：`python engine/make.py <專案> --preview`（edge-tts 暫配、不花額度，每段 75% 處截圖）→ `抽格/分鏡預覽.html` ⛔
+3. **正式出片**：`python engine/make.py <專案>`，配音後自動跑 AI 耳朵（有 Gemini 金鑰才跑）→ 兩個 AI 交叉聽 → 句內停頓（都只提醒）
+4. 概念忠實度（上表）→ 抽檢回報加進品檢規則 → 收工紀錄（`進度.md`）
+
+配音：專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS（批次合成＋壞音檔關卡），否則 edge-tts。

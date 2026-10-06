@@ -1,5 +1,5 @@
-"""一行做出範本影片：同步引擎 → 檢查圖示 → ⓪文稿檢查 → 建置（旁白、配樂、字幕）→ 文不對題檢查 → 範本音效 →
-AI 耳朵聽檢 → 版面＋旁白品檢 → 算圖 → 響度 → 成片品檢。
+"""一行做出範本影片：同步引擎 → 檢查圖示 → ⓪文稿檢查 → 唸法標準題 → 建置（旁白、配樂、字幕；Gemini 過壞音檔關卡）
+→ 文不對題檢查 → 範本音效 → AI 耳朵聽檢 → 兩個 AI 交叉聽 → 句內停頓 → 版面＋旁白品檢 → 算圖 → 響度 → 成片品檢。
 
 用法（在專案資料夾裡執行；專案由 new_project.py 建立，node_modules 已就緒）：
     python <skill>/engine/scripts/make_video.py storyboard.json --template B   # A／B／C／D
@@ -8,6 +8,8 @@ AI 耳朵聽檢 → 版面＋旁白品檢 → 算圖 → 響度 → 成片品檢
     --no-sync     不把 skill 最新的範本程式（tpl、lib、QaProbe）同步進專案
     --no-qa       跳過品檢（不建議）
     --force       品檢有「必修」也繼續算圖
+    --preview     分鏡預覽（配音前給使用者看）：edge-tts 暫配（不花 Gemini 額度）→ 建置 → 每場截一張 → qa/分鏡預覽/分鏡預覽.html，不算圖
+配音選擇規則：專案自己的 .env.local 有 GEMINI_API_KEY 才用 Gemini Flash TTS，否則 edge-tts。
 storyboard 沒寫 music 時，自動用範本預設配樂。
 """
 import argparse, json, os, re, shutil, subprocess, sys
@@ -161,6 +163,7 @@ def main():
     ap.add_argument('storyboard'); ap.add_argument('--template', required=True, choices=list(TPL))
     ap.add_argument('--name'); ap.add_argument('--no-sync', action='store_true')
     ap.add_argument('--no-qa', action='store_true'); ap.add_argument('--force', action='store_true')
+    ap.add_argument('--preview', action='store_true')
     a = ap.parse_args()
     T = a.template; info = TPL[T]
     if not os.path.exists('node_modules'):
@@ -180,6 +183,17 @@ def main():
         rc = sh([py, os.path.join(SKILL, 'final_qa', 'term_check.py'), a.storyboard, '--out', 'qa/文稿檢查'], check=False)
         if rc != 0 and not a.force:
             raise SystemExit('文稿檢查有「必改」，見 qa/文稿檢查/文稿檢查報告.html（改完重跑，或加 --force）')
+    if a.preview:     # 分鏡預覽：暫配 → 建置 → 截圖 → 預覽頁（2026-10-06）
+        os.environ['TTS_FORCE_EDGE'] = '1'
+        sh([py, os.path.join(HERE, 'build.py'), build_sb])
+        sh(['node', os.path.join(HERE, 'preview_stills.mjs'), f'Template{T}', 'qa/分鏡預覽'])
+        sh([py, os.path.join(SKILL, 'final_qa', 'storyboard_page.py'), 'qa/分鏡預覽'])
+        print()
+        print('⛔ 請使用者看 qa/分鏡預覽/分鏡預覽.html（畫面文字、圖示、比喻、順序），確認後再拿掉 --preview 正式配音出片')
+        return
+    if not a.no_qa:   # 唸法標準題（2026-10-06）：Gemini 規則或專案 唸法標準題.json 沒全過就不配音
+        if sh([py, os.path.join(HERE, 'pron_test.py')], check=False) != 0 and not a.force:
+            raise SystemExit('唸法標準題沒有全過（見上方 ✗），修好唸法規則再配音（或加 --force）')
     sh([py, os.path.join(HERE, 'build.py'), build_sb])
     tc = json.load(open('qa/text_check.json', encoding='utf-8')) if os.path.exists('qa/text_check.json') else {}
     if tc.get('文不對題') and not a.no_qa and not a.force:
@@ -189,8 +203,11 @@ def main():
     os.makedirs('out', exist_ok=True); os.makedirs('qa', exist_ok=True)
     comp = f'Template{T}'
     if not a.no_qa:   # 配音後 AI 耳朵聽檢：只提醒，不擋（AI 標出的要人工聽過才算）
-        if sh([py, os.path.join(HERE, 'ai_listen.py'), '--out', 'qa/聽檢'], check=False) == 2:
-            print('⚠ AI 耳朵有疑問的場景，請聽 qa/聽檢/聽檢報告.html（確認唸錯就改稿或發音規範後重跑）')
+        if sh([py, os.path.join(HERE, 'ai_listen.py'), '--out', 'qa/聽檢'], check=False) == 2 and os.path.exists('qa/聽檢/聽檢.json'):
+            # 兩個 AI 交叉聽：whisper 再聽一次，分確定／待聽／可接受／誤報，只有前兩種要人聽
+            sh([py, os.path.join(SKILL, 'final_qa', 'listen_crosscheck.py'), 'qa/聽檢/聽檢.json'], check=False)
+            print('⚠ 請聽 qa/聽檢/交叉聽.html 的「確定／待聽」（確認唸錯就改稿或唸法規則後重跑）')
+        sh([py, os.path.join(SKILL, 'final_qa', 'pause_check.py')], check=False)   # 句內長停頓（只提醒）
     if not a.no_qa:
         rc = sh([py, os.path.join(HERE, 'qa.py'), '--comp', comp], check=False)
         shutil.copy('qa_report.md', f'qa/pre_{T}.md')

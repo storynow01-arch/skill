@@ -5,7 +5,10 @@
 選項：
     --trailer remotion|python   宣傳片版本（預設 remotion）
     --rebuild-trailer           忽略快取，重算宣傳片（改了宣傳片事實後要加）
-    --no-qa                     跳過說明段的版面＋旁白品檢
+    --no-qa                     跳過說明段的品檢
+    --preview                   分鏡預覽（配音前給使用者看）：edge-tts 暫配 → 每場截一張 → qa/分鏡預覽/分鏡預覽.html，不算圖
+品檢（2026-10-06，跟外層工作流一致）：唸法標準題 → 建置（Gemini 過壞音檔關卡）→ AI 耳朵 → 兩個 AI 交叉聽 → 句內停頓 → 版面＋旁白品檢。
+配音規則：專案自己的 .env.local 有 GEMINI_API_KEY 才用 Gemini，否則 edge-tts。
 宣傳片快取在 <skill>/templates/資訊科範本1/cache/（不進 git）；沒有快取會自動在 ../trailer 重算一次再存回快取。
 """
 import argparse, os, shutil, subprocess, sys
@@ -64,14 +67,30 @@ def main():
     ap.add_argument('storyboard'); ap.add_argument('--name', default='活動')
     ap.add_argument('--trailer', default='remotion', choices=['remotion', 'python'])
     ap.add_argument('--rebuild-trailer', action='store_true'); ap.add_argument('--no-qa', action='store_true')
+    ap.add_argument('--preview', action='store_true')
     a = ap.parse_args()
     if not os.path.exists('node_modules'):
         raise SystemExit('專案裡沒有 node_modules：先 npm install（或 junction 到共用的 node_modules）')
     for d in ('lib', 'custom', 'tpl'):
         shutil.copytree(os.path.join(SRC, d), os.path.join('src', d), dirs_exist_ok=True)
     py = sys.executable
+    fq = os.path.join(SKILL, 'final_qa')
+    if a.preview:     # 分鏡預覽（2026-10-06）
+        os.environ['TTS_FORCE_EDGE'] = '1'
+        sh(f'"{py}" "{os.path.join(HERE, "build.py")}" "{a.storyboard}"')
+        sh(f'node "{os.path.join(HERE, "preview_stills.mjs")}" Video qa/分鏡預覽')
+        sh(f'"{py}" "{os.path.join(fq, "storyboard_page.py")}" qa/分鏡預覽')
+        print('⛔ 請使用者看 qa/分鏡預覽/分鏡預覽.html，確認後拿掉 --preview 正式出片')
+        return
+    if not a.no_qa and sh(f'"{py}" "{os.path.join(HERE, "pron_test.py")}"', check=False) != 0:
+        raise SystemExit('唸法標準題沒有全過（見上方 ✗），修好唸法規則再配音')
     sh(f'"{py}" "{os.path.join(HERE, "build.py")}" "{a.storyboard}"')
     os.makedirs('out', exist_ok=True)
+    if not a.no_qa:   # 配音後：AI 耳朵（有 Gemini 金鑰才跑）→ 交叉聽 → 句內停頓（都只提醒）
+        if sh(f'"{py}" "{os.path.join(HERE, "ai_listen.py")}" --out qa/聽檢', check=False) == 2 and os.path.exists('qa/聽檢/聽檢.json'):
+            sh(f'"{py}" "{os.path.join(fq, "listen_crosscheck.py")}" qa/聽檢/聽檢.json', check=False)
+            print('⚠ 請聽 qa/聽檢/交叉聽.html 的「確定／待聽」')
+        sh(f'"{py}" "{os.path.join(fq, "pause_check.py")}"', check=False)
     if not a.no_qa:
         rc = sh(f'"{py}" "{os.path.join(HERE, "qa.py")}" --comp Video', check=False)
         if rc != 0:

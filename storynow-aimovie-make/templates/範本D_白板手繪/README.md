@@ -4,6 +4,14 @@
 > 觸發：使用者說「**範本D／白板手繪／手繪範本**」，或在選範本時選 D。（範本B 是「手稿範本」：方格筆記本加便利貼，兩個不要搞混）
 > 用法：**丟任何文本 → 拆成共用場景語彙 → 選本範本 → 產出同一風格的影片**。
 
+## 長什麼樣（10 秒示範片）
+
+[![點開看示範片](示範/poster.jpg)](示範/示範.mp4)
+
+![示範片三格總覽](示範/總覽.jpg)
+
+示範片：[`示範/示範.mp4`](示範/示範.mp4)（主題「測試範本」、edge-tts 配音）；示範分鏡：[`示範/storyboard.json`](示範/storyboard.json)；沒有這個 skill 時用：[`提示詞_範本D完整版.md`](提示詞_範本D完整版.md)
+
 ## 適合
 觀念教學、微課、比喻很多的內容（寄信、搬家、門牌……），也適合「一步一步畫給你看」的說明影片。最後會拉遠，讓觀眾看到整張白板的全貌。
 
@@ -19,6 +27,15 @@ and high-impact, and the audio should be seamlessly programmed in with precise, 
 - 淺灰紙面上，馬克筆先描黑框、再上扁平色（藍 #2b86bf、橘 #f39a33、黃 #f7c94a、紅 #e5543f）。
 - 字幕是白字黑邊的粗體。
 - 整片是一張大白板，鏡頭平移串起每個場景。
+
+## 流程與品檢（2026-10-06，所有範本一致）
+不改畫面風格，只是讓影片更順、少出錯：
+1. **逐字審稿**：`final_qa/review_prep.py storyboard.json` → Claude 逐句審 → `final_qa/review_report.py` → 給使用者 ⛔
+2. **分鏡預覽**：`make_video.py storyboard.json --template D --preview`（edge-tts 暫配、不花額度）→ `qa/分鏡預覽/分鏡預覽.html` ⛔
+3. **正式出片**：`make_video.py storyboard.json --template D`，自動跑唸法標準題 → 建置（Gemini 過壞音檔關卡）→ AI 耳朵 → 兩個 AI 交叉聽 → 句內停頓 → 版面品檢
+4. 概念忠實度（下表）→ 抽檢回報加進品檢規則 → 收工紀錄（`進度.md`）
+
+配音：專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS，否則 edge-tts。
 
 ## 概念忠實度檢查（交付前逐項打勾，用「連續格」看，不是只看單格）
 | # | 招牌特徵 | 怎麼驗 | 通用版現況 |
