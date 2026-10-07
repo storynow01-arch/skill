@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { agoText, parseBoard, planText, runningText } from '../hooks/register'
+import { agoText, parseBoard, plain, planText, runningText } from '../hooks/register'
 
 test('多久以前', async () => {
   expect(agoText(5)).toBe('剛剛')
@@ -35,4 +35,9 @@ test('全部進度與預計完成時間', async () => {
   expect(planText({ ...pl, eta: null, etaText: '', perMin: 0 })).toBe('84% 47/56節 · 完成時間估算中')
   expect(planText({ ...pl, done: 56, pct: 100 })).toBe('100% 56/56節 · 已完成')
   expect(planText({ ...pl, done: 51, pct: 91, waitUntil: '15:05', etaText: '17:40' })).toBe('91% 51/56節 · 等 15:05 繼續 · 預計 17:40 完成')
+})
+
+test('一列裡不出現 Markdown 符號', async () => {
+  expect(plain('全部查清並修好了。先給你**今天的戰報結論**，## 一、')).toBe('全部查清並修好了。先給你今天的戰報結論，一、')
+  expect(plain('用 `final_qa.py` 檢查')).toBe('用 final_qa.py 檢查')
 })

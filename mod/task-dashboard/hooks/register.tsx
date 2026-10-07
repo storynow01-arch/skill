@@ -63,24 +63,28 @@ export const register: Register = on => {
     const { Box, Text } = $.ui.resolve(e)
     const running = b.projects.filter(p => p.state === 'running')
     const pending = b.projects.filter(p => p.state !== 'running' && p.plan != null && p.plan.done < p.plan.total)
+    // 一個專案一行：狀態標籤 → 專案名 → 進度（有設定才有）→ 最近一句；名稱與標籤不縮，最後一段超出就截斷
+    const rows = [...running.map(p => ({ p, run: true })), ...pending.map(p => ({ p, run: false }))]
+    const shown = rows.slice(0, MAX_ROWS)
     const mine = (
-      <Box columnGap={2}>
-        <Text color="green">{`執行中 ${running.length}`}</Text>
-        {running.length === 0 && pending.length === 0 && <Text dimColor>目前沒有執行中的專案</Text>}
-        {running.map(p => (
+      <Box flexDirection="column">
+        {rows.length === 0 && (
+          <Box columnGap={2}>
+            <Text color="green" wrap="truncate">執行中 0</Text>
+            <Text dimColor wrap="truncate">目前沒有執行中的專案</Text>
+          </Box>
+        )}
+        {shown.map(({ p, run }) => (
           <Box key={p.cwd} columnGap={1}>
-            <Text bold>{p.name}</Text>
-            {p.plan != null && <Text color="cyan">{planText(p.plan)}</Text>}
-            <Text dimColor wrap="truncate">{runningText(p)}</Text>
+            <Box flexShrink={0}><Text color={run ? 'green' : 'yellow'}>{run ? '● 執行中' : '◐ 未完成'}</Text></Box>
+            <Box flexShrink={0}><Text bold>{p.name}</Text></Box>
+            {p.plan != null && <Box flexShrink={0}><Text color="cyan">{planText(p.plan)}</Text></Box>}
+            {(run || p.plan == null) && (
+              <Box flexShrink={1} minWidth={0}><Text dimColor wrap="truncate">{runningText(p)}</Text></Box>
+            )}
           </Box>
         ))}
-        {pending.map(p => (
-          <Box key={p.cwd} columnGap={1}>
-            <Text color="yellow">未完成</Text>
-            <Text bold>{p.name}</Text>
-            {p.plan != null && <Text color="cyan">{planText(p.plan)}</Text>}
-          </Box>
-        ))}
+        {rows.length > MAX_ROWS && <Text dimColor wrap="truncate">{`還有 ${rows.length - MAX_ROWS} 個專案（/dashboard 看全部）`}</Text>}
         {b.error !== undefined && <Text color="red" wrap="truncate">掃描失敗</Text>}
       </Box>
     )
@@ -121,11 +125,11 @@ export const register: Register = on => {
               {p.plan != null && <Text color="cyan">{`  ${planText(p.plan, true)}`}</Text>}
               {p.title !== '' && <Text dimColor wrap="truncate">{`  ${p.title}`}</Text>}
               {p.state === 'waiting' && p.lastClaude !== '' && (
-                <Text wrap={isOpen ? 'wrap' : 'truncate'}>{`  Claude：${p.lastClaude}`}</Text>
+                <Text wrap={isOpen ? 'wrap' : 'truncate'}>{`  Claude：${plain(p.lastClaude)}`}</Text>
               )}
               {isOpen && p.lastUser !== '' && <Text dimColor wrap="wrap">{`  你：${p.lastUser}`}</Text>}
               {isOpen && p.state !== 'waiting' && p.lastClaude !== '' && (
-                <Text dimColor wrap="wrap">{`  Claude：${p.lastClaude}`}</Text>
+                <Text dimColor wrap="wrap">{`  Claude：${plain(p.lastClaude)}`}</Text>
               )}
               {isOpen && p.status.map((s, i) => <Text key={`s${i}`} wrap="wrap">{`  · ${s}`}</Text>)}
               {isOpen && <Text dimColor wrap="truncate">{`  ${p.cwd}`}</Text>}
@@ -138,11 +142,19 @@ export const register: Register = on => {
   })
 }
 
-/** 執行中的專案在一列裡顯示什麼：背景工作最後一行 → 工作清單「目前狀態」第一條 → Claude 最後一句（限 40 字） */
+/** 執行中的專案在一列裡顯示什麼：背景工作最後一行 → 工作清單「目前狀態」第一條 → Claude 最後一句（去掉 Markdown 符號，限 40 字） */
 export const runningText = (p: Project): string => {
-  const t = p.bg ? `背景 ${p.bg}` : (p.status[0] ?? p.lastClaude)
+  const raw = p.bg ? `背景 ${p.bg}` : (p.status[0] ?? p.lastClaude)
+  const t = plain(raw)
   return t.length > 40 ? t.slice(0, 40) + '…' : t
 }
+
+/** 去掉 Markdown 記號（** ## ` > -）與多餘空白，一列裡才不會出現符號 */
+export const plain = (s: string): string =>
+  s.replace(/\*\*|__|`/g, '').replace(/\s*#{1,6}\s+/g, '').replace(/(^|\s)[>\-]\s+/g, '$1').replace(/\s+/g, ' ').trim()
+
+/** 輸入框上方最多列幾個專案，其餘收成「還有 N 個」 */
+export const MAX_ROWS = 4
 
 /** 「84% 47/56節 · 預計 17:47 完成」；long 加上其他單位與每項分鐘數 */
 export const planText = (pl: Plan, long = false): string => {
