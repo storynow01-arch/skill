@@ -95,7 +95,7 @@ def main():
         "vocab": (TPL / "範本風格_場景語彙.md").read_text(encoding="utf-8"),
     }
     # 有資料夾但沒登記的範本
-    dirs = {p.name for p in TPL.iterdir() if p.is_dir()}
+    dirs = {p.name for p in TPL.iterdir() if p.is_dir() and not p.name.startswith(("_", "."))}   # __pycache__ 這類暫存資料夾不是範本
     unreg = sorted(dirs - {t["dir"] for t in reg})
     total_bad = 0
     for t in reg:
