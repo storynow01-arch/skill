@@ -1,0 +1,347 @@
+{
+  "title": "1-3 網域名稱與 DNS（範本 H 螢幕模擬）",
+  "mode": "teach",
+  "snapBars": false,
+  "voice": {
+    "name": "zh-TW-YunJheNeural",
+    "rate": "+18%",
+    "pitch": "+4Hz"
+  },
+  "lineGap": 0.3,
+  "lead": 0.4,
+  "tail": 0.6,
+  "scenes": [
+    {
+      "id": "S1",
+      "type": "title",
+      "props": {
+        "eyebrow": "1-3",
+        "title": "網域名稱與 DNS",
+        "en": "DOMAIN NAME & DNS"
+      },
+      "lines": [
+        "打開瀏覽器打一個網址，背後其實發生了一件事。"
+      ]
+    },
+    {
+      "id": "S2",
+      "type": "screen",
+      "props": {
+        "browser": {
+          "tab": "新分頁",
+          "page": "newtab"
+        },
+        "actions": [
+          {
+            "do": "click",
+            "to": "omnibox",
+            "cue": "網址列"
+          },
+          {
+            "do": "type",
+            "app": "browser",
+            "typed": "google.com",
+            "cue": "google.com"
+          },
+          {
+            "do": "enter",
+            "app": "browser",
+            "cue": "按下",
+            "status": [
+              "正在解析主機...",
+              "正在建立安全連線..."
+            ]
+          },
+          {
+            "do": "move",
+            "to": {
+              "x": 820,
+              "y": 470
+            },
+            "after": 0.3
+          },
+          {
+            "do": "zoom",
+            "to": "omnibox",
+            "z": 1.8,
+            "cue": "對應到"
+          },
+          {
+            "do": "callout",
+            "to": "omnibox",
+            "text": "google.com　→　[[哪一個 IP？]]",
+            "cue": "哪一個"
+          },
+          {
+            "do": "zoom",
+            "to": "status",
+            "z": 2.4,
+            "cue": "網路上"
+          },
+          {
+            "do": "callout",
+            "to": "status",
+            "side": "above",
+            "text": "DNS：把名字[[翻成 IP]]",
+            "cue": "就叫做"
+          },
+          {
+            "do": "callout",
+            "to": "status",
+            "side": "above",
+            "text": "DNS：把名字[[翻成 IP]]\ngoogle.com　→　142.251.43.14",
+            "cue": "翻成",
+            "dt": 0.6
+          },
+          {
+            "do": "load",
+            "page": "google",
+            "title": "Google",
+            "url": "google.com",
+            "after": 0.6
+          },
+          {
+            "do": "zoom",
+            "reset": true,
+            "after": 0.2
+          }
+        ]
+      },
+      "lines": [
+        "你在網址列打了 google.com，",
+        "然後按下 Enter。",
+        "然後按下 Enter。",
+        "電腦要怎麼知道，它對應到哪一個 IP？",
+        "總要有人保管這本通訊錄。",
+        "網路上做這件事的系統，就叫做 DNS。",
+        "它的工作只有一句話：把名字翻成 IP。"
+      ]
+    },
+    {
+      "id": "S3",
+      "type": "screen",
+      "props": {
+        "browser": {
+          "tab": "Google",
+          "url": "google.com",
+          "page": "google"
+        },
+        "cursor": {
+          "x": 820,
+          "y": 470
+        },
+        "actions": [
+          {
+            "do": "click",
+            "to": "omnibox",
+            "cue": "故意"
+          },
+          {
+            "do": "type",
+            "app": "browser",
+            "typed": "my-school.test",
+            "cue": "不存在"
+          },
+          {
+            "do": "enter",
+            "app": "browser",
+            "cue": "試試看",
+            "status": [
+              "正在解析主機..."
+            ]
+          },
+          {
+            "do": "load",
+            "page": "dns_error",
+            "title": "my-school.test",
+            "url": "my-school.test",
+            "cue": "瀏覽器會"
+          },
+          {
+            "do": "zoom",
+            "to": "page:code",
+            "z": 2.0,
+            "cue": "注意"
+          },
+          {
+            "do": "highlight",
+            "to": "page:code",
+            "cue": "錯誤碼"
+          },
+          {
+            "do": "callout",
+            "to": "page:code",
+            "side": "right",
+            "text": "名字[[解析失敗]]：DNS 查不到",
+            "cue": "意思"
+          }
+        ]
+      },
+      "lines": [
+        "我故意打一個不存在的網址試試看。",
+        "瀏覽器會告訴你：無法連上這個網站。",
+        "注意下面這一行英文錯誤碼，意思就是名字解析失敗，DNS 查不到。"
+      ]
+    },
+    {
+      "id": "S4",
+      "type": "screen",
+      "props": {
+        "browser": {
+          "tab": "Google",
+          "url": "google.com",
+          "page": "google"
+        },
+        "terminal": {
+          "shell": "powershell"
+        },
+        "cursor": {
+          "x": 900,
+          "y": 600
+        },
+        "actions": [
+          {
+            "do": "focus",
+            "app": "terminal",
+            "cue": "打開終端機"
+          },
+          {
+            "do": "move",
+            "to": {
+              "x": 1240,
+              "y": 820
+            },
+            "after": 0.5
+          },
+          {
+            "do": "type",
+            "app": "terminal",
+            "typed": "nslookup google.com",
+            "cue": "輸入"
+          },
+          {
+            "do": "enter",
+            "app": "terminal",
+            "after": 0.25,
+            "output": [
+              "伺服器:  dns.google",
+              "Address:  8.8.8.8",
+              "",
+              "未經授權的回答:",
+              "名稱:    google.com",
+              "Addresses:  2404:6800:4012:805::200e",
+              "          142.251.43.14",
+              ""
+            ]
+          },
+          {
+            "do": "zoom",
+            "to": "term:142.251.43.14",
+            "z": 1.85,
+            "cue": "查得到，代表"
+          },
+          {
+            "do": "highlight",
+            "to": "term:142.251.43.14",
+            "after": 0.3
+          },
+          {
+            "do": "callout",
+            "to": "term:142.251.43.14",
+            "side": "right",
+            "text": "查得到 IP　→　[[DNS 沒問題]] ✓\n問題在[[網站那一端]]",
+            "cue": "代表"
+          }
+        ]
+      },
+      "lines": [
+        "下次遇到打不開，可以先查這個名字查不查得到 IP。",
+        "打開終端機，輸入 nslookup，後面接網址。",
+        "查得到，代表 DNS 沒問題，問題在網站那一端。"
+      ]
+    },
+    {
+      "id": "S5",
+      "type": "phone",
+      "props": {
+        "phone": {
+          "app": "AI 小幫手",
+          "color": "#06C755",
+          "messages": [
+            {
+              "from": "other",
+              "text": "嗨！需要什麼幫忙？"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "do": "tap",
+            "to": "mic",
+            "cue": "你對"
+          },
+          {
+            "do": "message",
+            "from": "me",
+            "text": "幫我打開學校網站",
+            "cue": "幫我打開",
+            "dt": 0.8
+          },
+          {
+            "do": "message",
+            "from": "other",
+            "text": "正在查詢 www.example.edu.tw 的 IP…",
+            "cue": "它也是"
+          },
+          {
+            "do": "zoom",
+            "to": "phone:last",
+            "z": 1.5,
+            "after": 0.1
+          },
+          {
+            "do": "callout",
+            "to": "phone:last",
+            "side": "right",
+            "text": "App 也要先[[查 DNS]]",
+            "cue": "翻成"
+          },
+          {
+            "do": "message",
+            "from": "other",
+            "text": "已連線 ✓",
+            "cue": "才連得"
+          }
+        ]
+      },
+      "lines": [
+        "手機也一樣，App 背後一樣要先查 DNS。",
+        "你對語音助理說：幫我打開學校網站。",
+        "它也是先把網址翻成 IP，才連得過去。"
+      ]
+    },
+    {
+      "id": "S6",
+      "type": "recap",
+      "props": {
+        "heading": "重點整理",
+        "points": [
+          "網域名稱是給人看的名字",
+          "DNS 負責把名字翻成 IP",
+          "打不開時先用 nslookup 查"
+        ],
+        "cueMap": [
+          1,
+          2,
+          3
+        ]
+      },
+      "lines": [
+        "整理一下。",
+        "網域名稱，是給人看的名字。",
+        "DNS，負責把名字翻成 IP。",
+        "打不開的時候，先用 nslookup 查查看。"
+      ]
+    }
+  ]
+}

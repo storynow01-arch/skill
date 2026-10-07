@@ -1,6 +1,7 @@
-"""範本音效軌：讀 src/data/spec.json，依範本（A 遊戲／B 手稿／C 快剪／D 白板手繪）在場景與旁白 cue 上放音效 → public/tpl_sfx.wav
+"""範本音效軌：讀 src/data/spec.json，依範本（A 遊戲／B 手稿／C 快剪／D 白板手繪／H 螢幕模擬）在場景與旁白 cue 上放音效 → public/tpl_sfx.wav
 範本 D 另外產生 public/sfx_d/*.wav（馬克筆沙沙、上色啵、答對叮、答錯嗡），由 TemplateD 對準每一筆的時間播放。
-用法：python tpl_sfx.py A|B|C|D   （在專案資料夾內執行）"""
+範本 H：每個字按下去一聲鍵盤、點擊一聲滑鼠、Enter 重一點、泡泡一聲輕「啵」（時間＝build.py 排好的 keys／f，跟畫面同一份）。
+用法：python tpl_sfx.py A|B|C|D|H   （在專案資料夾內執行）"""
 import json, os, sys, wave
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -43,6 +44,18 @@ def pop():
 
 def hit():
     return M.impact(.7) * .5
+
+
+def key_click(rng, heavy=False):
+    """鍵盤：短促的雜訊＋一點高頻（每一聲略不同，聽起來才像真的在打字）"""
+    n = int((.06 if heavy else .045) * SR); t = np.arange(n) / SR
+    x = rng.normal(0, 1, n) * np.exp(-t * (110 if heavy else 170)) * .5 + np.sin(2 * np.pi * rng.uniform(1700, 2300) * t) * np.exp(-t * 260) * .22
+    return np.convolve(x, np.ones(6) / 6, 'same') * (1.25 if heavy else rng.uniform(.75, 1.0)) * .32   # 太尖會把成片峰值頂過 −1 dBTP（最終品檢 F6）
+
+
+def mouse_click(rng):
+    n = int(.06 * SR); t = np.arange(n) / SR
+    return (rng.normal(0, 1, n) * np.exp(-t * 220) * .4 + np.sin(2 * np.pi * 2600 * t) * np.exp(-t * 300) * .35) * .38
 
 
 def write_mono(path, x):
@@ -108,6 +121,16 @@ def main():
                 for i, _ in enumerate(p.get('cards', p.get('sideNotes', p.get('pills', [])))): put(pop(), C(s, cm[i] if i < len(cm) else None, 20 + i * 30), .8)
             if typ in ('quiz',): put(scribble(.5), C(s, p.get('revealCue'), int(s['dur'] * .6)), 1.2)
             if typ == 'vs': put(pop(), t0 + 40, 1); put(pop(), t0 + 60, 1)
+        elif tpl == 'H':   # 螢幕模擬：鍵盤、滑鼠、Enter、泡泡
+            rng = np.random.default_rng(sum(map(ord, s['id'])))
+            for a in p.get('actions', []):
+                d = a.get('do')
+                if d == 'type':
+                    for k in a.get('keys', []): put(key_click(rng), t0 + k)
+                elif d in ('click', 'focus'): put(mouse_click(rng), t0 + a['f'])
+                elif d == 'tap': put(pop(), t0 + a['f'], .5)
+                elif d == 'enter': put(key_click(rng, True), t0 + a['f'])
+                elif d in ('callout', 'message'): put(pop(), t0 + a['f'], .35)
         elif tpl == 'D':   # 白板手繪：逐筆音效由 TemplateD 播放，這裡只放換場 whoosh
             if t0 > 0: put(M.whoosh(.8), t0 - 4, .45)
         else:   # C 快剪

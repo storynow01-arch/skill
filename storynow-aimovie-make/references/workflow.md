@@ -65,7 +65,7 @@
 
 ## ⑦ 分鏡預覽（配音前，⛔）
 2026-10-07 從⑧製作拆出來成為獨立一步（範本E 的第⑥步）。概念（④）、文本（⑤）、試看（⑥）都定了之後、選聲音與正式配音之前做：
-- `make_video.py … --preview`（範本F／G：`make.py <專案> --preview`；資訊科範本1：`make_info1.py --preview`）——
+- `make_video.py … --preview`（範本H 每個操作動作各截一張；範本F／G：`make.py <專案> --preview`；資訊科範本1：`make_info1.py --preview`）——
 - edge-tts 暫配（不花 Gemini 額度）→ 建置 → 每場在「物件都出現了」那一格截圖 → `分鏡預覽.html`（截圖＋旁白）。
 - 畫面文字、圖示、比喻、順序在這裡就改掉，正式配音後只剩唸法要處理
 - 使用者看過才往下；改了文本就重跑 `--preview`

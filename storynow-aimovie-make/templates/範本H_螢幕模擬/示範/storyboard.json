@@ -1,0 +1,35 @@
+{
+  "title": "範本 H 測試範本",
+  "mode": "teach",
+  "snapBars": false,
+  "voice": {"name": "zh-TW-YunJheNeural", "rate": "+18%", "pitch": "+0Hz"},
+  "lineGap": 0.2,
+  "lead": 0.2,
+  "tail": 0.4,
+  "scenes": [
+    {
+      "id": "S1", "type": "title",
+      "props": {"eyebrow": "範本 H", "title": "螢幕模擬", "en": "SCREEN SIM"},
+      "lines": ["這是範本 H，螢幕模擬。"]
+    },
+    {
+      "id": "S2", "type": "screen",
+      "props": {
+        "browser": {"tab": "新分頁", "page": "newtab"},
+        "actions": [
+          {"do": "click", "to": "omnibox", "cue": "打開瀏覽器"},
+          {"do": "type", "app": "browser", "typed": "example.com", "cue": "輸入網址", "speed": 1.4},
+          {"do": "enter", "app": "browser", "cue": "按下"},
+          {"do": "load", "page": {"site": "測試範本", "brand": "#0B57D0", "blocks": [
+            {"kind": "h1", "text": "測試範本"},
+            {"kind": "p", "text": "這一頁是程式畫出來的，不是錄影。"},
+            {"id": "go", "kind": "button", "text": "開始使用"}
+          ]}, "title": "測試範本", "url": "example.com", "after": 0.5},
+          {"do": "zoom", "to": "page:go", "z": 1.8, "cue": "重點"},
+          {"do": "callout", "to": "page:go", "side": "right", "text": "重點用[[泡泡]]標出來", "cue": "泡泡"}
+        ]
+      },
+      "lines": ["打開瀏覽器，輸入網址，按下 Enter。", "重點會放大，再用泡泡標出來。"]
+    }
+  ]
+}

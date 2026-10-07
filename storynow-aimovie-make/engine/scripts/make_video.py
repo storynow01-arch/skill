@@ -2,7 +2,7 @@
 → 文不對題檢查 → 範本音效 → AI 耳朵聽檢 → 兩個 AI 交叉聽 → 句內停頓 → 版面＋旁白品檢 → 算圖 → 響度 → 成片品檢。
 
 用法（在專案資料夾裡執行；專案由 new_project.py 建立，node_modules 已就緒）：
-    python <skill>/engine/scripts/make_video.py storyboard.json --template B   # A／B／C／D
+    python <skill>/engine/scripts/make_video.py storyboard.json --template B   # A／B／C／D／H
     python <skill>/engine/scripts/make_video.py storyboard.json --template A --name 1-3_IP位址
 選項：
     --no-sync     不把 skill 最新的範本程式（tpl、lib、QaProbe）同步進專案
@@ -22,6 +22,7 @@ TPL = {
     'B': {'name': '創客手稿', 'dir': '範本B_創客手稿', 'music': {'genre': 'acoustic', 'bpm': 90, 'key': 'G'}},
     'C': {'name': '動態字體快剪', 'dir': '範本C_動態字體快剪', 'music': {'genre': 'phonk', 'bpm': 145, 'key': 'Em'}},
     'D': {'name': '白板手繪', 'dir': '範本D_白板手繪', 'music': {'genre': 'marimba', 'bpm': 112, 'key': 'D'}},
+    'H': {'name': '螢幕模擬', 'dir': '範本H_螢幕模擬', 'music': {'genre': 'lofi', 'bpm': 80, 'key': 'C'}},
 }
 
 
@@ -158,6 +159,16 @@ def brand_assemble(spec, main, out):
     return lead
 
 
+def true_peak(path):
+    """成片的真峰值（dBTP，EBU R128 量測）；量不到回傳 None"""
+    r = subprocess.run(['ffmpeg', '-hide_banner', '-nostats', '-i', path, '-af', 'ebur128=peak=true', '-f', 'null', '-'], capture_output=True, text=True, errors='replace')
+    m = re.findall(r'Peak:\s*(-?[\d.]+|-inf) dBFS', r.stderr)
+    try:
+        return float(m[-1]) if m else None
+    except ValueError:
+        return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('storyboard'); ap.add_argument('--template', required=True, choices=list(TPL))
@@ -223,6 +234,13 @@ def main():
     src = joined if lead else raw
     # 峰值上限 −1.5 dBTP（−1 在 AAC 編碼後會浮到 −0.7，2026-10-05 最終品檢 F6 抓到）
     sh(['ffmpeg', '-v', 'error', '-y', '-i', src, '-c:v', 'copy', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=9', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', final])
+    tp = true_peak(final)                          # AAC 編碼後峰值會再浮 0.3～0.6 dB：實際量一次，超過 −1 dBTP 才用更保守的上限重轉聲音
+    if tp is not None and tp > -1.0:
+        print(f'⚠ 成片峰值 {tp:.1f} dBTP 超過 −1，聲音改用 TP −2.5 重轉（2026-10-07 範本H 最終品檢 F6 抓到）')
+        tmp = final + '.tmp.mp4'
+        sh(['ffmpeg', '-v', 'error', '-y', '-i', src, '-c:v', 'copy', '-af', 'loudnorm=I=-14:TP=-2.5:LRA=9', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', tmp])
+        os.replace(tmp, final)
+        print(f'  重轉後峰值 {true_peak(final):.1f} dBTP')
     for x in (raw, joined):
         if os.path.exists(x): os.remove(x)
     if lead:

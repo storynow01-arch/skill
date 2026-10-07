@@ -1,4 +1,4 @@
-// 分鏡預覽截圖（2026-10-06，從範本E 移植；十二步流程、範本 A～D 用）：每個場景在「物件都出現了」的時間點
+// 分鏡預覽截圖（2026-10-06，從範本E 移植；十二步流程、範本 A～D、H 用）：每個場景在「物件都出現了」的時間點
 // （場景結束前 0.6 秒）截一張圖，再寫 scenes.json（場景、型別、截圖、旁白）給 final_qa/storyboard_page.py 做預覽頁。
 // 用法（在專案資料夾執行，build.py 之後）：node <skill>/engine/scripts/preview_stills.mjs <Composition> [輸出資料夾=qa/分鏡預覽]
 // make_video.py --preview 會自動跑：用 edge-tts 暫配（不花 Gemini 額度）→ 建置 → 截圖 → 預覽頁，不算圖。
@@ -26,12 +26,17 @@ const say = {};
 for (const v of spec.voiceLines || []) (say[v.scene] ||= []).push(v.text);
 const rows = [];
 for (const s of spec.scenes) {
-  const frame = Math.min(Math.max(0, s.from + s.dur - Math.round(0.6 * fps)), composition.durationInFrames - 1);
-  const img = `${s.id}.jpg`;
-  await renderStill({composition, serveUrl, frame, inputProps: {}, puppeteerInstance: browser, scale: 0.5,
-                     imageFormat: 'jpeg', jpegQuality: 80, timeoutInMilliseconds: 60000, logLevel: 'error',
-                     output: path.join(outDir, img)});
-  rows.push({id: s.id, type: s.type, img, say: say[s.id] || []});
+  // 範本H 的操作場景：build.py 在每個動作（泡泡、放大、按 Enter、載入…）排好了 shots，每個都截一張，才看得到每一步
+  const frames = (s.shots && s.shots.length ? s.shots : [s.dur - Math.round(0.6 * fps)])
+    .map((x) => Math.min(Math.max(0, s.from + Math.min(x, s.dur - 1)), composition.durationInFrames - 1));
+  for (const [k, frame] of frames.entries()) {
+    const img = frames.length > 1 ? `${s.id}_${k + 1}.jpg` : `${s.id}.jpg`;
+    await renderStill({composition, serveUrl, frame, inputProps: {}, puppeteerInstance: browser, scale: 0.5,
+                       imageFormat: 'jpeg', jpegQuality: 80, timeoutInMilliseconds: 60000, logLevel: 'error',
+                       output: path.join(outDir, img)});
+    rows.push({id: frames.length > 1 ? `${s.id}-${k + 1}` : s.id, type: s.type, img, say: k === 0 ? say[s.id] || [] : [],
+               at: +((frame / fps).toFixed(1))});
+  }
 }
 fs.writeFileSync(path.join(outDir, 'scenes.json'), JSON.stringify({title: path.basename(proj), template: comp, scenes: rows}, null, 1));
 await browser.close({silent: true});

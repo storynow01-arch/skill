@@ -1,0 +1,10 @@
+#!/bin/sh
+# push 前自動跑範本規格檢查（2026-10-07）：有 ✗ 就不准推。啟用方式（每台電腦一次）：git config core.hooksPath .githooks
+# 緊急時可用 git push --no-verify 跳過（不建議；跳過就要事後補齊）
+ROOT="$(git rev-parse --show-toplevel)"
+CHK="$ROOT/storynow-aimovie-make/templates/check_templates.py"
+[ -f "$CHK" ] || exit 0
+PY=$(command -v py || command -v python3 || command -v python)
+[ -n "$PY" ] || { echo "pre-push：找不到 Python，無法跑範本檢查"; exit 1; }
+echo "pre-push：範本規格檢查中…"
+PYTHONIOENCODING=utf-8 "$PY" "$CHK" || { echo; echo "✗ 範本規格沒過，push 已取消（照 storynow-aimovie-make/templates/範本規格.md 補齊）"; exit 1; }

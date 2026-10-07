@@ -17,8 +17,11 @@ from pathlib import Path
 
 ENGINE = Path(__file__).resolve().parent.parent
 ROOT = ENGINE.parent
+NARRATION_KEYS = {"lines", "say", "narration"}   # storyboard 裡放旁白的欄位
 SKIP_MD = re.compile(r"^(---|id:|unit:|episode:|section:|core_metaphor:|scriptId)")
-NOT_SCREEN_KEYS = {"cue", "cueWords", "icon", "id", "type", "scriptId", "kind", "variant", "color", "frame", "focusPlan"}
+NOT_SCREEN_KEYS = {"cue", "cueWords", "icon", "id", "type", "scriptId", "kind", "variant", "color", "frame", "focusPlan",
+                   # 範本H 螢幕模擬（2026-10-07）：動作代號、目標、頁面代號、真實介面文字（打的字、終端機輸出、網址、狀態列）照真的寫，不檢查
+                   "do", "app", "to", "side", "page", "shell", "typed", "output", "url", "status", "from"}
 
 
 def collect(paths: list[Path]) -> list[Path]:
@@ -45,16 +48,18 @@ def units(f: Path):
             needle = json.dumps(sv, ensure_ascii=False)[1:-1][:40]
             return next((k for k, l in enumerate(lines, 1) if needle in l), 0)
 
-        def walk(o, key=None):
+        def walk(o, key=None, narr=False):
+            # 2026-10-07：lines（範本 A～D、H、十二步）／say（範本F／G）底下的字是旁白，其他是畫面文字
+            # （以前全部當畫面文字，only_narration 規則在 storyboard 上從沒生效過）
             if isinstance(o, str):
                 if key not in NOT_SCREEN_KEYS and o.strip():
-                    yield line_of(o), o, True
+                    yield line_of(o), o, not narr
             elif isinstance(o, list):
                 for x in o:
-                    yield from walk(x, key)
+                    yield from walk(x, key, narr)
             elif isinstance(o, dict):
                 for k, v in o.items():
-                    yield from walk(v, k)
+                    yield from walk(v, k, narr or k in NARRATION_KEYS)
         yield from walk(json.loads(text))
         return
     for i, line in enumerate(text.split("\n"), 1):
@@ -70,6 +75,8 @@ def check(files: list[Path], rules: dict) -> list[dict]:
         for i, line, screen in units(f):
             for r in rules["rules"]:
                 if r.get("only_screen") and not screen:
+                    continue
+                if r.get("only_narration") and screen:       # 2026-10-06：只檢查旁白（畫面上的標籤沒問題）
                     continue
                 if r.get("skip") and re.search(r["skip"], line):
                     continue

@@ -14,7 +14,7 @@ const GH = 'https://github.com/storynow01-arch/skill/blob/main/storynow-aimovie-
 // 範本：目錄前綴 → 網址代號
 const TEMPLATES = [
   ['範本A_', 'a'], ['範本B_', 'b'], ['範本C_', 'c'], ['範本D_', 'd'],
-  ['範本E_', 'e'], ['範本F_', 'f'], ['範本G_', 'g'], ['資訊科範本1', 'info1'],
+  ['範本E_', 'e'], ['範本F_', 'f'], ['範本G_', 'g'], ['範本H_', 'h'], ['資訊科範本1', 'info1'],
 ];
 // README 抓不到「適合／觸發」時用這裡（範本E、資訊科範本1 的 README 格式不同）
 const FALLBACK = {

@@ -291,8 +291,13 @@ def clean_caption(text):
     return CAP_INNER.sub("　", t).strip("　 ")
 
 
+SCREEN_RAW = {"typed", "output", "page"}   # 範本H 螢幕模擬：打的字、終端機輸出、網頁內容要跟真的一樣，整棵不清標點
+
+
 def clean_screen(obj, key=None):
     """畫面物件文字比照字幕：，；。→空白、——→空白、 — →：、刪行尾標點（只處理含中文的字串）"""
+    if key in SCREEN_RAW:
+        return obj
     if isinstance(obj, str):
         if key in SCREEN_SKIP or not CJK.search(obj):
             return obj
@@ -333,12 +338,107 @@ def mismatch(items, narration):
     return bad
 
 
+# ── 範本H 螢幕模擬（2026-10-07）：screen／phone 場景的動作對齊旁白 ──────────
+H_TYPES = ("screen", "phone")
+H_SHOT_KINDS = ("callout", "zoom", "enter", "load", "highlight", "message", "tap", "focus")
+H_WAITS = ("zoom", "callout", "highlight")   # 這幾種動作要等前面的打字／指令輸出做完（不然會指到還沒出現的東西）
+
+
+def resolve_screen(sc, timing, start, fps):
+    """把 props.actions 每個動作的 cue（旁白原文片段）換算成「場景內第幾格」。
+    timing＝[(旁白原文, 開始秒, 結束秒)]（整支片的秒數）。cue 依旁白順序往後找，找不到就中止建置（不靜默失敗）。
+    type 動作另外排出每個字按下去的格數 keys（畫面打字與按鍵音用同一份），enter 的輸出從 outF 開始逐行出現。
+    回傳 (動作表, 預覽截圖格數, 泡泡文字, 最後一個動作結束的秒數)"""
+    import random as _r
+    flat, spans = "", []                      # 去空白串成一條，記住每一句在條上的位置
+    for text, a, b in timing:
+        s = re.sub(r"\s+", "", text)
+        spans.append((len(flat), len(flat) + len(s), a, b)); flat += s
+    pos, prev, busy, out, shots, bubbles = 0, start, start, [], [], []
+    rnd = _r.Random(sc["id"])
+    for i, act in enumerate(sc.get("props", {}).get("actions", [])):
+        act = dict(act)
+        if act.get("cue"):
+            key = re.sub(r"\s+", "", act["cue"])
+            k = flat.find(key, pos)
+            if k < 0:
+                k = flat.find(key)
+                hint = "（在前面的旁白找到了：cue 要照旁白順序排）" if k >= 0 else ""
+                raise SystemExit(f"範本H {sc['id']} 第 {i + 1} 個動作（{act.get('do')}）找不到 cue「{act['cue']}」{hint}")
+            pos = k + 1
+            for a0, a1, ta, tb in spans:
+                if a0 <= k < a1:
+                    t = ta + (k - a0) / max(1, a1 - a0) * (tb - ta); break
+        else:
+            t = prev + act.get("after", 0.4)
+        t += act.get("dt", 0.0)
+        if act.get("do") in H_WAITS and t < busy + 0.15:   # 前面的打字／執行還沒跑完：等它做完再放大、指出來
+            if busy + 0.15 - t > 0.3:
+                print(f"  ⚠ 範本H {sc['id']} 第 {i + 1} 個動作（{act.get('do')}）順延 {busy + 0.15 - t:.1f} 秒：前面的打字或執行還沒做完")
+            t = busy + 0.15
+        act["f"] = round((t - start) * fps)
+        end = t
+        if act.get("do") == "type":
+            keys, tt = [], t
+            for _ in act.get("typed", ""):
+                tt += (0.07 + rnd.random() * 0.06) / act.get("speed", 1.0)
+                keys.append(round((tt - start) * fps))
+            act["keys"] = keys; end = tt
+        if act.get("do") == "enter" and act.get("output"):
+            act["outF"] = act["f"] + round(0.2 * fps)
+            end = t + 0.2 + len(act["output"]) * 2 / fps
+        if act.get("do") == "callout" and act.get("text"):    # 泡泡＝講解，要跟旁白一致；App 訊息是畫面內容，不算
+            bubbles.append(re.sub(r"<[^>]+>|\[\[|\]\]", "", str(act["text"])))
+        if act.get("do") in H_SHOT_KINDS:
+            shots.append(act["f"] + round(act.get("shot", 0.7) * fps))
+        prev = end
+        if act.get("do") in ("type", "enter"):
+            busy = max(busy, end)
+        out.append(act)
+    return out, sorted(set(shots)), bubbles, prev
+
+
 CAP_PUNCT = re.compile(r'[，。、：；？！—―「」『』…,.:;?!\s]')
 
 
 def cap_len(x):
     """字幕實際顯示的字數（標點與空白在畫面上會清掉，不算）"""
     return len(CAP_PUNCT.sub('', x))
+
+
+CAP_MIN_SEC, CAP_MAX_CPS = 5 / 6, 9.0   # Netflix 繁中：每頁至少 5/6 秒、每秒 ≤9 字
+
+
+def fix_short_pages(pages, durs, cap_max=16, slack=0.0):
+    """同一句的字幕頁，太短（<5/6 秒）或太快（>9 字/秒）時：
+    ① 最後一頁先延伸進句後停頓（最多 slack 的 90%，不蓋到下一句；字幕比語音晚收一點是業界常態）
+    ② 同一句的頁互相挪時間（挪完雙方都仍 ≥5/6 秒、≤9 字/秒才挪）
+    ③ 還太短、而且合起來 ≤ cap_max＋2 字才併頁。原本就合規的句子完全不動。
+    （2026-10-07 範本H 最終品檢 G2：「手機也一樣」0.73 秒；「你在網址列打了 google.com」10 字/秒——英文字母一個算一字，唸得比中文快）"""
+    pages, durs = list(pages), list(durs)
+    floor = lambda k: max(CAP_MIN_SEC, cap_len(pages[k]) / CAP_MAX_CPS) + 1 / 30   # 這一頁合規需要的最少秒數（多留 1 格：換算整數格時會被四捨五入吃掉）
+    bad = lambda k: durs[k] < floor(k) - 1e-6
+    if any(bad(k) for k in range(len(pages))) and slack > 0:
+        durs[-1] += slack * 0.9
+    for _ in range(40):
+        i = next((k for k in range(len(pages)) if bad(k)), None)
+        if i is None:
+            break
+        moved = False
+        for j in sorted([k for k in (i - 1, i + 1) if 0 <= k < len(pages)], key=lambda k: floor(k) - durs[k]):
+            give = min(floor(i) - durs[i], durs[j] - floor(j))
+            if give > 1e-6:
+                durs[j] -= give; durs[i] += give; moved = True; break
+        if moved:
+            continue
+        if durs[i] < CAP_MIN_SEC:
+            js = [k for k in (i - 1, i + 1) if 0 <= k < len(pages) and cap_len(pages[min(i, k)] + pages[max(i, k)]) <= cap_max + 2]
+            if js:
+                j = min(js, key=lambda k: durs[k]); a_, b_ = min(i, j), max(i, j)
+                pages[a_:b_ + 1] = [pages[a_] + pages[b_]]; durs[a_:b_ + 1] = [durs[a_] + durs[b_]]
+                continue
+        break                                   # 整句本來就唸太快：交給「字幕太快」提醒（改稿或放慢語速）
+    return pages, durs
 
 
 def word_cut(part, k, lo):
@@ -470,7 +570,7 @@ def main():
     t = 0.0; scenes = []; caps = []; duck = []; voice_parts = []; impacts = []; whooshes = []; blips = []; vlines = []
     fast_caps = []; text_issues = []
     for i, sc in enumerate(sb['scenes']):
-        start = t; cues = []
+        start = t; cues = []; n_vl = len(vlines); shots = []
         lines = sc.get('lines', []) if mode == 'teach' and not a.no_tts else []
         if mode == 'promo' or not lines:
             if mode == 'promo' and 'bars' not in sc and 'sec' in sc:   # 以秒指定 → 吸附到該曲速的整數小節
@@ -497,14 +597,15 @@ def main():
                 cues.append(round((tt - start) * fps))
                 pages = split_caption(written_form(ln), sb.get('capMax', 16))   # Netflix 繁中：每頁 ≤16 字
                 n_all = sum(len(x) for x in pages); t0 = tt
-                for pg in pages:                     # 長句分頁，時間依字數比例分配
-                    t1 = t0 + d * len(pg) / n_all
+                pages, durs = fix_short_pages(pages, [d * len(x) / n_all for x in pages], sb.get('capMax', 16), gap)
+                for pg, pd in zip(pages, durs):      # 長句分頁，時間依字數比例分配（太短的頁已借時間或併頁）
+                    t1 = t0 + pd
                     cap_txt = clean_caption(pg)
                     if not cap_txt.strip():          # 只剩標點的頁：時間併給上一頁
                         if caps: caps[-1]['to'] = round(t1 * fps)
                         t0 = t1; continue
-                    cps = len(CJK.findall(cap_txt)) / max(t1 - t0, 0.01)
-                    if cps > 9.5:
+                    cps = cap_len(cap_txt) / max(t1 - t0, 0.01)   # 跟最終品檢 G2 同一標準：英數字母也算字、>9 就提醒（2026-10-07 以前只數中文、>9.5，品檢才抓到）
+                    if cps > CAP_MAX_CPS + 0.05:
                         fast_caps.append(f"{sc['id']}「{cap_txt}」{cps:.1f} 字/秒")
                     caps.append({'text': cap_txt, 'from': round(t0 * fps), 'to': round(t1 * fps)}); t0 = t1
                 duck.append([round(tt * fps), round((tt + d) * fps)])
@@ -514,6 +615,21 @@ def main():
             if sb.get('snapBars'):   # 範本：場景長度補足到整數小節，切點對拍
                 import math
                 dur = math.ceil(dur / bar - 0.05) * bar
+        if sc['type'] in H_TYPES:                    # 範本H：動作對齊旁白（找不到 cue 會中止）
+            timing = [(v['text'], v['from'], v['to']) for v in vlines[n_vl:]]
+            if not timing:                           # 沒配音的預覽：用字數估時
+                tt = start + lead
+                for raw in sc.get('lines', []):
+                    ln = raw if isinstance(raw, str) else raw['text']
+                    timing.append((ln, tt, tt + len(ln) / 5.2)); tt += len(ln) / 5.2 + gap
+            acts, shots, bubbles, last = resolve_screen(sc, timing, start, fps)
+            sc = {**sc, 'props': {**sc.get('props', {}), 'actions': acts}}
+            dur = max(dur, last - start + sc.get('hold', 1.0))
+            if mode == 'teach' and sc.get('lines') and not sc.get('allowStatic'):
+                narr = "".join(l if isinstance(l, str) else l.get('text', '') for l in sc['lines'])
+                bad = mismatch([b for b in bubbles if CJK.search(b)], narr)
+                if bad:
+                    text_issues.append(f"{sc['id']}：{'、'.join(bad[:4])}")
         if sc.get('impact'): impacts.append(start)
         elif i > 0: whooshes.append(start)
         for b in sc.get('blips', []): blips.append(start + b)
@@ -525,7 +641,8 @@ def main():
             if bad:
                 text_issues.append(f"{sc['id']}：{'、'.join(bad[:4])}")
         scenes.append({'id': sc['id'], 'type': sc['type'], 'from': round(start * fps), 'dur': 0, 'accent': sc.get('accent'),
-                       'code': sc.get('code', 0), 'hud': sc.get('hud'), 'props': props, 'cues': cues})
+                       'code': sc.get('code', 0), 'hud': sc.get('hud'), 'props': props, 'cues': cues,
+                       **({'shots': shots} if shots else {})})
         t = start + dur
     total = t
     # 以整數 frame 重算每段長度，避免累積誤差

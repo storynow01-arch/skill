@@ -1,0 +1,16 @@
+{
+  "_說明": "所有範本的登記表（2026-10-07）。新增範本先在這裡加一筆，再照 範本規格.md 第四節登記其他地方；check_templates.py 依這份檢查。type：shared＝共用引擎（make_video.py --template 代號）、standalone＝自帶產線。",
+  "templates": [
+    {"code": "A", "dir": "範本A_闖關遊戲", "type": "shared", "name": "闖關遊戲", "trigger": "範本A／闖關遊戲範本／遊戲風"},
+    {"code": "B", "dir": "範本B_創客手稿", "type": "shared", "name": "創客手稿", "trigger": "範本B／手稿範本／筆記本風"},
+    {"code": "C", "dir": "範本C_動態字體快剪", "type": "shared", "name": "動態字體快剪", "trigger": "範本C／快剪範本／動態字體"},
+    {"code": "D", "dir": "範本D_白板手繪", "type": "shared", "name": "白板手繪", "trigger": "範本D／白板手繪／手繪範本"},
+    {"code": "E", "dir": "範本E_教學課程產線", "type": "standalone", "name": "教學課程產線", "trigger": "範本E／教學課程產線／整門課的教學影片",
+     "protected": "15 步課程產線由本機課程專案匯出（export_template.py）；skill 端只能在 README 結尾附加範本卡片，不改流程、引擎、規範"},
+    {"code": "F", "dir": "範本F_開發者流程線", "type": "standalone", "name": "開發者流程線", "trigger": "範本F／開發者流程線／01 風格"},
+    {"code": "G", "dir": "範本G_動態圖卡教學", "type": "standalone", "name": "動態圖卡教學", "trigger": "範本G／動態圖卡教學／06 風格"},
+    {"code": "H", "dir": "範本H_螢幕模擬", "type": "shared", "name": "螢幕模擬", "trigger": "範本H／螢幕模擬／模擬螢幕錄影"},
+    {"code": "info1", "dir": "資訊科範本1", "type": "standalone", "name": "資訊科範本1（活動說明＋資訊科宣傳片）", "trigger": "資訊科範本1",
+     "legacy_name": true}
+  ]
+}
