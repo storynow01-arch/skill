@@ -1,0 +1,9 @@
+{
+  "name": "token-meter",
+  "version": "0.1.0",
+  "description": "token 與用量：輸入框上方直接顯示上下文、5 小時、7 天用量的數字與進度條，以及本次花費",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "storynow01-arch"
+  }
+}

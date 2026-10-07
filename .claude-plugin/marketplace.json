@@ -1,0 +1,21 @@
+{
+  "name": "storynow-mods",
+  "owner": {
+    "name": "storynow01-arch"
+  },
+  "metadata": {
+    "description": "storynow 的 Claude Code mod 集合（mod/ 資料夾）"
+  },
+  "plugins": [
+    {
+      "name": "token-meter",
+      "source": "./mod/token-meter",
+      "description": "輸入框上方一列：上下文、5 小時、7 天用量數字＋進度條，以及本次花費（/token 切換）"
+    },
+    {
+      "name": "task-dashboard",
+      "source": "./mod/task-dashboard",
+      "description": "輸入框上方一列：執行中的專案與工作清單進度；/dashboard 開完整面板"
+    }
+  ]
+}

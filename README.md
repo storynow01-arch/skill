@@ -61,6 +61,16 @@
 | [`supabase-key-usage`](#5-supabase-key-usage--supabase-兩把-key-的用法與安全驗證) | 資安 / 部署架構 | 「接 Supabase」、「Supabase 的 key」、「RLS 要怎麼設」、「喚醒 Supabase」、「heartbeat」 | 伺服器專用架構：secret key 只在伺服器、publishable key 只給喚醒腳本；全表鎖 RLS 並用程式驗證「公開的 key 什麼都讀不到」。 |
 | [`storynow-aimovie-make`](#6-storynow-aimovie-make--從內容長出影片的-ai-影片工作流) | 影音製作 / 創意工作流 | 「做影片」、「招生片」、「宣傳片」、「教學影片」、「產生創意概念」、「做試看」、「資訊科範本1」 | 讀懂資料→三輪定調問答→從內容產生 3 個全新創意概念（含英文提示詞）→文本審閱→10 秒動態試看→程式手刻成片並自動品檢。另有「資訊科範本1」與範本風格 A／B／C／D（丟文本選範本即可產出）。 |
 
+### 🧩 Claude Code mod（外掛）
+
+所有 mod 放在 [`mod/`](mod/README.md)，透過 `.claude-plugin/marketplace.json`（marketplace 名稱 `storynow-mods`）安裝：
+
+```
+/plugin marketplace add storynow01-arch/skill
+/plugin install token-meter@storynow-mods
+/plugin install task-dashboard@storynow-mods
+```
+
 ---
 
 ## 📖 各 Skill 詳細功能說明
