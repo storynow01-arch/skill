@@ -5,7 +5,7 @@
 | mod | 作用 |
 |---|---|
 | `token-meter` | 輸入框上方一列：上下文／5 小時／7 天用量數字＋進度條＋本次花費；`/token` 切換 |
-| `task-dashboard` | 輸入框上方一列：只列執行中的專案與進度；`/dashboard` 開完整面板。掃描 `~/.claude/projects` 對話紀錄（只讀，需要 Python `py`）；專案可用 `.claude/dashboard.json` 登記背景紀錄檔 |
+| `task-dashboard` | 輸入框上方一列：只列執行中的專案、全部進度百分比、預計完成時間；`/dashboard` 開完整面板。掃描 `~/.claude/projects` 對話紀錄（只讀，需要 Python `py`）；專案用 `.claude/dashboard.json` 設定（見下） |
 
 ## 安裝（每台電腦做一次）
 
@@ -18,6 +18,29 @@
 ```
 
 更新：`/plugin marketplace update storynow-mods` 後 `/reload-plugins`。
+
+⚠ 這個倉庫含範本示範片，從 GitHub clone 約要 2 分鐘，超過預設 120 秒會失敗（「Git clone timed out」）。
+先設環境變數 `CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=600000`（或寫進 `~/.claude/settings.json` 的 `"env"`）再安裝／更新。
+
+## task-dashboard 的專案設定 `.claude/dashboard.json`
+
+```json
+{
+  "logs": ["11_品檢/v8_batch.log"],
+  "progress": {
+    "label": "節", "total": 56, "glob": "11_品檢/v8_*/.ok",
+    "extra": [{ "label": "集", "total": 8, "glob": "06_輸出_集/v8/EP?.mp4" }],
+    "wait": { "until": "15:05", "items": ["11_品檢/v8_4-12/.ok"] },
+    "tail_min": 30
+  }
+}
+```
+
+- `logs`：30 分鐘內有更新就算「背景執行中」，顯示最後一行
+- `progress.glob`：每完成一項就多一個檔案（完成記號）；百分比＝檔案數／`total`
+- 預計完成時間＝剩餘項數 × 每項分鐘數 ＋ `tail_min`（收尾）。每項分鐘數取最近 24 小時完成記號間隔的中位數（只算 3～60 分），也可用 `per_item_min` 指定
+- `wait`：今天 `until` 之前不會動的項目（例：等配音額度），預估會排到 `until` 之後
+- `extra`：只顯示數量，不算進百分比
 
 ## 新增一個 mod
 
