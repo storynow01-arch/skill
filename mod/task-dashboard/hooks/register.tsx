@@ -62,15 +62,23 @@ export const register: Register = on => {
     if (b === null || e.props.hasSurvey) return below
     const { Box, Text } = $.ui.resolve(e)
     const running = b.projects.filter(p => p.state === 'running')
+    const pending = b.projects.filter(p => p.state !== 'running' && p.plan != null && p.plan.done < p.plan.total)
     const mine = (
       <Box columnGap={2}>
         <Text color="green">{`執行中 ${running.length}`}</Text>
-        {running.length === 0 && <Text dimColor>目前沒有執行中的專案</Text>}
+        {running.length === 0 && pending.length === 0 && <Text dimColor>目前沒有執行中的專案</Text>}
         {running.map(p => (
           <Box key={p.cwd} columnGap={1}>
             <Text bold>{p.name}</Text>
             {p.plan != null && <Text color="cyan">{planText(p.plan)}</Text>}
             <Text dimColor wrap="truncate">{runningText(p)}</Text>
+          </Box>
+        ))}
+        {pending.map(p => (
+          <Box key={p.cwd} columnGap={1}>
+            <Text color="yellow">未完成</Text>
+            <Text bold>{p.name}</Text>
+            {p.plan != null && <Text color="cyan">{planText(p.plan)}</Text>}
           </Box>
         ))}
         {b.error !== undefined && <Text color="red" wrap="truncate">掃描失敗</Text>}
@@ -141,6 +149,7 @@ export const planText = (pl: Plan, long = false): string => {
   const parts = [`${pl.pct}% ${pl.done}/${pl.total}${pl.label}`]
   if (long) for (const x of pl.extra) parts.push(`${x.label} ${x.done}/${x.total}`)
   if (pl.done >= pl.total) parts.push('已完成')
+  else if (pl.waitUntil) parts.push(`等 ${pl.waitUntil} 繼續`, ...(pl.etaText !== '' ? [`預計 ${pl.etaText} 完成`] : []))
   else if (pl.etaText !== '') parts.push(`預計 ${pl.etaText} 完成`)
   else parts.push('完成時間估算中')
   if (long && pl.perMin > 0 && pl.done < pl.total) parts.push(`每${pl.label}約 ${pl.perMin} 分`)

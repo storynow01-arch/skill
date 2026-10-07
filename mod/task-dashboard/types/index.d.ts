@@ -32,6 +32,8 @@ export type Plan = {
   eta: number | null
   /** 「17:47」「明天 09:10」「10/09 14:00」 */
   etaText: string
+  /** 還有項目在等這個時間才會開始（例：「15:05」）；沒有就空字串 */
+  waitUntil?: string
 }
 
 export type Board = { at: number; projects: Project[]; error?: string }

@@ -34,4 +34,5 @@ test('全部進度與預計完成時間', async () => {
   expect(planText(pl, true)).toBe('84% 47/56節 · 集 5/8 · 預計 17:47 完成 · 每節約 27 分')
   expect(planText({ ...pl, eta: null, etaText: '', perMin: 0 })).toBe('84% 47/56節 · 完成時間估算中')
   expect(planText({ ...pl, done: 56, pct: 100 })).toBe('100% 56/56節 · 已完成')
+  expect(planText({ ...pl, done: 51, pct: 91, waitUntil: '15:05', etaText: '17:40' })).toBe('91% 51/56節 · 等 15:05 繼續 · 預計 17:40 完成')
 })

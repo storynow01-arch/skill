@@ -133,12 +133,14 @@ def plan(cwd: str, now: float) -> dict | None:
     per = pc.get("per_item_min", 0) * 60 or (gaps[len(gaps) // 2] if gaps else 0)
     remaining = total - done
     eta = None
+    wait_text = ""
     if remaining == 0:
         eta = marks[-1] if marks else now
     elif per:
         t = now
         w = pc.get("wait") or {}
         waiting = 0
+        wait_text = ""
         if w.get("until"):
             hh, mm = map(int, w["until"].split(":"))
             lt = time.localtime(now)
@@ -146,10 +148,11 @@ def plan(cwd: str, now: float) -> dict | None:
             if now < until:
                 waiting = min(remaining, sum(1 for r in w.get("items", []) if not (root / r).exists()))
                 t = max(now + (remaining - waiting) * per, until)
+                wait_text = w["until"] if waiting else ""
         eta = (t if waiting else now) + (waiting or remaining) * per + pc.get("tail_min", 0) * 60
     return {"label": pc.get("label", ""), "done": done, "total": total, "pct": round(done * 100 / total) if total else 0,
             "extra": extra, "perMin": round(per / 60), "eta": int(eta) if eta else None,
-            "etaText": eta_text(eta, now) if eta else ""}
+            "etaText": eta_text(eta, now) if eta else "", "waitUntil": wait_text}
 
 
 def eta_text(eta: float, now: float) -> str:
