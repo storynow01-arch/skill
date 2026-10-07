@@ -2,15 +2,15 @@
  "name": "示範_範本G_動態圖卡教學",
  "voice": {
   "name": "zh-TW-YunJheNeural",
-  "rate": "+4%",
-  "gap": 0.45,
-  "lead": 0.6,
-  "tail": 0.9
+  "rate": "+14%",
+  "gap": 0.2,
+  "lead": 0.4,
+  "tail": 0.7
  },
  "pron": {},
  "segments": [
   {
-   "say": "這是範本G，動態圖卡教學的測試範本。",
+   "say": "範本G，動態圖卡教學。三十秒看完。",
    "scene": {
     "type": "hook",
     "title": [
@@ -32,9 +32,9 @@
      ]
     ],
     "ring": {
-     "big": "10",
+     "big": "30",
      "small": "秒",
-     "word": "測試範本"
+     "word": "三十秒"
     },
     "chips": {
      "items": [
@@ -47,29 +47,175 @@
    }
   },
   {
-   "say": "旁白念到哪裡，圖卡就彈出到哪裡。",
+   "say": "一般投影片一次全部出現；範本G 念到才彈出來。",
+   "scene": {
+    "type": "compare",
+    "header": {
+     "title": "差在哪裡"
+    },
+    "left": {
+     "title": "一般投影片",
+     "word": "一般投影片",
+     "caption": "一次全部出現",
+     "captionWord": "全部出現"
+    },
+    "right": {
+     "title": "範本G",
+     "word": "範本G",
+     "codeWord": "念到",
+     "filmWord": "彈出來",
+     "code": [
+      "say: 念到這句",
+      "scene: 圖卡出現"
+     ],
+     "caption": [
+      [
+       "念到",
+       "ivory"
+      ],
+      [
+       " → ",
+       "dim"
+      ],
+      [
+       "才彈出",
+       "coral"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "say": "準備三樣東西：文本、旁白、分鏡。",
    "scene": {
     "type": "iconCards",
     "header": {
-     "label": "特色",
-     "title": "念到才出現"
+     "label": "準備",
+     "title": "三樣東西"
     },
     "cards": [
      {
-      "name": "旁白",
+      "name": "文本",
       "icon": "term",
+      "word": "文本"
+     },
+     {
+      "name": "旁白",
+      "icon": "film",
       "word": "旁白"
      },
      {
+      "name": "分鏡",
+      "icon": "hex",
+      "iconText": "G",
+      "word": "分鏡"
+     }
+    ]
+   }
+  },
+  {
+   "say": "先看分鏡，方向對了再出片。",
+   "scene": {
+    "type": "storyboard",
+    "header": {
+     "label": "STEP 1",
+     "title": "先看分鏡"
+    },
+    "no": {
+     "icon": "▶",
+     "text": "先別出片",
+     "word": "先看分鏡"
+    },
+    "gridWord": "分鏡",
+    "editWord": "方向",
+    "ok": {
+     "text": "方向對了，再出片",
+     "word": "方向對了"
+    }
+   }
+  },
+  {
+   "say": "畫面有圖卡、圓環、打字機、時間軸。",
+   "scene": {
+    "type": "chips",
+    "header": {
+     "label": "STEP 2",
+     "title": "畫面元件"
+    },
+    "items": [
+     {
       "name": "圖卡",
-      "icon": "film",
+      "icon": "▭",
       "word": "圖卡"
      },
      {
-      "name": "彈出",
-      "icon": "hex",
-      "iconText": "G",
-      "word": "彈出"
+      "name": "圓環",
+      "icon": "●",
+      "word": "圓環"
+     },
+     {
+      "name": "打字機",
+      "icon": "A",
+      "word": "打字機"
+     },
+     {
+      "name": "時間軸",
+      "icon": "★",
+      "word": "時間軸"
+     }
+    ]
+   }
+  },
+  {
+   "say": "出片前，抽開頭、中間、結尾三格檢查。",
+   "scene": {
+    "type": "timeline",
+    "header": {
+     "label": "STEP 3",
+     "title": "出片前抽三格"
+    },
+    "points": [
+     {
+      "name": "開頭",
+      "word": "開頭"
+     },
+     {
+      "name": "中間",
+      "word": "中間"
+     },
+     {
+      "name": "結尾",
+      "word": "結尾"
+     }
+    ],
+    "checkWord": "檢查",
+    "done": {
+     "word": "三格檢查",
+     "button": "整支輸出 MP4"
+    }
+   }
+  },
+  {
+   "say": "字太多就拆段，念太快就放慢。",
+   "scene": {
+    "type": "problemFix",
+    "header": {
+     "label": "⚠ 注意",
+     "title": "兩個地雷",
+     "color": "red"
+    },
+    "rows": [
+     {
+      "problem": "字太多",
+      "fix": "拆成兩段",
+      "pword": "字太多",
+      "fword": "拆段"
+     },
+     {
+      "problem": "念太快",
+      "fix": "放慢語速",
+      "pword": "念太快",
+      "fword": "放慢"
      }
     ]
    }

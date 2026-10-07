@@ -143,6 +143,8 @@ def main():
                     help="F11 不檢查的時間段（秒），例：0-14.6 = 封面＋委製方提供的片頭影片")
     ap.add_argument("--silence-ok", type=float, default=0.0,
                     help="長度不超過這個秒數的無聲段屬於設計（例如片尾測驗卡 6 秒倒數），列出但不算未通過")
+    ap.add_argument("--jumps-by-design", action="store_true",
+                    help="F11 突跳是範本的招牌設計（範本A 像素逐 2 格、範本C 硬切砸字）：照樣全部列出，但不算不通過；一定要人工看連續格確認")
     ap.add_argument("--spec", help="十二步流程建置出的 src/data/spec.json：量字幕＝旁白、字幕同步、Netflix 字幕規範")
     ap.add_argument("--layout", help="qa_layout.mjs 輸出的版面量測 json（qa_layout.json）")
     a = ap.parse_args()
@@ -217,7 +219,9 @@ def main():
     if R["F1"]["count"]: bad.append(f"F1 字幕閃爍 {R['F1']['count']} 處")
     if R["F2"]["count"]: bad.append(f"F2 字幕抖動 {R['F2']['count']} 處")
     if R["F3"]: bad.append(f"F3 黑畫面 {len(R['F3'])} 段")
-    if R["F11"]["count"]: bad.append(f"F11 畫面突跳 {R['F11']['count']} 處（{', '.join(str(x['sec']) + 's' for x in R['F11']['examples'][:5])}）")
+    if R["F11"]["count"] and a.jumps_by_design:
+        R["F11"]["by_design"] = True
+    if R["F11"]["count"] and not a.jumps_by_design: bad.append(f"F11 畫面突跳 {R['F11']['count']} 處（{', '.join(str(x['sec']) + 's' for x in R['F11']['examples'][:5])}）")
     if R["F5"]["size"] != "1920x1080": bad.append(f"F5 解析度 {R['F5']['size']}")
     if not R["F6"]["ok"]: bad.append(f"F6 響度 {I} LUFS／峰值 {tp} dBTP（目標 {a.lufs}±1、≤−1）")
     designed = [x for x in R["F7"] if x[1] - x[0] <= a.silence_ok + 0.05]

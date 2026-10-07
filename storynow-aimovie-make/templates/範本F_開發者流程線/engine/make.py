@@ -12,7 +12,7 @@ import sys as _s; _s.stdout.reconfigure(encoding="utf-8", errors="replace")
 import argparse, json, os, re, shutil, subprocess, sys
 
 ENGINE = os.path.dirname(os.path.abspath(__file__))
-LIB, MUSIC, LOUD = 'lib_F.js', True, 'loudnorm=I=-14.5:TP=-2:LRA=11,alimiter=limit=0.84:level=false'
+LIB, MUSIC, LOUD = 'lib_F.js', True, 'loudnorm=I=-14:TP=-2:LRA=11'   # 2026-10-07：實際用兩次 loudnorm（見 _two_pass），單次在短片停在 -16；峰值超過 −1 再用 TP −3 重做
 
 ap = argparse.ArgumentParser()
 ap.add_argument('proj'); ap.add_argument('--stills', action='store_true'); ap.add_argument('--name')
@@ -69,8 +69,26 @@ if a.stills: sys.exit(0)
 os.makedirs(os.path.join(proj, 'out'), exist_ok=True)
 run('node', 'render.mjs', '.', '--video', 'out/_video.mp4', '--workers', '3', cwd=proj)
 final = f'out/{name}.mp4'
-run('ffmpeg', '-y', '-loglevel', 'error', '-i', 'out/_video.mp4', '-i', audio, '-map', '0:v', '-map', '1:a', '-c:v', 'copy',
-    '-af', LOUD, '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-shortest', final, cwd=proj)
+def _two_pass(target_tp):
+    """先壓縮再 loudnorm 兩次（2026-10-07 實測）：原始音軌約 -24 LUFS 但配樂與音效峰值尖，直接拉到 -14 會超過峰值上限，
+    loudnorm 只能停在 -15.5～-16；先用壓縮器收尖峰，再量一次、用量到的值線性調整 → -14.2、峰值 -1.7"""
+    pre = 'acompressor=threshold=-24dB:ratio=3:attack=5:release=120:makeup=2'
+    m = subprocess.run(['ffmpeg', '-i', audio, '-af', pre + ',loudnorm=I=-14:TP=%s:LRA=11:print_format=json' % target_tp, '-f', 'null', '-'],
+                       cwd=proj, capture_output=True, text=True, encoding='utf-8', errors='replace').stderr
+    j = json.loads(m[m.rindex('{'):m.rindex('}') + 1])
+    af = (pre + ',loudnorm=I=-14:TP=%s:LRA=11:measured_I=%s:measured_TP=%s:measured_LRA=%s:measured_thresh=%s:offset=%s:linear=true'
+          % (target_tp, j['input_i'], j['input_tp'], j['input_lra'], j['input_thresh'], j['target_offset']))
+    run('ffmpeg', '-y', '-loglevel', 'error', '-i', 'out/_video.mp4', '-i', audio, '-map', '0:v', '-map', '1:a', '-c:v', 'copy',
+        '-af', af, '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-shortest', final, cwd=proj)
+_two_pass(-2)
+def _peak(path):
+    out = subprocess.run(['ffmpeg', '-i', path, '-af', 'ebur128=peak=true', '-f', 'null', '-'], cwd=proj, capture_output=True, text=True, encoding='utf-8', errors='replace').stderr
+    m = re.findall(r'Peak:\s+(-?[\d.]+) dBFS', out)
+    return float(m[-1]) if m else None
+pk = _peak(final)
+if pk is not None and pk > -1.0:   # AAC 編碼後峰值會再浮一點：超過 −1 dBTP 才用更保守的上限重轉（同 make_video.py）
+    print(f'峰值 {pk:.1f} dBTP 超過 −1，改用 TP −3 重轉')
+    _two_pass(-3)
 os.remove(os.path.join(proj, 'out', '_video.mp4'))
 r = subprocess.run(['ffmpeg', '-i', final, '-af', 'ebur128=peak=true', '-f', 'null', '-'], cwd=proj, capture_output=True, text=True, encoding='utf-8', errors='replace').stderr
 I = re.findall(r'I:\s+(-?[\d.]+) LUFS', r); P = re.findall(r'Peak:\s+(-?[\d.]+) dBFS', r)

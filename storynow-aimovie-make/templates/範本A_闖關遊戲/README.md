@@ -4,7 +4,7 @@
 > 觸發：使用者說「**範本A／闖關遊戲範本／遊戲風**」，或在選範本時選 A。
 > 用法：**丟任何文本 → 拆成共用場景語彙 → 選本範本 → 產出同一風格的影片**。
 
-## 長什麼樣（10 秒示範片）
+## 長什麼樣（30 秒示範片）
 
 [![點開看示範片](示範/poster.jpg)](示範/示範.mp4)
 
@@ -58,6 +58,7 @@ Narration: a friendly senior student, like a game guide talking to the new playe
 ## 範本設定
 | 項目 | 設定 |
 |---|---|
+| 最終品檢 | 加 `--jumps-by-design`：F11 畫面突跳是這個範本的招牌（像素動畫每 2 格才更新一次、標題字掉落彈跳、打擊時畫面震動），照樣全部列出但不算不通過；**交付前一定要人工看連續格確認**每一處都是設計，不是瑕疵（2026-10-07） |
 | Composition | `TemplateA`（`engine/template/src/tpl/TemplateA.tsx`） |
 | 配樂 | `"music": {"genre": "chiptune", "bpm": 140, "key": "C"}` |
 | 旁白 | 學長姐口吻；招生用女聲曉臻 +15%，教學用男聲雲哲 +18%；`narrator` 決定對話框名牌 |

@@ -155,7 +155,7 @@ const cards = templates.map((t) => `
 const flows = DOCS.map((d) => `<a class="flow" href="/w/${d.key}/"><b>${esc(d.title)}</b><span>${esc(d.desc)}</span></a>`).join('');
 fs.writeFileSync(path.join(DIST, 'index.html'), page('影片工作流與範本', `
   <section class="intro"><h1>影片工作流與範本</h1>
-    <p>每個範本都有 10 秒左右的示範片（主題「測試範本」）。挑好範本後，在 Claude Code 說出卡片上的觸發詞（任一個）就會照那個範本做；點「看說明」有完整版提示詞、截圖與流程。</p></section>
+    <p>每個範本都有 30 秒左右的示範片，演出這個範本的每一種場景。挑好範本後，在 Claude Code 說出卡片上的觸發詞（任一個）就會照那個範本做；點「看說明」有完整版提示詞、截圖與流程。</p></section>
   <section id="templates"><h2>範本</h2><div class="grid">${cards}</div></section>
   <section id="workflows"><h2>工作流</h2><div class="flows">${flows}</div></section>`));
 

@@ -1,73 +1,16 @@
 {
  "name": "示範_範本F_開發者流程線",
- "voice": {
-  "name": "zh-TW-YunJheNeural",
-  "rate": "+8%",
-  "gap": 0.18,
-  "lead": 0.4,
-  "tail": 0.9
- },
+ "voice": {"name": "zh-TW-YunJheNeural", "rate": "+8%", "gap": 0.18, "lead": 0.4, "tail": 1.0},
  "pron": {},
- "parts": [
-  {
-   "steps": [
-    [
-     "節點列",
-     "講到哪亮到哪"
-    ],
-    [
-     "舞台",
-     "會動的物件"
-    ],
-    [
-     "收尾",
-     "雙色標語"
-    ]
-   ]
-  }
- ],
+ "parts": [{"steps": [["文本", "寫下步驟"], ["分鏡", "先給你看"], ["配音", "自動合成"], ["出片", "一行指令"], ["品檢", "全部通過"]]}],
  "segments": [
-  {
-   "say": "這是範本F，開發者流程線的測試範本。",
-   "scene": {
-    "type": "overview",
-    "title": "範本F 開發者流程線",
-    "subtitle": "測試範本"
-   }
-  },
-  {
-   "say": "上方的節點列，講到哪一步，就亮哪一步。",
-   "scene": {
-    "type": "checkRows",
-    "step": 0,
-    "note": "下方舞台換成會動的物件",
-    "rows": [
-     {
-      "title": "節點列",
-      "desc": "講到哪一步亮哪一步",
-      "word": "節點列"
-     },
-     {
-      "title": "舞台",
-      "desc": "每一步一種會動的物件",
-      "word": "亮哪一步"
-     }
-    ]
-   }
-  },
-  {
-   "say": "換上你的內容，就是同樣風格的影片。",
-   "scene": {
-    "type": "slogan",
-    "left": "內容",
-    "right": "影片",
-    "word": "換上你的內容",
-    "allWord": "換上你的內容",
-    "line": "同樣風格的影片",
-    "lineWord": "同樣風格",
-    "credit": "範本F 測試範本",
-    "creditWord": "同樣風格的影片"
-   }
-  }
+  {"say": "做影片，常常卡在剪接。", "scene": {"type": "terminal", "stampWord": "卡在", "errorFrom": 3, "code": ["$ 打開剪輯軟體……", "匯入素材 128 個", "對齊字幕 第 3 次", "Error: 時間軸又亂掉了", "Error: 匯出失敗"]}},
+  {"say": "範本F，開發者流程線。", "scene": {"type": "overview", "title": "範本F 開發者流程線", "chip": "深色點陣 × 流程節點列 × 會動的舞台", "info": "測試範本", "infoWord": "流程線"}},
+  {"say": "開始前準備兩件事：有步驟的文本，和一段旁白。", "scene": {"type": "checkRows", "rows": [{"title": "有步驟的文本", "desc": "流程、課程地圖、兩段式介紹", "word": "有步驟的文本"}, {"title": "一段旁白", "desc": "一句一行，念到哪畫面到哪", "word": "一段旁白"}]}},
+  {"say": "先把文本交給 AI，它會先給你看分鏡。", "scene": {"type": "qa", "step": 1, "qa": [["Q", "幫我把這份流程做成影片"], ["A", "分鏡在右邊，請先確認"]], "doc": {"title": "storyboard.json", "lines": ["每段一句旁白", "每段一種畫面", "確認後才出片"]}}},
+  {"say": "配音、字幕、畫面、音效，四件事自動完成。", "scene": {"type": "split4", "step": 2, "color": "violet", "cards": [["♪", "配音"], ["字", "字幕"], ["▣", "畫面"], ["♫", "音效"]], "hlLast": false, "deps": [], "note": "全部對齊旁白"}},
+  {"say": "接著一行指令出片，再跑品檢。", "scene": {"type": "chain3", "step": 3, "items": [["make.py", "一行出片"], ["final_qa", "最終品檢"], ["mp4", "交付"]], "doneWord": "品檢", "pill": ["python make.py 專案", "成片完成  ✓"], "pillWord": "出片"}},
+  {"say": "上方節點列，講到哪一步就亮哪一步。", "scene": {"type": "stats", "step": 4, "pill": ["節點列", "講到哪亮到哪"], "pillWord": "節點列", "word": "亮哪一步", "stats": [[14, "種", "畫面型別"], [5, "個", "流程節點"], [1, "行", "指令出片"]]}},
+  {"say": "換上你的內容，就是同樣風格的影片。", "scene": {"type": "slogan", "left": "內容", "right": "影片", "word": "換上你的內容", "line": "同樣風格的影片", "lineWord": "同樣風格", "credit": "範本F 測試範本", "creditWord": "同樣風格的影片"}}
  ]
 }

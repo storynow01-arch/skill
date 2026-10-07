@@ -169,22 +169,34 @@ export const Schedule: React.FC<SceneProps> = ({p, cues, accent}) => {
   const rows = p.rows as {time: string; title: string; tag?: string}[];
   // lightMap[k] = 第 k 句旁白要亮的列
   const lightMap: number[][] = p.lightMap;
-  let lit: number[] = [];
-  for (let k = 0; k < lightMap.length; k++) if (f >= cue(cues, k, 1e9) - 3) lit = lightMap[k];
+  // 亮起程度 w[i]（0～1）：換到下一組時用 9 格（0.3 秒）漸變，不再瞬間切換（2026-10-07 最終品檢 F11 抓到課程表突跳）
+  let w = rows.map(() => 0);
+  let prev: number[] = [];
+  for (let k = 0; k < lightMap.length; k++) {
+    const s = cue(cues, k, 1e9) - 3;
+    if (f < s) break;
+    const g = Math.min(1, (f - s) / 9);
+    w = rows.map((_, i) => (prev.includes(i) ? 1 : 0) * (1 - g) + (lightMap[k].includes(i) ? 1 : 0) * g);
+    prev = lightMap[k];
+  }
+  const anyOn = Math.max(0, ...w);
   return (
     <AbsoluteFill>
       <Heading zh={p.heading} en={p.en} accent={accent} top={130} />
       <div style={abs({left: 200, right: 200, top: 270, display: 'flex', flexDirection: 'column', gap: 10})}>
         {rows.map((r, i) => {
           const a = ease(f, 4 + i * 3, 10);
-          const on = lit.includes(i);
+          const on = w[i];
           const col = r.tag === 'break' ? t.c.accent2 : r.tag === 'core' ? t.c.bad : accent;
           return (
-            <div key={i} style={{display: 'flex', alignItems: 'center', height: 58, padding: '0 28px', borderRadius: Math.min(t.radius, 10),
-              background: on ? `${col}33` : `${t.c.panel}aa`, border: `2px solid ${on ? col : `${t.c.muted}33`}`, opacity: a * (lit.length && !on ? 0.55 : 1),
-              transform: `translateX(${(1 - a) * 30}px) scale(${on ? 1.015 : 1})`, boxShadow: on ? glowOf(t, col, 0.4) : 'none'}}>
-              <div style={{width: 260, whiteSpace: 'nowrap', fontFamily: t.f.num, fontWeight: t.w.num, fontSize: t.f.num.includes('Press') ? 16 : 28, color: on ? col : t.c.muted}}>{r.time}</div>
-              <div style={{fontFamily: t.f.tc, fontWeight: on ? t.w.tc : 700, fontSize: 32, color: t.c.fg}}>{r.title}</div>
+            <div key={i} style={{position: 'relative', display: 'flex', alignItems: 'center', height: 58, padding: '0 28px', borderRadius: Math.min(t.radius, 10),
+              background: `${t.c.panel}aa`, border: `2px solid ${t.c.muted}33`, opacity: a * (1 - 0.45 * anyOn * (1 - on)),
+              transform: `translateX(${(1 - a) * 30}px) scale(${1 + 0.015 * on})`}}>
+              <div style={{position: 'absolute', inset: -2, borderRadius: Math.min(t.radius, 10), background: `${col}33`, border: `2px solid ${col}`,
+                boxShadow: glowOf(t, col, 0.4), opacity: on}} />
+              <div style={{position: 'relative', width: 260, whiteSpace: 'nowrap', fontFamily: t.f.num, fontWeight: t.w.num, fontSize: t.f.num.includes('Press') ? 16 : 28,
+                color: on > 0.5 ? col : t.c.muted}}>{r.time}</div>
+              <div style={{position: 'relative', fontFamily: t.f.tc, fontWeight: 700, fontSize: 32, color: t.c.fg}}>{r.title}</div>
             </div>
           );
         })}

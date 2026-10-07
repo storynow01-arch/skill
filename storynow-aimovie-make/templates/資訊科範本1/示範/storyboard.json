@@ -3,16 +3,16 @@
  "mode": "teach",
  "style": "cyber-neon",
  "hud": {
-  "left": "資訊科範本1",
+  "left": "資訊科範本1 // 研習活動說明",
   "right": "測試範本"
  },
  "lineGap": 0.3,
- "lead": 0.3,
- "tail": 0.5,
+ "lead": 0.4,
+ "tail": 0.8,
  "voice": {
-  "name": "zh-TW-YunJheNeural",
-  "rate": "+12%",
-  "pitch": "+2Hz"
+  "rate": "+16%",
+  "pitch": "+2Hz",
+  "name": "zh-TW-YunJheNeural"
  },
  "scenes": [
   {
@@ -21,59 +21,188 @@
    "impact": true,
    "props": {
     "eyebrow": "資訊科範本1",
-    "title": "活動說明＋宣傳片",
-    "size": 100,
-    "subtitle": "測試範本",
-    "en": "EVENT NOTICE × PROMO"
+    "title": "研習活動說明",
+    "size": 110,
+    "subtitle": "活動說明 ＋ 資訊科宣傳片",
+    "en": "WORKSHOP BRIEFING"
    },
    "lines": [
-    "這是資訊科範本1的測試範本。"
+    "資訊科範本1，研習活動說明。"
    ]
   },
   {
    "id": "A2",
-   "type": "flow",
+   "type": "infoGrid",
+   "code": 0.4,
    "props": {
-    "heading": "一支影片兩段",
-    "en": "TWO PARTS",
+    "heading": "研習資訊",
+    "en": "WORKSHOP INFO",
     "cueMap": [
      0,
-     0,
-     0
+     1
     ],
-    "result": "＝ 現場播放用",
-    "steps": [
+    "items": [
      {
-      "title": "活動說明",
-      "sub": "約兩分半"
+      "label": "時間",
+      "value": "13:30 – 16:30",
+      "note": "下午三小時"
      },
      {
-      "title": "宣傳片",
-      "sub": "60 秒"
-     },
-     {
-      "title": "串接",
-      "sub": "一支成片"
+      "label": "地點",
+      "value": "資訊大樓 3 樓",
+      "note": "有電梯"
      }
     ]
    },
    "lines": [
-    "活動說明、宣傳片，串接成一支。"
+    "研習時間是下午三小時，",
+    "地點在資訊大樓三樓，有電梯。"
    ]
   },
   {
    "id": "A3",
+   "type": "flow",
+   "code": 0.4,
+   "props": {
+    "heading": "簽到 · 簽退",
+    "en": "SIGN IN · SIGN OUT",
+    "cueMap": [
+     0,
+     0,
+     1
+    ],
+    "result": "＝ 核給研習時數",
+    "steps": [
+     {
+      "title": "簽到",
+      "sub": "入場時"
+     },
+     {
+      "title": "研習",
+      "sub": "三小時"
+     },
+     {
+      "title": "簽退",
+      "sub": "結束後"
+     }
+    ]
+   },
+   "lines": [
+    "進場時記得簽到，結束後記得簽退，",
+    "這樣才能核給研習時數。"
+   ]
+  },
+  {
+   "id": "A4",
+   "type": "checklist",
+   "code": 0.4,
+   "props": {
+    "heading": "課前準備",
+    "en": "BEFORE WE START",
+    "cueMap": [
+     0,
+     1
+    ],
+    "items": [
+     {
+      "title": "Google 帳號可登入",
+      "note": ""
+     },
+     {
+      "title": "手機放手邊",
+      "note": ""
+     }
+    ]
+   },
+   "lines": [
+    "課前請確認 Google 帳號可以登入，",
+    "手機放在手邊。"
+   ]
+  },
+  {
+   "id": "A5",
+   "type": "compare",
+   "accent": "accent2",
+   "props": {
+    "heading": "個資提醒",
+    "en": "PRIVACY FIRST",
+    "mid": "VS",
+    "left": {
+     "title": "✓ 模擬資料",
+     "tone": "ok",
+     "items": [
+      "安心練習"
+     ]
+    },
+    "right": {
+     "title": "✕ 真實名冊",
+     "tone": "bad",
+     "items": [
+      "請勿使用"
+     ]
+    }
+   },
+   "lines": [
+    "實作一律用模擬資料安心練習，真實名冊請勿使用。"
+   ]
+  },
+  {
+   "id": "A6",
+   "type": "schedule",
+   "props": {
+    "heading": "今日課程流程",
+    "en": "TODAY'S SCHEDULE",
+    "lightMap": [
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      3
+     ]
+    ],
+    "rows": [
+     {
+      "time": "13:30",
+      "title": "開場"
+     },
+     {
+      "time": "13:50",
+      "title": "實作一"
+     },
+     {
+      "time": "15:00",
+      "title": "休息",
+      "tag": "break"
+     },
+     {
+      "time": "15:10",
+      "title": "實作二"
+     }
+    ]
+   },
+   "lines": [
+    "今天先開場，接著實作一，",
+    "休息之後是實作二。"
+   ]
+  },
+  {
+   "id": "A7",
    "type": "closing",
    "impact": true,
    "props": {
-    "title": "換上你的活動",
-    "size": 96,
-    "subtitle": "就是這個風格",
-    "lines": [],
-    "en": "YOUR EVENT HERE"
+    "title": "有問題，歡迎找我們",
+    "size": 100,
+    "subtitle": "承辦人　資訊科",
+    "lines": [
+     "分機 1234"
+    ],
+    "en": "NEXT ▶ 資訊科宣傳片"
    },
    "lines": [
-    "換上你的活動，就是這個風格。"
+    "有問題，歡迎找承辦人。",
+    "說明結束後，會接上六十秒的資訊科宣傳片。"
    ]
   }
  ]

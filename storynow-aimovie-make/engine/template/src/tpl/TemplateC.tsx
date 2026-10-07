@@ -302,7 +302,7 @@ export const TemplateC: React.FC<TplSpec & {bpm?: number}> = (spec) => {
   const idx = sceneIndex(spec, f);
   const cur = spec.scenes[idx];
   const flash = idx > 0 && f - cur.from < 3;
-  const cap = captionAt(spec, f, 6);
+  const cap = captionAt(spec, f, 8);   // 跟 A、B、D 一樣延長 8 格（6 格時字幕會比換場早 1 格消失，最終品檢 F1）
   const fade = Math.max(0, spec.brand ? 0 : 1 - f / 4, (f - (spec.totalFrames - 16)) / 16);
   return (
     <AbsoluteFill style={{background: BK}}>

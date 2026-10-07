@@ -3,14 +3,144 @@
   "style": "garychen-dark",
   "chapterLabel": "1-1  範本E 測試範本",
   "scenes": [
-    {"id": "S1", "type": "title_card",
-     "props": {"title": "教學課程產線", "subtitleEn": "TEACHING PIPELINE", "eyebrow": "範本E"}},
-    {"id": "S2", "type": "concept_cards",
-     "props": {"heading": "一整門課，風格一致", "cards": [
-       {"n": 1, "icon": "🎨", "title": "風格一致", "note": "深色科技風", "cue": "風格一致"},
-       {"n": 2, "icon": "💡", "title": "念到才亮", "note": "跟著旁白出現", "cue": "念到才亮"},
-       {"n": 3, "icon": "🎬", "title": "整集合併", "note": "幾十節合成一集", "cue": "整集合併"}]}},
-    {"id": "S3", "type": "closing_card",
-     "props": {"takeaway": ["換上你的課程，就是這個風格。"], "callback": [{"icon": "🎨", "label": "風格一致"}, {"icon": "🎬", "label": "整集合併"}]}}
+    {
+      "id": "S1",
+      "type": "title_card",
+      "props": {
+        "title": "教學課程產線",
+        "subtitleEn": "TEACHING PIPELINE",
+        "eyebrow": "範本E"
+      }
+    },
+    {
+      "id": "S2",
+      "type": "scenario",
+      "props": {
+        "heading": "一門課幾十節",
+        "icon": "📚",
+        "pills": [
+          "風格要一致",
+          "字幕不能錯",
+          "唸法要正確"
+        ],
+        "cueWords": [
+          "風格要一致",
+          "字幕不能錯",
+          "唸法要正確"
+        ]
+      }
+    },
+    {
+      "id": "S3",
+      "type": "concept_cards",
+      "props": {
+        "heading": "三個做法",
+        "cards": [
+          {
+            "n": 1,
+            "icon": "🎨",
+            "title": "風格一致",
+            "note": "深色科技風",
+            "cue": "風格一致"
+          },
+          {
+            "n": 2,
+            "icon": "💡",
+            "title": "念到才亮",
+            "note": "跟著旁白出現",
+            "cue": "念到才亮"
+          },
+          {
+            "n": 3,
+            "icon": "🎬",
+            "title": "整集合併",
+            "note": "幾十節合成一集",
+            "cue": "整集合併"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S4",
+      "type": "comparison",
+      "props": {
+        "left": {
+          "frame": "danger",
+          "icon": "✂️",
+          "text": "一節一節手工剪"
+        },
+        "mid": "→",
+        "right": {
+          "frame": "success",
+          "icon": "⚙️",
+          "text": "範本E 一次量產"
+        },
+        "footerPill": "風格與品檢都一樣"
+      }
+    },
+    {
+      "id": "S5",
+      "type": "flow_arrows",
+      "props": {
+        "heading": "十五步產線",
+        "steps": [
+          {
+            "label": "寫稿",
+            "note": "一行一句",
+            "cue": "寫稿"
+          },
+          {
+            "label": "審稿",
+            "note": "第⓪關",
+            "cue": "審稿"
+          },
+          {
+            "label": "配音",
+            "note": "Gemini／edge",
+            "cue": "配音"
+          },
+          {
+            "label": "渲染",
+            "note": "品檢全過",
+            "cue": "渲染"
+          }
+        ],
+        "footer": "每一步都有品質關卡"
+      }
+    },
+    {
+      "id": "S6",
+      "type": "quiz",
+      "props": {
+        "question": "範本E 最重視什麼？",
+        "options": [
+          "內容正確",
+          "特效很多"
+        ],
+        "answerIndex": 0,
+        "revealAt": 4.0,
+        "afterNote": "字幕與唸法零錯誤"
+      }
+    },
+    {
+      "id": "S7",
+      "type": "closing_card",
+      "props": {
+        "takeaway": [
+          "換上你的課程，就是這個風格。"
+        ],
+        "nextTeaser": "你的第一門課",
+        "callback": [
+          {
+            "icon": "📚",
+            "label": "幾十節"
+          },
+          {
+            "icon": "🎬",
+            "label": "一個風格"
+          }
+        ]
+      }
+    }
   ]
 }

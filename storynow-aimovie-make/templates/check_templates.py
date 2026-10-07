@@ -12,7 +12,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 TPL = Path(__file__).resolve().parent            # storynow-aimovie-make/templates
 SKILL = TPL.parent
 REPO = SKILL.parent
-SECTIONS = [("示範片", r"^##\s*(長什麼樣|10 秒示範片)"), ("適合", r"^##\s*適合"), ("原始提示詞", r"^##\s*原始提示詞"),
+SECTIONS = [("示範片", r"^##\s*(長什麼樣|\d+ 秒示範片)"), ("適合", r"^##\s*適合"), ("原始提示詞", r"^##\s*原始提示詞"),
             ("流程與品檢", r"^##\s*流程與品檢"), ("概念忠實度檢查", r"^##\s*概念忠實度檢查"), ("範本設定", r"^##\s*範本設定")]
 
 
@@ -42,7 +42,7 @@ def check(t: dict, texts: dict) -> list[tuple[str, bool, str]]:
     ok("完整版提示詞", full, full[0].name if full else "缺 提示詞_範本<代號>完整版.md")
     demo = d / "示範"
     info = probe(demo / "示範.mp4") if (demo / "示範.mp4").exists() else None
-    ok("示範/示範.mp4", info and 6 <= info["sec"] <= 20 and info["w"] == 1920 and info["h"] == 1080 and info["audio"],
+    ok("示範/示範.mp4", info and 25 <= info["sec"] <= 35 and info["w"] == 1920 and info["h"] == 1080 and info["audio"],
        f"{info['sec']:.1f} 秒 {info['w']}×{info['h']}{' 有聲' if info['audio'] else ' 無聲'}" if info else "缺")
     ok("示範/poster.jpg", (demo / "poster.jpg").exists())
     ok("示範/總覽.jpg", (demo / "總覽.jpg").exists())

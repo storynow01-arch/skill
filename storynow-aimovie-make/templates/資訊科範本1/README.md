@@ -4,7 +4,7 @@
 > 結構：**活動說明（約 2 分 30 秒，賽博霓虹＋旁白字幕）→ 資訊科宣傳片「攜手築夢·智造未來」（60 秒）**
 > 使用者輸入「資訊科範本1」時，照本檔執行。
 
-## 長什麼樣（10 秒示範片）
+## 長什麼樣（30 秒示範片）
 
 [![點開看示範片](示範/poster.jpg)](示範/示範.mp4)
 
@@ -32,6 +32,7 @@
 ## 範本設定
 | 項目 | 設定 |
 |---|---|
+| 最終品檢 | 加 `--jumps-by-design`：開場與結尾的衝擊轉場（故障閃爍＋放大彈入閃光）是招牌，F11 照樣列出但不算不通過；**交付前人工看連續格確認**其餘突跳都是設計（2026-10-07） |
 | 產生器 | `engine/scripts/make_info1.py`（說明段用共用引擎＋宣傳片 `trailer/`，串接成一支） |
 | 說明段風格 | `style: cyber-neon`；分鏡骨架 [`notice/notice_template.json`](notice/notice_template.json) |
 | 旁白 | `voice: YunJhe rate +3% pitch +2Hz`（有專案 Gemini 金鑰時依配音規則用 Gemini）；`lineGap 0.62`、`lead 0.6`，總長用 `tail` 調 |

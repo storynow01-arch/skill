@@ -102,12 +102,14 @@ export const termFind = (acts: Act[], lf: number, init: TermInit, match: string)
   for (let i = lines.length - 1; i >= 0; i--) {
     const k = lines[i].text.indexOf(match);
     if (k >= 0) {
-      const col = textCols(lines[i].text.slice(0, k));
-      return {x: TERM_TEXT.x + col * TERM_TEXT.charW, y: TERM_TEXT.y + (i - off) * TERM_TEXT.lineH, w: textCols(match) * TERM_TEXT.charW, h: TERM_TEXT.lineH};
+      return {x: TERM_TEXT.x + termPx(lines[i].text.slice(0, k)), y: TERM_TEXT.y + (i - off) * TERM_TEXT.lineH, w: termPx(match), h: TERM_TEXT.lineH};
     }
   }
   return null;
 };
+/** 終端機裡一段字的實際寬度（px）：英數用 Cascadia Mono 22px＝13.2px；中文退回微軟正黑體＝22px（不是 2 格的 26.4px，
+    2026-10-07 示範片抓到：前面有 7 個中文字時螢光筆往右偏一個字） */
+export const termPx = (s: string) => Array.from(s).reduce((n, ch) => n + (/[⺀-￿]/.test(ch) ? 22 : TERM_TEXT.charW), 0);
 /** 等寬字：中文佔兩格 */
 export const textCols = (s: string) => Array.from(s).reduce((n, ch) => n + (/[\u2e80-\uffff]/.test(ch) ? 2 : 1), 0);
 

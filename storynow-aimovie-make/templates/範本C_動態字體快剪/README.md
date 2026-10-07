@@ -4,7 +4,7 @@
 > 觸發：使用者說「**範本C／快剪範本／動態字體**」，或在選範本時選 C。
 > 用法：**丟任何文本 → 拆成共用場景語彙 → 選本範本 → 產出同一風格的影片**。
 
-## 長什麼樣（10 秒示範片）
+## 長什麼樣（30 秒示範片）
 
 [![點開看示範片](示範/poster.jpg)](示範/示範.mp4)
 
@@ -59,6 +59,7 @@ Narration: a senior student, punchy and short, almost like a rapper's ad-libs be
 ## 範本設定
 | 項目 | 設定 |
 |---|---|
+| 最終品檢 | 加 `--jumps-by-design`：F11 畫面突跳是這個範本的招牌（字在拍點上砸入、場景硬切、字碎開變成圖示），照樣全部列出但不算不通過；**交付前一定要人工看連續格確認**每一處都是設計，不是瑕疵（2026-10-07） |
 | Composition | `TemplateC`（`engine/template/src/tpl/TemplateC.tsx`） |
 | 配樂 | `"music": {"genre": "phonk", "bpm": 145, "key": "Em"}` |
 | 旁白 | 短而有力；建議旁白句子短、語速 +15～18% |

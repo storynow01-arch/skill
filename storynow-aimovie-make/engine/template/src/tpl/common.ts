@@ -34,7 +34,16 @@ export const wrap = (s: string, n: number): string[] => {
 };
 
 /** 目前這一格要顯示的字幕 */
-export const captionAt = (spec: Spec, f: number, tail = 6) => spec.captions.find((c) => f >= c.from && f < c.to + tail);
+export const captionAt = (spec: Spec, f: number, tail = 6) => {
+  // 下一句 10 格內就出現時直接接上，不讓字幕帶空 1～2 格（最終品檢 F1 字幕閃爍；2026-10-07 範本C 30 秒示範抓到）
+  const cs = spec.captions;
+  for (let i = 0; i < cs.length; i++) {
+    const c = cs[i], nx = cs[i + 1];
+    const end = nx && nx.from - c.to <= 10 ? Math.max(nx.from, c.to + Math.min(tail, nx.from - c.to)) : c.to + tail;
+    if (f >= c.from && f < end) return c;
+  }
+  return undefined;
+};
 
 /** 目前的場景索引 */
 export const sceneIndex = (spec: Spec, f: number) => Math.max(0, spec.scenes.findIndex((s) => f >= s.from && f < s.from + s.dur));
