@@ -4,7 +4,7 @@
 停太久畫面會靜止、片子變長；範本E 實測抓到「回顧名詞清單每個停 1.5～2 秒」「測驗思考停 5.2 秒」。
 
   python <skill>/final_qa/pause_check.py                    在專案資料夾執行，自動判斷：
-      src/data/spec.json＋public/voice.wav（範本 A～D、十一步流程）→ 每句旁白 voiceLines 的範圍內檢查
+      src/data/spec.json＋public/voice.wav（範本 A～D、十二步流程）→ 每句旁白 voiceLines 的範圍內檢查
       timings.json（範本F／G）→ 每段配音檔
   python <skill>/final_qa/pause_check.py 02_語音/1-1        一個資料夾裡的每個 mp3／wav（範本E 的每場音檔）
 輸出 qa/停頓檢查.json（範本E 給資料夾時寫在該資料夾）。只提醒、不擋（exit 0）：停頓是不是太長要人聽。

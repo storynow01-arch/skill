@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""配音後聽檢（AI 耳朵），給十一步流程與範本 A～D 用（範本E 另有 qa/ai_listen.py 讀 02_語音）。
+"""配音後聽檢（AI 耳朵），給十二步流程與範本 A～D 用（範本E 另有 qa/ai_listen.py 讀 02_語音）。
 
   python <skill>/engine/scripts/ai_listen.py [--out qa/聽檢] [--model auto]     （在專案資料夾執行，build.py 之後）
 
@@ -90,7 +90,7 @@ def main():
         return 0
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
     clips = []                                   # (場景, 文字, 音檔, 起, 訖)
-    if Path("src/data/spec.json").exists():      # 十一步流程、範本 A～D
+    if Path("src/data/spec.json").exists():      # 十二步流程、範本 A～D
         spec = json.loads(Path("src/data/spec.json").read_text(encoding="utf-8"))
         voice = Path("public") / (spec.get("voice") or "voice.wav")
         scenes = {}

@@ -3,7 +3,7 @@
 
   py qa\\term_check.py [檔案或資料夾...] [--out 輸出資料夾] [--rules 規範檔]
   例：py qa\\term_check.py ..\\01_腳本                      （預設：01_腳本 的 *.md 與 *_plan.json）
-      py qa\\term_check.py storyboard.json --out 11_品檢\\文稿檢查   （十一步流程的 storyboard 也可以）
+      py qa\\term_check.py storyboard.json --out 11_品檢\\文稿檢查   （十二步流程的 storyboard 也可以）
 
 規則：00_規範/用詞規範.json（rules 正規表示式、mainland 大陸用語、names 產品正式寫法）。
 輸出：文稿檢查報告.html、.md、.json；有「必改」時 exit 1（流程可以擋下來）。

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""唸法標準題（2026-10-06，從範本E 移植；十一步流程、範本 A～D 用）：確認 build.py 送進 TTS 的文字跟預期一樣。
+"""唸法標準題（2026-10-06，從範本E 移植；十二步流程、範本 A～D 用）：確認 build.py 送進 TTS 的文字跟預期一樣。
 改了 voices.json 的 gemini_replace、pron_zh-TW.json、build.py 的 to_speech 之後一定要跑；make_video.py 配音前自動跑，沒全過就停。
 
   python <skill>/engine/scripts/pron_test.py              （在專案資料夾執行）

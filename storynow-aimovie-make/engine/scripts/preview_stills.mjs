@@ -1,4 +1,4 @@
-// 分鏡預覽截圖（2026-10-06，從範本E 移植；十一步流程、範本 A～D 用）：每個場景在「物件都出現了」的時間點
+// 分鏡預覽截圖（2026-10-06，從範本E 移植；十二步流程、範本 A～D 用）：每個場景在「物件都出現了」的時間點
 // （場景結束前 0.6 秒）截一張圖，再寫 scenes.json（場景、型別、截圖、旁白）給 final_qa/storyboard_page.py 做預覽頁。
 // 用法（在專案資料夾執行，build.py 之後）：node <skill>/engine/scripts/preview_stills.mjs <Composition> [輸出資料夾=qa/分鏡預覽]
 // make_video.py --preview 會自動跑：用 edge-tts 暫配（不花 Gemini 額度）→ 建置 → 截圖 → 預覽頁，不算圖。

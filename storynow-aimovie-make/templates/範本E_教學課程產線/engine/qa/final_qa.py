@@ -143,7 +143,7 @@ def main():
                     help="F11 不檢查的時間段（秒），例：0-14.6 = 封面＋委製方提供的片頭影片")
     ap.add_argument("--silence-ok", type=float, default=0.0,
                     help="長度不超過這個秒數的無聲段屬於設計（例如片尾測驗卡 6 秒倒數），列出但不算未通過")
-    ap.add_argument("--spec", help="十一步流程建置出的 src/data/spec.json：量字幕＝旁白、字幕同步、Netflix 字幕規範")
+    ap.add_argument("--spec", help="十二步流程建置出的 src/data/spec.json：量字幕＝旁白、字幕同步、Netflix 字幕規範")
     ap.add_argument("--layout", help="qa_layout.mjs 輸出的版面量測 json（qa_layout.json）")
     a = ap.parse_args()
     mp4 = Path(a.mp4)

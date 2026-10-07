@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""第⑦步聲音試聽：用 Gemini 聲音設計做幾個聲音，同一句台詞各唸一次，產出固定格式的試聽頁。
+"""第⑧步聲音試聽：用 Gemini 聲音設計做幾個聲音，同一句台詞各唸一次，產出固定格式的試聽頁。
 
   python voice_preview.py --out 05_聲音試聽 --line "台詞" \\
       --voice "A 明亮清爽=描述…" --voice "B 溫暖中音=描述…" --voice "C 低沉渾厚=描述…" \\

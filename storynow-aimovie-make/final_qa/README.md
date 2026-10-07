@@ -1,14 +1,14 @@
 # final_qa：第⑪步「最終品檢」
 
 **最少只需要成片 mp4**，不依賴任何專案格式；有原始資料時加參數就能多量字幕與版面。
-十一步流程做的片、範本 A～E 做的片都能跑，**不會修改任何檔案**。
+十二步流程做的片、範本 A～E 做的片都能跑，**不會修改任何檔案**。
 2026-10 在範本E（教學課程產線）實際用於 EP1／EP2 驗收後抽出。
 
 ```bash
 # 最少：只給影片
 python final_qa/final_qa.py out/成片.mp4 --lufs -14
 
-# 十一步流程做的片：加上 spec.json 與版面量測，字幕與版面一起量
+# 十二步流程做的片：加上 spec.json 與版面量測，字幕與版面一起量
 python final_qa/final_qa.py out/成片.mp4 --lufs -14 \
     --spec src/data/spec.json --layout qa_layout.json \
     --terms "IP,DNS,HTTPS,443" --text 旁白全文.txt
@@ -42,7 +42,7 @@ python final_qa/final_qa.py out/成片.mp4 --lufs -14 \
 | F9 | 英數詞唸法（`--terms`） | **時長比對**：同詞重複 4 次送 TTS，跟逐字母／逐字／中文整數等候選比時長 | 每個詞都要「＝某個正確唸法」 |
 | F10 | 多音詞（`--text`） | `多音字清單.json` 比對旁白 | 人工試聽 |
 
-**有 `--spec spec.json` 時（十一步流程 build.py 產出的）**
+**有 `--spec spec.json` 時（十二步流程 build.py 產出的）**
 
 | 代號 | 檢查 | 門檻 |
 |---|---|---|

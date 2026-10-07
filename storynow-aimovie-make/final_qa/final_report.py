@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """final_qa.py 的兩個延伸：
 
-1. spec_checks()：讀 storynow-aimovie-make 十一步流程建置出的 src/data/spec.json
+1. spec_checks()：讀 storynow-aimovie-make 十二步流程建置出的 src/data/spec.json
    （captions：每頁字幕文字與起訖格數；voiceLines：每句旁白原文、送進 TTS 的寫法、起訖秒數），
    量「字幕對不對、同不同步」與 Netflix 繁中字幕規範。
 2. render_html()：把全部結果做成一份 HTML 報告（附截圖總覽），跟 final_qa.md 放在一起。
@@ -101,7 +101,7 @@ def spec_checks(spec_path: Path) -> dict:
 
 
 def layout_summary(layout_path: Path) -> dict:
-    """讀 qa_layout.mjs 的輸出（十一步流程的 engine/scripts 或範本E 都是 [{frame, issues:[{kind,...}]}]）"""
+    """讀 qa_layout.mjs 的輸出（十二步流程的 engine/scripts 或範本E 都是 [{frame, issues:[{kind,...}]}]）"""
     data = json.loads(Path(layout_path).read_text(encoding="utf-8"))
     kinds: dict[str, int] = {}
     rows = []

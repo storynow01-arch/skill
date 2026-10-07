@@ -2,7 +2,7 @@
 """逐字審稿・審稿表（2026-10-06，從範本E 移植；外層工作流、範本 A～G 共用）：配音前，AI 逐句審稿用的底稿。
 
   python <skill>/final_qa/review_prep.py storyboard.json [--out qa/逐字審稿]
-  storyboard 支援：範本 A～D／十一步流程（scenes[].lines）、範本F／G（segments[].say）；
+  storyboard 支援：範本 A～D／十二步流程（scenes[].lines）、範本F／G（segments[].say）；
   也可以給純文字稿 .txt／.md（一行一句）。
 
 輸出 <out>/審稿表.md：每一句旁白＋這句裡的多音詞（應唸）、英數詞、數字、實際送 TTS 的文字（依配音規則：有 Gemini 金鑰看 Gemini 唸法）。
