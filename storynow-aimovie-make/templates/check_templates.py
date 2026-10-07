@@ -47,6 +47,9 @@ def check(t: dict, texts: dict) -> list[tuple[str, bool, str]]:
     ok("示範/poster.jpg", (demo / "poster.jpg").exists())
     ok("示範/總覽.jpg", (demo / "總覽.jpg").exists())
     ok("示範分鏡", (demo / "storyboard.json").exists() or list(demo.glob("示範分鏡*")))
+    allowed = re.compile(r"^(示範\.mp4|poster\.jpg|總覽\.jpg|storyboard\.json|示範分鏡.*|範例_.*)$")
+    extra = [x.name for x in demo.iterdir() if not allowed.match(x.name)] if demo.is_dir() else []
+    ok("示範/ 沒有多餘檔案", not extra, "、".join(extra[:4]) + "（備份、暫存不要放進 skill）")
     if readme.exists():
         md = readme.read_text(encoding="utf-8")
         head = md.split("\n## ", 1)[0]
