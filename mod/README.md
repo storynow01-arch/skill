@@ -7,20 +7,28 @@
 | `token-meter` | 輸入框上方一列：上下文／5 小時／7 天用量數字＋進度條＋本次花費；`/token` 切換 |
 | `task-dashboard` | 輸入框上方一列：只列執行中的專案、全部進度百分比、預計完成時間；`/dashboard` 開完整面板。掃描 `~/.claude/projects` 對話紀錄（只讀，需要 Python `py`）；專案用 `.claude/dashboard.json` 設定（見下） |
 
-## 安裝（每台電腦做一次）
+## 安裝（每台電腦做一次）—— 建議：直接讀本機的 skill 資料夾
 
-在 Claude Code 裡輸入：
+每台電腦都已經有這個倉庫的 clone（例：`D:\claude\skill-push`），在 Claude Code 輸入（路徑換成那台的位置）：
 
 ```
-/plugin marketplace add storynow01-arch/skill
+/plugin marketplace add D:\claude\skill-push
 /plugin install token-meter@storynow-mods
 /plugin install task-dashboard@storynow-mods
 ```
 
-更新：`/plugin marketplace update storynow-mods` 後 `/reload-plugins`。
+之前從 GitHub 裝過的，先 `/plugin marketplace remove storynow-mods` 再做上面三行。
 
-⚠ 這個倉庫含範本示範片，從 GitHub clone 約要 2 分鐘，超過預設 120 秒會失敗（「Git clone timed out」）。
-先設環境變數 `CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=600000`（或寫進 `~/.claude/settings.json` 的 `"env"`）再安裝／更新。
+**之後更新**：在 skill 資料夾 `git pull`，開新對話就是最新版（不用 marketplace update、不用重新下載）。
+`/plugin list` 會顯示 `Read from: D:\claude\skill-push\mod\…` 表示是讀本機資料夾。
+
+### 另一種：從 GitHub 安裝（沒有本機 clone 時才用）
+
+```
+/plugin marketplace add storynow01-arch/skill
+```
+⚠ 倉庫含範本示範片，clone 約 2 分鐘，超過預設 120 秒會失敗 → 先設 `CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=600000`。
+這種裝法每次改版都要把 `plugin.json` 的 version 加一，再 `/plugin marketplace update storynow-mods`。
 
 ## task-dashboard 的專案設定 `.claude/dashboard.json`
 
