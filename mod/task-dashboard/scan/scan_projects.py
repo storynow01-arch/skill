@@ -10,6 +10,7 @@
   open     工作清單.md 裡還沒勾的項目數
   bg       背景工作：專案 .claude/dashboard.json 的 {"logs": ["相對路徑", …]}，30 分鐘內有更新的紀錄檔 → 最後一行
            （Claude 閒著、但批次／渲染還在背景跑的專案也算「執行中」）
+  plan     全部進度與預計完成時間：dashboard.json 的 "progress"（見 plan()）；沒設定就是 null
 只讀檔，不寫任何東西。用法：python scan_projects.py [天數=7]
 """
 from __future__ import annotations
@@ -106,6 +107,60 @@ def background(cwd: str, now: float) -> str:
     return clean(lines[-1], 60) if lines else ""
 
 
+def plan(cwd: str, now: float) -> dict | None:
+    """全部進度與預計完成時間：專案 .claude/dashboard.json 的 "progress"
+      {"label": "節", "total": 56, "glob": "完成記號的 glob",
+       "extra": [{"label": "集", "total": 8, "glob": "…"}],       # 只顯示數量，不算進百分比
+       "wait": {"until": "15:05", "items": ["完成記號路徑", …]},   # 今天 until 之前不會動的項目（例：等配音額度）
+       "per_item_min": 20, "tail_min": 30}                         # 每項分鐘（不給就用最近完成間隔的中位數）、收尾分鐘
+    """
+    cfg = Path(cwd) / ".claude" / "dashboard.json"
+    if not cfg.exists():
+        return None
+    try:
+        pc = json.loads(cfg.read_text(encoding="utf-8")).get("progress")
+    except Exception:
+        return None
+    if not pc:
+        return None
+    root = Path(cwd)
+    marks = sorted(p.stat().st_mtime for p in root.glob(pc["glob"]))
+    total = int(pc["total"])
+    done = min(len(marks), total)
+    extra = [{"label": x["label"], "done": len(list(root.glob(x["glob"]))), "total": int(x["total"])}
+             for x in pc.get("extra", [])]
+    gaps = sorted(b - a for a, b in zip(marks, marks[1:]) if now - b < 86400 and 180 < b - a < 3600)
+    per = pc.get("per_item_min", 0) * 60 or (gaps[len(gaps) // 2] if gaps else 0)
+    remaining = total - done
+    eta = None
+    if remaining == 0:
+        eta = marks[-1] if marks else now
+    elif per:
+        t = now
+        w = pc.get("wait") or {}
+        waiting = 0
+        if w.get("until"):
+            hh, mm = map(int, w["until"].split(":"))
+            lt = time.localtime(now)
+            until = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, hh, mm, 0, 0, 0, -1))
+            if now < until:
+                waiting = min(remaining, sum(1 for r in w.get("items", []) if not (root / r).exists()))
+                t = max(now + (remaining - waiting) * per, until)
+        eta = (t if waiting else now) + (waiting or remaining) * per + pc.get("tail_min", 0) * 60
+    return {"label": pc.get("label", ""), "done": done, "total": total, "pct": round(done * 100 / total) if total else 0,
+            "extra": extra, "perMin": round(per / 60), "eta": int(eta) if eta else None,
+            "etaText": eta_text(eta, now) if eta else ""}
+
+
+def eta_text(eta: float, now: float) -> str:
+    a, b = time.localtime(eta), time.localtime(now)
+    if (a.tm_year, a.tm_yday) == (b.tm_year, b.tm_yday):
+        return time.strftime("%H:%M", a)
+    if time.localtime(now + 86400).tm_yday == a.tm_yday:
+        return "明天 " + time.strftime("%H:%M", a)
+    return time.strftime("%m/%d %H:%M", a)
+
+
 def tail_text(p: Path, n: int = 4000) -> str:
     size = p.stat().st_size
     with p.open("rb") as f:
@@ -154,7 +209,8 @@ def scan_one(proj: Path, now: float) -> dict | None:
     state = "running" if ago < 90 or bg else ("waiting" if last_kind == "assistant" else "idle")
     status, open_n = progress(cwd)
     return {"name": Path(cwd).name or cwd, "cwd": cwd, "state": state, "ago": int(ago), "title": clean(title, 60),
-            "lastUser": last_user, "lastClaude": last_claude, "status": status, "open": open_n, "bg": bg}
+            "lastUser": last_user, "lastClaude": last_claude, "status": status, "open": open_n, "bg": bg,
+            "plan": plan(cwd, now)}
 
 
 def main():

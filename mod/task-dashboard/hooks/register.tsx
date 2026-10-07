@@ -5,7 +5,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { Board, Project } from '../types'
+import type { Board, Plan, Project } from '../types'
 
 const PANE = 'task-dashboard'
 const board = atom({ plugin: 'task-dashboard', key: 'board' } as const, null)
@@ -69,6 +69,7 @@ export const register: Register = on => {
         {running.map(p => (
           <Box key={p.cwd} columnGap={1}>
             <Text bold>{p.name}</Text>
+            {p.plan != null && <Text color="cyan">{planText(p.plan)}</Text>}
             <Text dimColor wrap="truncate">{runningText(p)}</Text>
           </Box>
         ))}
@@ -109,6 +110,7 @@ export const register: Register = on => {
                 <Text dimColor>{agoText(p.ago + age)}</Text>
                 {p.open > 0 && <Text dimColor>{`未完成 ${p.open}`}</Text>}
               </Box>
+              {p.plan != null && <Text color="cyan">{`  ${planText(p.plan, true)}`}</Text>}
               {p.title !== '' && <Text dimColor wrap="truncate">{`  ${p.title}`}</Text>}
               {p.state === 'waiting' && p.lastClaude !== '' && (
                 <Text wrap={isOpen ? 'wrap' : 'truncate'}>{`  Claude：${p.lastClaude}`}</Text>
@@ -132,6 +134,17 @@ export const register: Register = on => {
 export const runningText = (p: Project): string => {
   const t = p.bg ? `背景 ${p.bg}` : (p.status[0] ?? p.lastClaude)
   return t.length > 40 ? t.slice(0, 40) + '…' : t
+}
+
+/** 「84% 47/56節 · 預計 17:47 完成」；long 加上其他單位與每項分鐘數 */
+export const planText = (pl: Plan, long = false): string => {
+  const parts = [`${pl.pct}% ${pl.done}/${pl.total}${pl.label}`]
+  if (long) for (const x of pl.extra) parts.push(`${x.label} ${x.done}/${x.total}`)
+  if (pl.done >= pl.total) parts.push('已完成')
+  else if (pl.etaText !== '') parts.push(`預計 ${pl.etaText} 完成`)
+  else parts.push('完成時間估算中')
+  if (long && pl.perMin > 0 && pl.done < pl.total) parts.push(`每${pl.label}約 ${pl.perMin} 分`)
+  return parts.join(' · ')
 }
 
 const isEngine = (x: unknown): boolean => x == null || (typeof x === 'object' && (x as { type?: unknown }).type === 'engine')

@@ -14,6 +14,24 @@ export type Project = {
   open: number
   /** 背景工作（.claude/dashboard.json 登記的紀錄檔）30 分鐘內的最後一行；沒有就空字串 */
   bg?: string
+  /** 全部進度與預計完成時間（.claude/dashboard.json 的 progress）；沒設定就是 null */
+  plan?: Plan | null
+}
+
+export type Plan = {
+  label: string
+  done: number
+  total: number
+  /** done／total 的百分比（整數） */
+  pct: number
+  /** 只顯示數量的其他單位，例：集 5/8 */
+  extra: { label: string; done: number; total: number }[]
+  /** 估算用的每項分鐘數（0＝還量不出來） */
+  perMin: number
+  /** 預計完成時間（epoch 秒）；量不出來是 null */
+  eta: number | null
+  /** 「17:47」「明天 09:10」「10/09 14:00」 */
+  etaText: string
 }
 
 export type Board = { at: number; projects: Project[]; error?: string }
