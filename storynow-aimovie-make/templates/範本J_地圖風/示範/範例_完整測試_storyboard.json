@@ -1,0 +1,63 @@
+{
+ "title": "範本J 測試範本：如何準備一場上台報告",
+ "mode": "teach",
+ "snapBars": false,
+ "narrator": "嚮導",
+ "hud": {"left": "上台報告探索地圖"},
+ "voice": {"provider": "edge", "name": "zh-TW-YunJheNeural", "rate": "+0%", "pitch": "+0Hz"},
+ "lineGap": 0.4,
+ "lead": 0.2,
+ "tail": 1.6,
+ "scenes": [
+  {
+   "id": "S1", "type": "title",
+   "props": {"eyebrow": "報告探險隊", "title": "上台報告準備術", "subtitle": "三個步驟不再怯場", "en": "PRESENTATION QUEST"},
+   "lines": ["上台報告，你是不是很緊張？", "今天帶你走一趟報告探險地圖。"]
+  },
+  {
+   "id": "S2", "type": "scenario",
+   "props": {"heading": "報告前一晚", "icon": "⏰", "pills": ["投影片還沒做", "講稿背不起來", "時間抓不準", "明天上台怎麼辦"], "cueMap": [0, 1, 1, 2]},
+   "lines": ["報告前一晚，投影片還沒做，", "講稿背不起來，時間也抓不準，", "明天上台怎麼辦？"]
+  },
+  {
+   "id": "S3", "type": "definition",
+   "props": {"label": "關鍵觀念", "icon": "📚", "bigText": "報告是說給人聽的故事", "highlight": "說給人聽", "sideNotes": ["先想聽眾是誰", "一頁只講一件事"], "cueMap": [1, 1], "noteCues": [2, 3]},
+   "lines": ["先記住一個觀念：", "報告，是說給人聽的故事。", "所以要先想聽眾是誰，", "而且一頁只講一件事。"]
+  },
+  {
+   "id": "S4", "type": "cards",
+   "props": {"heading": "準備三步驟", "cards": [
+     {"icon": "🎯", "title": "定目標", "note": "一句話講重點"},
+     {"icon": "✏️", "title": "寫大綱", "note": "開頭中間結尾"},
+     {"icon": "🎤", "title": "練三次", "note": "計時大聲講"}
+    ], "footer": "練習比天分更重要", "cueMap": [1, 2, 3]},
+   "lines": ["準備報告，分成三步驟。", "第一，定目標，一句話講重點。", "第二，寫大綱，開頭中間結尾。", "第三，練三次，計時大聲講。", "記得，練習比天分更重要。"]
+  },
+  {
+   "id": "S5", "type": "vs",
+   "props": {"left": {"frame": "danger", "icon": "📄", "text": "照著投影片念稿"}, "right": {"frame": "success", "icon": "💬", "text": "看著聽眾說重點"},
+     "mid": "vs", "footerPill": "眼神交流最加分", "cueMap": [0, 1]},
+   "lines": ["很多人上台，會照著投影片念稿；", "更好的做法，是看著聽眾說重點。", "眼神交流最加分。"]
+  },
+  {
+   "id": "S6", "type": "stat",
+   "props": {"value": "3", "suffix": "次", "label": "上台前完整練習", "sub": "每一次都要計時"},
+   "lines": ["上台前，至少要完整練習三次，", "而且每一次都要計時。"]
+  },
+  {
+   "id": "S7", "type": "quiz",
+   "props": {"question": "報告開場最好先做什麼？", "options": ["直接念大綱", "說一個小故事", "先道歉說緊張"], "answerIndex": 1, "revealCue": 3, "afterNote": "故事最能抓住注意力"},
+   "lines": ["考考你：報告開場，最好先做什麼？", "直接念大綱、說一個小故事，還是先道歉說緊張？", "……", "答案是，說一個小故事！故事最能抓住注意力。"]
+  },
+  {
+   "id": "S8", "type": "recap",
+   "props": {"takeaway": ["報告是說給人聽的故事", "定目標寫大綱練三次", "看著聽眾說重點"], "recap": ["一頁一件事", "眼神交流", "計時練習"],
+     "nextTeaser": "問答時間怎麼接", "takeCues": [0, 1, 2], "nextCue": 3},
+   "lines": ["回顧走過的路：報告是說給人聽的故事，", "定目標、寫大綱、練三次，", "看著聽眾說重點。", "下一站，聊問答時間怎麼接。"]
+  },
+  {
+   "id": "S9", "type": "qaEnd", "sec": 6,
+   "props": {"question": "準備報告的三步驟，第二步是？", "options": ["定目標", "寫大綱", "練三次", "做投影片"], "answerIndex": 1, "answerSec": 4}
+  }
+ ]
+}

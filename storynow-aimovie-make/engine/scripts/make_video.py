@@ -23,6 +23,10 @@ TPL = {
     'C': {'name': '動態字體快剪', 'dir': '範本C_動態字體快剪', 'music': {'genre': 'phonk', 'bpm': 145, 'key': 'Em'}},
     'D': {'name': '白板手繪', 'dir': '範本D_白板手繪', 'music': {'genre': 'marimba', 'bpm': 112, 'key': 'D'}},
     'H': {'name': '螢幕模擬', 'dir': '範本H_螢幕模擬', 'music': {'genre': 'lofi', 'bpm': 80, 'key': 'C'}},
+    'I': {'name': '漫畫風', 'dir': '範本I_漫畫風', 'music': {'genre': 'comedy', 'bpm': 120, 'key': 'C'}},
+    'J': {'name': '地圖風', 'dir': '範本J_地圖風', 'music': {'genre': 'acoustic', 'bpm': 120, 'key': 'G'}},
+    'K': {'name': '宇宙風', 'dir': '範本K_宇宙風', 'music': {'genre': 'minimal', 'bpm': 120, 'key': 'Am'}},
+    'L': {'name': '黏土玩具風', 'dir': '範本L_黏土玩具風', 'music': {'genre': 'marimba', 'bpm': 120, 'key': 'F'}},
 }
 
 
@@ -52,6 +56,16 @@ def known_icons(tpl=None):
         body = w.split('export const WB_ICONS')[1].split('const EXTRA_EMOJI')[0]
         sk |= set(re.findall(r'^\s{2}(\w+)(?=: \(\)|,)', body, re.M))
         emo.update(re.findall(r"'([^']+)': '(\w+)'", w.split('const EXTRA_EMOJI')[1].split('};')[0]))
+    lib_icons = {'I': ('comic', 'COMIC'), 'J': ('map', 'MAP'), 'K': ('cosmos', 'COSMOS'), 'L': ('clay', 'CLAY')}
+    if tpl in lib_icons:   # 範本I～L 先查自己的圖示庫（lib/<名>/icons.tsx 的 <名>_ICONS＋EMOJI_TO_<名>），找不到才退回線稿
+        d, n = lib_icons[tpl]
+        fp = os.path.join(SRC, 'lib', d, 'icons.tsx')
+        if os.path.exists(fp):
+            c = open(fp, encoding='utf-8').read()
+            if f'export const {n}_ICONS' in c and f'export const EMOJI_TO_{n}' in c:
+                body = c.split(f'export const {n}_ICONS')[1].split(f'export const EMOJI_TO_{n}')[0]
+                sk |= set(re.findall(r'^\s{2}(\w+):', body, re.M))
+                emo.update(re.findall(r"'([^']+)': '(\w+)'", c.split(f'export const EMOJI_TO_{n}')[1].split('};')[0]))
     return sk, emo
 
 

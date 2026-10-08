@@ -10,6 +10,10 @@
     {"code": "F", "dir": "範本F_開發者流程線", "type": "standalone", "name": "開發者流程線", "trigger": "範本F／開發者流程線／01 風格"},
     {"code": "G", "dir": "範本G_動態圖卡教學", "type": "standalone", "name": "動態圖卡教學", "trigger": "範本G／動態圖卡教學／06 風格"},
     {"code": "H", "dir": "範本H_螢幕模擬", "type": "shared", "name": "螢幕模擬", "trigger": "範本H／螢幕模擬／模擬螢幕錄影"},
+    {"code": "I", "dir": "範本I_漫畫風", "type": "shared", "name": "漫畫風", "trigger": "範本I／漫畫風／漫畫範本"},
+    {"code": "J", "dir": "範本J_地圖風", "type": "shared", "name": "地圖風", "trigger": "範本J／地圖風／地圖範本"},
+    {"code": "K", "dir": "範本K_宇宙風", "type": "shared", "name": "宇宙風", "trigger": "範本K／宇宙風／宇宙範本"},
+    {"code": "L", "dir": "範本L_黏土玩具風", "type": "shared", "name": "黏土玩具風", "trigger": "範本L／黏土玩具風／黏土範本"},
     {"code": "info1", "dir": "資訊科範本1", "type": "standalone", "name": "資訊科範本1（活動說明＋資訊科宣傳片）", "trigger": "資訊科範本1",
      "legacy_name": true}
   ]

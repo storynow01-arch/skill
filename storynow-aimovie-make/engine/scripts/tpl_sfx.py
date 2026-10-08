@@ -131,6 +131,22 @@ def main():
                 elif d == 'tap': put(pop(), t0 + a['f'], .5)
                 elif d == 'enter': put(key_click(rng, True), t0 + a['f'])
                 elif d in ('callout', 'message'): put(pop(), t0 + a['f'], .35)
+        elif tpl == 'I':   # 漫畫風（2026-10-07）：翻頁咻＋每格出現「啵」＋重點擬聲
+            if t0 > 0: put(M.whoosh(.45), t0 - 6, .7)
+            for c in s['cues']: put(pop(), t0 + c, .7)
+            if typ in ('stat', 'quiz', 'recap'): put(M.impact(1.0), t0 + 8, .5)
+        elif tpl == 'J':   # 地圖風（2026-10-08）：換站沙沙捲紙＋每個註記「啵」＋數字叮
+            if t0 > 0: put(M.whoosh(.7), t0 - 8, .5)
+            for c in s['cues']: put(pop(), t0 + c, .6)
+            if typ in ('stat', 'quiz'): put(M.blip(84, .25), t0 + 10, 1.2)
+        elif tpl == 'K':   # 宇宙風（2026-10-08）：航行上升音＋資料面板嗶聲＋鎖定重音
+            if t0 > 0: put(M.riser(1.0), t0 - 30, .35)
+            for c in s['cues']: put(M.blip(88, .08), t0 + c, .55)   # 方波嗶聲峰值高，音量壓低（1.2 時成片峰值 −0.5 dBTP 超標）
+            if typ in ('title', 'stat', 'qaEnd'): put(M.impact(1.4, .5), t0 + 8, .32)
+        elif tpl == 'L':   # 黏土玩具風（2026-10-08）：翻頁咻（翻頁從 t0 開始 21 格）＋物件落下「啵」＋重點彈跳
+            if t0 > 0: put(M.whoosh(.5), t0 + 2, .6)
+            for c in s['cues']: put(pop(), t0 + c, .8)
+            if typ in ('title', 'stat', 'recap'): put(M.impact(.8), t0 + 8, .4)
         elif tpl == 'D':   # 白板手繪：逐筆音效由 TemplateD 播放，這裡只放換場 whoosh
             if t0 > 0: put(M.whoosh(.8), t0 - 4, .45)
         else:   # C 快剪
