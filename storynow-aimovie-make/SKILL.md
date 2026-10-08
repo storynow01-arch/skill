@@ -22,7 +22,7 @@ metadata:
 ## 快速指令
 | 使用者說 | 做什麼 |
 |---|---|
-| 「系列教學影片」「調用教學影片的工作流」「<科目>第 N 支」 | **照 [`references/series-workflow.md`](references/series-workflow.md)**：一個科目的整個系列（YouTube 教學頻道用）。甲 系列開始（大綱、**選範本或讓系統提案 3 個概念**、聲音、樣片、上架規格）→ 乙 每一支 13 步（老師提醒 → 寫稿＋存 AI 初稿 → 第⓪關 → 審稿 → 分鏡預覽 → make_video 一行出片 → 抽檢 → 上架資料 → 修改對照）。科目資料夾有 `系列設定.md` 就直接做下一支 |
+| 「系列教學影片」「調用教學影片的工作流」「<科目>第 N 支」 | **照 [`references/series-workflow.md`](references/series-workflow.md)**：一個科目的整個系列（YouTube 教學頻道用）。甲 系列開始（大綱、**選範本或讓系統提案 3 個概念**、聲音、樣片、上架規格）→ 乙 每一支 13 步（老師提醒 → 寫稿＋存 AI 初稿 → 第⓪關 → 審稿 → 分鏡預覽 → make_video 一行出片 → 抽檢 → 上架資料 → 修改對照）→ 丙 合併長片（要合併時必走：**整集品檢不能省略**）。科目資料夾有 `系列設定.md` 就直接做下一支 |
 | 「資訊科範本1」 | 照 [`templates/資訊科範本1/README.md`](templates/資訊科範本1/README.md)：活動說明（研習／座談）＋資訊科宣傳片，3 分半成片 |
 | 「範本A」「闖關遊戲範本」 | 照 [`templates/範本A_闖關遊戲/README.md`](templates/範本A_闖關遊戲/README.md)：任何文本 → 遊戲畫面 |
 | 「範本B」「手稿範本」 | 照 [`templates/範本B_創客手稿/README.md`](templates/範本B_創客手稿/README.md)：任何文本 → 一鏡到底筆記本 |
