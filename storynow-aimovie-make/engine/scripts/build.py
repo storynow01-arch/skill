@@ -45,6 +45,18 @@ def _gemini_rules():
 
 
 GEMINI_RULES = _gemini_rules()
+SUBJECTS = os.path.join(HERE, '..', '..', '科目包')
+
+
+def load_subject_pron(subject):
+    """storyboard 的 "subject"（例 "數位邏輯設計"）→ 併入 科目包/<科目>/念法.json 的詞典（2026-10-08）。
+    科目專用的唸法（AB 拆字母…）放科目包，不放全域的 pron_zh-TW.json。"""
+    if not subject:
+        return
+    path = os.path.join(SUBJECTS, subject, '念法.json')
+    if not os.path.exists(path):
+        sys.exit(f'找不到科目包念法：{path}（storyboard 的 subject 要等於 科目包/ 底下的資料夾名稱）')
+    PRON['詞典'].update(json.load(open(path, encoding='utf-8')).get('詞典', {}))
 
 
 def to_speech(text, provider='edge'):
@@ -162,8 +174,8 @@ def prefetch_gemini(items, cache, proj):
     groups = {}
     for text, voice in items:
         if _provider(voice) != 'gemini': continue
+        say = voice.get('_say') or to_speech(text, 'gemini')
         voice = _prep(voice, proj)
-        say = to_speech(text, 'gemini')
         wav = os.path.join(cache, hashlib.md5(_tag(say, voice, 'gemini').encode()).hexdigest()[:12] + '.wav')
         if os.path.exists(wav): continue
         groups.setdefault((voice['_gid'], voice['style'], voice['_model']), []).append((say, wav))
@@ -186,7 +198,7 @@ def prefetch_gemini(items, cache, proj):
 def synth_line(text, cache, voice, proj='.'):
     """一句 → 48k mono float32。以內容 hash 快取，改稿只重錄改過的句子。"""
     provider = _provider(voice)
-    say = to_speech(text, provider)
+    say = voice.get('_say') or to_speech(text, provider)
     voice = _prep(voice, proj)
     h = hashlib.md5(_tag(say, voice, provider).encode()).hexdigest()[:12]
     wav = os.path.join(cache, f'{h}.wav')
@@ -256,7 +268,8 @@ def sidechain_duck(music_path, voice, out_path, depth=0.3):
 
 
 def line_voice(raw, base, voices):
-    """逐句聲音：字串＝預設聲音；物件可指定角色（voices 裡的名字）或覆寫 rate／pitch／volume／style／provider。"""
+    """逐句聲音：字串＝預設聲音；物件可指定角色（voices 裡的名字）或覆寫 rate／pitch／volume／style／provider；
+    物件的 say＝這一句實際念的字（只影響配音，字幕仍用 text）。"""
     if isinstance(raw, str):
         return raw, base
     v = dict(base)
@@ -265,6 +278,7 @@ def line_voice(raw, base, voices):
     elif who: v['name'] = who
     for k in ('rate', 'pitch', 'volume', 'style', 'styledegree', 'provider', 'description', 'voice_id', 'gemini_voice', 'gender'):
         if k in raw: v[k] = raw[k]
+    if raw.get('say'): v['_say'] = raw['say']   # 2026-10-08：念法另寫（字幕用 text 的專業寫法，配音念 say；例 00 01 11 10 → 零零 零一 一一 一零）
     return raw['text'], v
 
 
@@ -544,6 +558,7 @@ def main():
     a = ap.parse_args()
     proj = os.path.abspath(a.project)
     sb = json.load(open(a.storyboard, encoding='utf-8'))
+    load_subject_pron(sb.get('subject'))
     style = a.style or sb.get('style', 'cyber-neon')
     if style not in STYLES: sys.exit(f'未知風格 {style}，可用：{", ".join(STYLES)}')
     fps = sb.get('fps', 30); mode = sb.get('mode', 'teach')

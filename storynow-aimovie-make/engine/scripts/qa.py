@@ -6,6 +6,7 @@
     python <skill>/engine/scripts/qa.py --skip-layout --skip-asr --video out/x.mp4
 結束碼：有「必修」問題 → 1，否則 0。
 """
+import sys as _s; _s.stdout.reconfigure(encoding="utf-8", errors="replace")   # cp950 主控台印 ⚠ 會當掉（2026-10-08）
 import argparse, difflib, json, os, re, subprocess, sys, wave
 import numpy as np
 
