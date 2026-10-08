@@ -1,6 +1,6 @@
 ---
 name: storynow-aimovie-make
-description: 「從內容長出影片」的 AI 影片工作流——使用者給一句話＋資料（PDF、講義、純文字稿、活動通知），先理解內容、問三輪定調問題，再從內容產生 3 個完全不同的創意概念（含英文提示詞），經過文本審閱與 10 秒動態試看後，用程式手刻（Remotion 畫面＋numpy 配樂＋Gemini Flash TTS 或 edge-tts 旁白，依專案 .env.local 有無金鑰）做出成片並自動品檢。適用：宣傳片、招生影片、科系形象片、教學影片、微課、研習／活動說明影片。也在使用者說「做影片」「做一支宣傳片／招生片／教學影片」「手刻影片」「程式做影片」「產生創意概念」「做試看」，或輸入「資訊科範本1」「範本F」「範本G」時觸發。使用者問「我的語音有哪些／目前有哪些聲音可以選／用我的聲音」時也觸發（跑 engine/scripts/list_voices.py 列出克隆與設計聲音）。
+description: 「從內容長出影片」的 AI 影片工作流——使用者給一句話＋資料（PDF、講義、純文字稿、活動通知），先理解內容、問三輪定調問題，再從內容產生 3 個完全不同的創意概念（含英文提示詞），經過文本審閱與 10 秒動態試看後，用程式手刻（Remotion 畫面＋numpy 配樂＋Gemini Flash TTS 或 edge-tts 旁白，依專案 .env.local 有無金鑰）做出成片並自動品檢。適用：宣傳片、招生影片、科系形象片、教學影片、微課、研習／活動說明影片。也在使用者說「做影片」「做一支宣傳片／招生片／教學影片」「手刻影片」「程式做影片」「產生創意概念」「做試看」，或輸入「資訊科範本1」「範本F」「範本G」時觸發。使用者說「系列教學影片」「調用教學影片的工作流」「做一整個科目的教學影片」「<科目>第 N 支」時走系列教學影片工作流（references/series-workflow.md）。使用者問「我的語音有哪些／目前有哪些聲音可以選／用我的聲音」時也觸發（跑 engine/scripts/list_voices.py 列出克隆與設計聲音）。
 metadata:
   tags: video, remotion, numpy-audio, gemini-tts, creative-concept, recruitment, lesson, trailer, workflow
   author: storynow01-arch
@@ -22,6 +22,7 @@ metadata:
 ## 快速指令
 | 使用者說 | 做什麼 |
 |---|---|
+| 「系列教學影片」「調用教學影片的工作流」「<科目>第 N 支」 | **照 [`references/series-workflow.md`](references/series-workflow.md)**：一個科目的整個系列（YouTube 教學頻道用）。甲 系列開始（大綱、**選範本或讓系統提案 3 個概念**、聲音、樣片、上架規格）→ 乙 每一支 13 步（老師提醒 → 寫稿＋存 AI 初稿 → 第⓪關 → 審稿 → 分鏡預覽 → make_video 一行出片 → 抽檢 → 上架資料 → 修改對照）。科目資料夾有 `系列設定.md` 就直接做下一支 |
 | 「資訊科範本1」 | 照 [`templates/資訊科範本1/README.md`](templates/資訊科範本1/README.md)：活動說明（研習／座談）＋資訊科宣傳片，3 分半成片 |
 | 「範本A」「闖關遊戲範本」 | 照 [`templates/範本A_闖關遊戲/README.md`](templates/範本A_闖關遊戲/README.md)：任何文本 → 遊戲畫面 |
 | 「範本B」「手稿範本」 | 照 [`templates/範本B_創客手稿/README.md`](templates/範本B_創客手稿/README.md)：任何文本 → 一鏡到底筆記本 |
@@ -76,7 +77,8 @@ engine/
                    gemini_tts.py（Gemini 配音共用模組：自動用最新 Flash TTS）、voice_preview.py（第⑧步聲音試聽頁）、qa.py＋qa_layout.mjs（自動品檢）、
                    make_music.py（13 種曲風 numpy 合成＋音效）、from_ai_pipeline.py（舊產線 .md+plan → storyboard，選用）、
                    pron_zh-TW.json（唸法：IP 逐字、縮寫拆字母）、pron_test.py（唸法標準題）、preview_stills.mjs（分鏡預覽截圖）、
-                   ai_listen.py（配音後 AI 耳朵；A～D、F、G、資訊科範本1 共用）
+                   ai_listen.py（配音後 AI 耳朵；A～D、F、G、資訊科範本1 共用）、
+                   revision.py（修改紀錄：AI 初稿／審稿後快照＋修改對照）、publish_meta.py（上架資料檢查後寫進上架清單.csv）
   examples/        storyboard 範例（教學、宣傳、活動說明、舊產線轉換）
 concepts/          做過的概念場景程式（參考實作，新影片要依內容改寫，不要直接套）
   levelup/ notebook/ kinetic/ lesson-logistics/ lesson-sitcom/ lesson-cable/ audio/

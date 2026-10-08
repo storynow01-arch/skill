@@ -25,6 +25,8 @@ const FALLBACK = {
 const DOCS = [
   { key: 'skill', file: 'SKILL.md', title: '總覽：skill 怎麼用', desc: '觸發用語、範本流程、十二步流程、硬規則' },
   { key: 'workflow', file: 'references/workflow.md', title: '十二步流程細節', desc: '「做影片」＋資料：理解素材 → 三個創意概念 → 試看 → 分鏡預覽 → 選聲音 → 製作 → 品檢' },
+  { key: 'series', file: 'references/series-workflow.md', title: '系列教學影片工作流', desc: '一個科目的整個系列：大綱 → 選範本或系統提案 → 每支 13 步（老師提醒、AI 初稿、四道關卡、上架資料）' },
+  { key: 'subjects', file: '科目包/README.md', title: '科目包', desc: '科目專用的教法、念法、專用場景；storyboard 寫 subject 就套用' },
   { key: 'e14', file: 'templates/範本E_教學課程產線/規範/完整工作流程.md', title: '範本E 完整 15 步流程', desc: '一整門課：文稿審查 → 審稿 → 分鏡預覽 → 選聲音 → 配音 → 聽檢 → 探針 → 渲染 → 品檢' },
   { key: 'scenes', file: 'templates/範本風格_場景語彙.md', title: '範本 A～D 共用場景語彙', desc: '9 種場景與欄位，同一份分鏡換範本就能重算' },
   { key: 'qa', file: 'final_qa/README.md', title: '品檢工具', desc: '最終品檢、文稿檢查、逐字審稿、分鏡預覽、交叉聽、停頓檢查' },
