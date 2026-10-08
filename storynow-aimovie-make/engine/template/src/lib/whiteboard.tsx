@@ -10,6 +10,16 @@ export const WB = {
   ink: '#26313d', blue: '#2b86bf', sky: '#9fd6ee', orange: '#f39a33', yellow: '#f7c94a', red: '#e5543f', green: '#3daa6a',
   white: '#ffffff', gray: '#c9ced4', skin: '#f3c9a6', brown: '#c98f55', kraft: '#d9a868', paper: '#efeff0',
 };
+/** 寫字用色（2026-10-08，WCAG 2.x AA）：橘、綠、紅、藍原色在淺灰紙面（#efeff0）上對比不足（橘 1.93:1、綠 2.55:1），
+ *  寫字時自動換成同色相、調深到剛好合格的版本；圖示填色維持原色。白板字一律 700 以上粗體 → ≥24px 算大字（≥3:1），小字 ≥4.5:1 */
+const TEXT_DARK: Record<string, [string, string]> = {
+  [WB.orange]: ['#cb720c', '#a25b0a'], [WB.green]: ['#389b61', '#2c7b4d'],
+  [WB.red]: ['#e5543f', '#cb321c'], [WB.blue]: ['#2b86bf', '#2472a2'],
+};
+export const textInk = (c: string, size: number) => {
+  const v = TEXT_DARK[c];
+  return v ? (size >= 24 ? v[0] : v[1]) : c;
+};
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 export const ease = Easing.inOut(Easing.cubic);
 export const lerp = (f: number, a: number, b: number, from = 0, to = 1, e = ease) =>
@@ -95,7 +105,7 @@ export const DrawText: React.FC<{it: TextItem; f: number; id: string; hand: stri
     <g>
       <clipPath id={id}><rect x={x0 - 40} y={it.y - it.size * 1.3} width={(w + 90) * p} height={it.size * 1.8} /></clipPath>
       <text data-qa-in={it.box} clipPath={`url(#${id})`} x={it.x} y={it.y} textAnchor={it.anchor ?? 'start'} style={{fontFamily: it.bold ? bold : hand}}
-        fontWeight={it.bold ? 900 : 700} fontSize={it.size} fill={it.color ?? WB.ink}>{it.text}</text>
+        fontWeight={it.bold ? 900 : 700} fontSize={it.size} fill={textInk(it.color ?? WB.ink, it.size)}>{it.text}</text>
     </g>
   );
 };

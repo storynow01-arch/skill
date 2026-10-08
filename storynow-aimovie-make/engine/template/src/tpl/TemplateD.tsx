@@ -159,7 +159,7 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
     const p = r.p, opts: string[] = p.options ?? [], reveal = k.C(p.revealCue, Math.round(r.dur * 0.6));
     const qw = wbTextW('小測驗', 42) + 70;                // 依字寬畫標籤（不借用吊牌圖示：字會壓到框與圓孔）
     k.shape(k.T0, 90 + qw / 2, 150, 1, card(qw, 80, WB.orange), 10, 'none', 0, k.id('qlabel'));
-    k.text(k.T0 + 4, 90 + qw / 2, 165, '小測驗', 42, {bold: true, color: '#fff', dur: 6, box: k.id('qlabel')});
+    k.text(k.T0 + 4, 90 + qw / 2, 165, '小測驗', 42, {bold: true, color: WB.ink, dur: 6, box: k.id('qlabel')});   // 深墨字：白字在橘標籤上只有 2.2:1（2026-10-08）
     wrap(p.question ?? '', 20).slice(0, 2).forEach((ln, i) => k.text(k.T0 + 8 + i * 6, 960, 320 + i * 80, ln, fitW(ln, 1600, 66)));
     const n = Math.max(1, opts.length), w = Math.min(620, 1700 / n - 50);
     opts.forEach((o, i) => {

@@ -70,7 +70,10 @@ const contrastRatio = (a: number[], b: number[]) => {
 const bgOf = (el: Element): number[] => {
   const r = el.getBoundingClientRect();
   const stack: number[][] = [];
-  for (const e of document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2)) {
+  // 只看疊在文字「下面」的東西：清單由上往下，文字之前的是蓋在字上面的（例如正在圈字的馬克筆），不算底色（2026-10-08）
+  const hits = document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+  const own = hits.indexOf(el);
+  for (const e of own >= 0 ? hits.slice(own + 1) : hits) {
     if (e !== el && el.contains(e)) continue;
     const ecs = getComputedStyle(e);
     // SVG 圖形（標籤、便利貼、手繪框）的底色在 fill，不在 background（2026-10-08 範本D「小測驗」標籤誤判）
