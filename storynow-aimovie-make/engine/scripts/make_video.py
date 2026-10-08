@@ -2,6 +2,8 @@
 → 文不對題檢查 → 範本音效 → AI 耳朵聽檢 → 兩個 AI 交叉聽 → 句內停頓 → 版面＋旁白品檢 → 算圖 → 響度 → 成片品檢。
 2026-10-08 加上：A1 程式碼執行、A2 答案核對、A3 計算與化簡、唸法清單（配音前）→ B1 聲音一致性（配音後）→ 最終品檢（渲染後自動跑）
 → qa/品檢紀錄/品檢總表.md（每項結果、例外、每一步耗時）。級別看 final_qa/品檢分級.json。
+階段 2（2026-10-08）：成片後再跑 C1 SRT 字幕檔（out/<成片>.srt）、E1 閃爍安全、D4 畫面停太久、D2 色盲、F1 系列一致性；
+--sfx-check 另跑 E2 音效不蓋旁白（要多渲染一次聲音，約多 1/3 算圖時間，系列前幾支開）。
 
 用法（在專案資料夾裡執行；專案由 new_project.py 建立，node_modules 已就緒）：
     python <skill>/engine/scripts/make_video.py storyboard.json --template B   # A／B／C／D／H
@@ -54,6 +56,31 @@ def write_summary(py, title):
     os.makedirs(REC, exist_ok=True)
     json.dump(STEPS, open(os.path.join(REC, '_耗時.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     sh([py, os.path.join(SKILL, 'final_qa', 'qa_summary.py'), REC, '--title', title], check=False)
+
+
+def stage2(py, final, lead, T, comp, a):
+    """階段 2 品檢（2026-10-08）：SRT、閃爍、靜止、色盲、系列一致性；選用的音效檢查"""
+    FQ = os.path.join(SKILL, 'final_qa')
+    spec_p = os.path.join('src', 'data', 'spec.json')
+    srt = os.path.splitext(final)[0] + '.srt'
+    sh([py, os.path.join(FQ, 'srt_tool.py'), 'make', spec_p, srt, '--lead', f'{lead:.3f}'], check=False)
+    timed('C1 SRT 字幕檔', [py, os.path.join(FQ, 'srt_tool.py'), 'check', spec_p, srt, '--lead', f'{lead:.3f}', '--video', final, '--out', REC], check=False)
+    timed('E1 閃爍安全', [py, os.path.join(FQ, 'flash_check.py'), final, '--out', REC], check=False)
+    timed('D4 畫面停太久', [py, os.path.join(FQ, 'still_check.py'), final, '--spec', spec_p, '--lead', f'{lead:.3f}', '--out', REC], check=False)
+    if os.path.exists('qa_layout.json'):
+        timed('D2 色盲友善', [py, os.path.join(FQ, 'colorblind_check.py'), 'qa_layout.json', '--out', REC], check=False)
+    ref = find_up(os.path.dirname(os.path.abspath(a.storyboard)), os.path.join('qa_reference', 'series_ref.json'))
+    timed('F1 系列一致性', [py, os.path.join(FQ, 'series_check.py'), final, '--template', T, '--spec', spec_p,
+                         *(['--ref', ref] if ref else []), '--out', REC], check=False)
+    if a.sfx_check:
+        spec = json.load(open(spec_p, encoding='utf-8'))
+        json.dump({**spec, 'voice': None, 'music': None}, open('qa/_sfx_props.json', 'w', encoding='utf-8'), ensure_ascii=False)
+        stem = 'qa/_sfx_only.wav'
+        timed('E2 音效音軌渲染', f'npx remotion render src/index.ts {comp} {stem} --codec=wav --props=qa/_sfx_props.json --log=error'
+              if os.name == 'nt' else ['npx', 'remotion', 'render', 'src/index.ts', comp, stem, '--codec=wav', '--props=qa/_sfx_props.json', '--log=error'], check=False)
+        timed('E2 音效不蓋旁白', [py, os.path.join(FQ, 'sfx_check.py'), '--sfx', stem, '--voice', os.path.join('public', spec.get('voice') or 'voice.wav'),
+                             '--lead', f'{lead:.3f}', '--out', REC], check=False)
+    print(f'✓ SRT 字幕檔：{srt}（上傳 YouTube 時一起上傳，取代自動字幕）')
 
 
 def find_up(start, rel, levels=4):
@@ -220,6 +247,7 @@ def main():
     ap.add_argument('--name'); ap.add_argument('--no-sync', action='store_true')
     ap.add_argument('--no-qa', action='store_true'); ap.add_argument('--force', action='store_true')
     ap.add_argument('--preview', action='store_true')
+    ap.add_argument('--sfx-check', action='store_true', help='E2 音效不蓋旁白（多渲染一次只有音效的音軌）')
     a = ap.parse_args()
     T = a.template; info = TPL[T]
     if not os.path.exists('node_modules'):
@@ -322,6 +350,7 @@ def main():
         t0 = time.time()
         timed('最終品檢', fq, check=False)
         final_bad = record_final_qa(final, round(time.time() - t0, 1))
+        stage2(py, final, lead, T, comp, a)
         write_summary(py, title)
         if final_bad:
             print(f'\n✗ 最終品檢沒過（見 {os.path.splitext(final)[0]}_品檢/final_qa.html）：修好重跑，沒過不交付')

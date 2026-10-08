@@ -127,6 +127,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('mp4'); ap.add_argument('--minutes'); ap.add_argument('--lufs', type=float)
     ap.add_argument('--out', default='qa/品檢紀錄')
+    ap.add_argument('--no-chapters', action='store_true', help='插入片段（splice_insert.py）的成片不需要章節')
     a = ap.parse_args()
     base = os.path.splitext(a.mp4)[0]
     log = json.load(open(base + '_合併紀錄.json', encoding='utf-8'))
@@ -137,9 +138,9 @@ def main():
         lo, hi = map(float, a.minutes.split(','))
         if not lo <= total / 60 <= hi:
             rec.problem('M.長度', '總長度', f'{total / 60:.2f} 分，不在 {lo:g}～{hi:g} 分')
-    expect = sum(p['dur'] for p in parts)
+    expect = max(p['start'] + p['dur'] for p in parts)      # 接片有交叉淡化會重疊，用最後一段的結束時間（不是各段加總）
     if abs(total - expect) > 1.0:
-        rec.problem('M.長度', '總長度', f'{total:.1f} 秒，各支加總 {expect:.1f} 秒（差 {total - expect:+.1f}）')
+        rec.problem('M.長度', '總長度', f'{total:.1f} 秒，合併紀錄的最後一段結束在 {expect:.1f} 秒（差 {total - expect:+.1f}）')
     I, tp = loudness(a.mp4)
     if I is None or abs(I - target) > 1.0:
         rec.problem('M.響度', '整集響度', f'{I} LUFS（目標 {target}±1）')
@@ -147,7 +148,8 @@ def main():
         rec.problem('M.響度', '真峰值', f'{tp} dBTP（上限 −1）')
     x = audio(a.mp4)
     check_seams(a.mp4, parts, x, rec)
-    check_chapters(base + '_章節.txt', parts, total, rec)
+    if not a.no_chapters:
+        check_chapters(base + '_章節.txt', parts, total, rec)
     rec.note(f'總長 {total / 60:.2f} 分、響度 {I} LUFS、峰值 {tp} dBTP、接點 {len(parts) - 1} 個')
     sys.exit(rec.finish())
 

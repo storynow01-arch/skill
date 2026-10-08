@@ -8,7 +8,7 @@
 
 同一個檔名已在清單裡 → 更新那一列（不重複新增）。
 """
-import argparse, csv, datetime, os, sys
+import argparse, csv, datetime, os, subprocess, sys
 
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 COLS = ['檔名', '標題', '說明前兩行', '標籤', '播放清單', '縮圖', '發布時間', 'AI揭露', '狀態']
@@ -54,6 +54,11 @@ def main():
     ap.add_argument('--ai', default='是'); ap.add_argument('--prefix', default='')
     a = ap.parse_args()
     bad = check(a)
+    if a.thumb and os.path.exists(a.thumb):          # D3 縮圖規格（2026-10-08）：不合 YouTube 規格就不寫進清單
+        tq = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'final_qa', 'thumb_check.py')
+        if subprocess.run([sys.executable, tq, a.thumb, '--out', os.path.join(os.path.dirname(os.path.abspath(a.csv)), 'qa', '品檢紀錄'),
+                           '--preview', os.path.join(os.path.dirname(os.path.abspath(a.csv)), '縮圖預覽')]).returncode:
+            bad.append('縮圖不合 YouTube 規格（見上方 ✗）')
     if bad:
         print('上架資料沒過：'); [print(f'  ✗ {b}') for b in bad]
         sys.exit(1)

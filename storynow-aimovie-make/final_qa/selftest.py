@@ -4,6 +4,7 @@
     python selftest.py --fast     # 不做影片合併的案例（幾秒）
 
 改了任何品檢規則（final_qa/、engine/scripts/build.py 的品檢部分、品檢分級.json）就一定要跑，沒全過不推。
+2026-10-08 階段 2 加上：C1 SRT、D2 色盲、D3 縮圖、E2 音效、A1 的 C 程式（有 gcc 才測）；完整版另加 E1 閃爍、D4 靜止、F1 系列一致性。
 pre-push 會自動跑 --fast。文字對比（L.對比）要真的渲染畫面，不在這裡測，見 final_qa/README.md 的實測紀錄。
 """
 import argparse, json, os, shutil, subprocess, sys, tempfile, time, wave
@@ -158,6 +159,87 @@ def merge_cases(work):
     merge_case(work, 'M 章節不合規則', [ok, ok, ok], {'M.章節'}, edit_chapters='0:00 第 1 支\n0:05 第 2 支\n')
 
 
+# ── 階段 2（2026-10-08）─────────────────────────────────
+def run_case(work, name, cmd, expect, cwd=None):
+    t0 = time.time()
+    d = os.path.join(work, ''.join(c if c.isalnum() else '_' for c in name))   # Windows 資料夾名不能有 : 等符號
+    os.makedirs(d, exist_ok=True)
+    run([PY, *cmd, '--out', os.path.join(d, 'rec')], cwd or work)
+    case(name, expect, codes(os.path.join(d, 'rec')), t0)
+
+
+def ff(*args):
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', *args], check=True)
+
+
+def stage2_fast(work):
+    # C1 SRT
+    spec = {'fps': 30, 'captions': [{'text': '第一頁', 'from': 0, 'to': 30}, {'text': '第二頁', 'from': 30, 'to': 60}]}
+    sp = os.path.join(work, 'c1_spec.json'); json.dump(spec, open(sp, 'w', encoding='utf-8'), ensure_ascii=False)
+    good = os.path.join(work, 'c1_good.srt')
+    run([PY, os.path.join(Q, 'srt_tool.py'), 'make', sp, good], work)
+    bad = os.path.join(work, 'c1_bad.srt')
+    open(bad, 'w', encoding='utf-8-sig').write(open(good, encoding='utf-8-sig').read().replace('第二頁', '第二夜'))
+    run_case(work, 'C1 SRT 一致', [os.path.join(Q, 'srt_tool.py'), 'check', sp, good], set())
+    run_case(work, 'C1 SRT 錯字', [os.path.join(Q, 'srt_tool.py'), 'check', sp, bad], {'C1.不一致'})
+    run_case(work, 'C1 SRT 片頭沒位移', [os.path.join(Q, 'srt_tool.py'), 'check', sp, good, '--lead', '3'], {'C1.不一致'})
+    # D2 色盲
+    cb_bad = os.path.join(work, 'cb_bad.json'); cb_ok = os.path.join(work, 'cb_ok.json')
+    json.dump([{'frame': 1, 'colors': {'190,80,60': '紅', '110,130,50': '綠'}}], open(cb_bad, 'w', encoding='utf-8'), ensure_ascii=False)
+    json.dump([{'frame': 1, 'colors': {'229,84,63': '紅', '43,134,191': '藍'}}], open(cb_ok, 'w', encoding='utf-8'), ensure_ascii=False)
+    run_case(work, 'D2 紅藍分得出', [os.path.join(Q, 'colorblind_check.py'), cb_ok], set())
+    run_case(work, 'D2 紅綠易混', [os.path.join(Q, 'colorblind_check.py'), cb_bad], {'D2.色盲'})
+    # D3 縮圖
+    from PIL import Image
+    Image.new('RGB', (1280, 720), (240, 240, 240)).save(os.path.join(work, 'th_ok.jpg'), quality=90)
+    Image.new('RGB', (800, 800), (240, 240, 240)).save(os.path.join(work, 'th_square.jpg'))
+    Image.fromarray(np.random.randint(0, 255, (1080, 1920, 3), np.uint8)).save(os.path.join(work, 'th_big.png'))
+    run_case(work, 'D3 縮圖合格', [os.path.join(Q, 'thumb_check.py'), 'th_ok.jpg', '--preview', 'prev'], set())
+    run_case(work, 'D3 不是 16:9', [os.path.join(Q, 'thumb_check.py'), 'th_square.jpg', '--preview', 'prev'], {'D3.規格'})
+    run_case(work, 'D3 超過 2MB', [os.path.join(Q, 'thumb_check.py'), 'th_big.png', '--preview', 'prev'], {'D3.規格'})
+    # E2 音效
+    sr, n = 48000, 48000 * 6
+    t = np.arange(n) / sr
+    voice = (0.2 * np.sin(2 * np.pi * 180 * t) * (np.sin(2 * np.pi * 2 * t) > -0.5)).astype(np.float32)
+    quiet = np.zeros(n, np.float32); quiet[sr * 2: sr * 2 + 2400] = 0.005
+    loud = np.zeros(n, np.float32); loud[sr * 2: sr * 2 + 2400] = 0.4
+    for name, x in (('e2_voice', voice), ('e2_quiet', quiet), ('e2_loud', loud)):
+        with wave.open(os.path.join(work, name + '.wav'), 'wb') as w:
+            w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes((x * 32767).astype(np.int16).tobytes())
+    run_case(work, 'E2 音效夠小聲', [os.path.join(Q, 'sfx_check.py'), '--sfx', 'e2_quiet.wav', '--voice', 'e2_voice.wav'], set())
+    run_case(work, 'E2 音效蓋旁白', [os.path.join(Q, 'sfx_check.py'), '--sfx', 'e2_loud.wav', '--voice', 'e2_voice.wav'], {'E2.音效'})
+    # A1 C 程式（有 gcc 才測）
+    sys.path.insert(0, Q)
+    from code_check import find_tool
+    if find_tool('gcc'):
+        nl = chr(92) + 'n'
+        ok = '#include <stdio.h>\nint main(){int a[]={1,2,3,4,5},s=0;for(int i=0;i<5;i++)s+=a[i];printf("%d' + nl + '",s);return 0;}'
+        oob = ok.replace('i<5', 'i<=5')
+        storyboard_case(work, 'A1 C 正確', 'code_check.py', {'scenes': [{'id': 'S1', 'props': {'o': '15'}, 'verify': [{'type': 'code', 'lang': 'c', 'src': ok, 'stdout': '15'}]}]}, set())
+        storyboard_case(work, 'A1 C 陣列越界', 'code_check.py', {'scenes': [{'id': 'S1', 'props': {'o': '15'}, 'verify': [{'type': 'code', 'lang': 'c', 'src': oob, 'stdout': '15'}]}]}, {'A1.警告'})
+    else:
+        print('ℹ 這台電腦沒有 gcc，跳過 A1 的 C 程式案例')
+
+
+def stage2_video(work):
+    # E1 閃爍、D4 靜止、F1 系列一致性（要做影片，放在完整版）
+    ff('-f', 'lavfi', '-i', "color=black:s=320x180:r=30:d=3,geq=lum='if(lt(mod(N,6),3),235,16)':cb=128:cr=128", '-pix_fmt', 'yuv420p', os.path.join(work, 'flicker.mp4'))
+    ff('-f', 'lavfi', '-i', "color=black:s=320x180:r=30:d=4,geq=lum='16+219*(0.5+0.5*sin(2*PI*N/60))':cb=128:cr=128", '-pix_fmt', 'yuv420p', os.path.join(work, 'fade.mp4'))
+    run_case(work, 'E1 淡入淡出', [os.path.join(Q, 'flash_check.py'), 'fade.mp4'], set())
+    run_case(work, 'E1 快速閃爍', [os.path.join(Q, 'flash_check.py'), 'flicker.mp4'], {'E1.閃爍'})
+    ff('-f', 'lavfi', '-i', 'testsrc2=s=320x180:r=30:d=4', '-f', 'lavfi', '-i', 'color=gray:s=320x180:r=30:d=12',
+       '-filter_complex', '[0][1]concat=n=2:v=1[v]', '-map', '[v]', '-pix_fmt', 'yuv420p', os.path.join(work, 'frozen.mp4'))
+    sp = os.path.join(work, 'frozen_spec.json')
+    json.dump({'fps': 30, 'scenes': [{'id': 'S1', 'from': 0}], 'voiceLines': [{'from': 4.5, 'to': 15.5}]}, open(sp, 'w', encoding='utf-8'))
+    run_case(work, 'D4 講話時畫面不動', [os.path.join(Q, 'still_check.py'), 'frozen.mp4', '--spec', sp], {'D4.靜止'})
+    for name, src in (('f1_a', 'color=c=0xefeff0'), ('f1_b', 'color=c=0x181818')):     # 淺灰白板 vs 深色背景
+        ff('-f', 'lavfi', '-i', f'{src}:s=640x360:r=30:d=4', '-f', 'lavfi', '-i', 'sine=f=300:d=4', '-c:v', 'libx264', '-preset', 'ultrafast',
+           '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', os.path.join(work, name + '.mp4'))
+    run([PY, os.path.join(Q, 'series_check.py'), 'f1_a.mp4', '--template', 'D', '--make-ref', 'f1_ref.json'], work)
+    run_case(work, 'F1 同一支', [os.path.join(Q, 'series_check.py'), 'f1_a.mp4', '--template', 'D', '--ref', 'f1_ref.json'], set())
+    run_case(work, 'F1 換範本換配色', [os.path.join(Q, 'series_check.py'), 'f1_b.mp4', '--template', 'H', '--ref', 'f1_ref.json'], {'F1.規格', 'F1.風格'})
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--fast', action='store_true'); ap.add_argument('--keep', action='store_true')
@@ -168,7 +250,9 @@ def main():
     try:
         text_cases(work)
         voice_cases(work)
+        stage2_fast(work)
         if not a.fast:
+            stage2_video(work)
             merge_cases(work)
     finally:
         if not a.keep: shutil.rmtree(work, ignore_errors=True)

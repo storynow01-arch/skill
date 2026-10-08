@@ -242,7 +242,7 @@ def main():
         # 級別照 品檢分級.json：文字對比目前是「提醒後擋」未升級 → 只列出，不算未通過（2026-10-08）
         import sys as _sys; _sys.path.insert(0, str(Path(__file__).parent))
         from qa_record import level as _lv
-        soft = {"對比不足"} if _lv("L.對比") != "擋" else set()
+        soft = ({"對比不足"} if _lv("L.對比") != "擋" else set()) | ({"手機字小"} if _lv("D1.手機字小") != "擋" else set())
         hard = {k: v for k, v in R["L"]["kinds"].items() if k not in soft}
         if hard:
             bad.append(f"L 版面問題 {sum(hard.values())} 個（{'、'.join(f'{k} {v}' for k, v in hard.items())}）")

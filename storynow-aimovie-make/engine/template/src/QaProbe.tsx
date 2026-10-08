@@ -1,7 +1,8 @@
 /* 品檢探針：只在 inputProps.qa=true 時掛上。字型載完後量測畫面上所有文字，輸出 QA:{json} 到瀏覽器 console，
    由 scripts/qa_layout.mjs 收集。檢查：①超出畫面 ②文字互相重疊 ③內容闖進字幕區 ④元素內容溢出
    ⑤物件標點（畫面文字不放「，；—」、不以「。」結尾）⑥文字貼邊（壓到圓角框／膠囊的弧線）——⑤⑥ 2026-10-05 從範本E 移植。
-   ⑦文字對比（WCAG 2.x AA：一般字 4.5:1、大字 3:1）——2026-10-08 從範本E 移植。 */
+   ⑦文字對比（WCAG 2.x AA：一般字 4.5:1、大字 3:1）——2026-10-08 從範本E 移植。
+   ⑧手機字小（1080p 畫面上 <32px）⑨收集各格字色給色盲檢查（final_qa/colorblind_check.py）——2026-10-08。 */
 import React, {useLayoutEffect, useState} from 'react';
 import {continueRender, delayRender, useCurrentFrame} from 'remotion';
 
@@ -91,6 +92,7 @@ const EMOJI_ONLY = /^(?:[\p{Extended_Pictographic}️‍⃣\s]|[0-9#*](?=️?⃣
 const measure = (W: number, H: number) => {
   const issues: {kind: string; detail: string}[] = [];
   const leaves: Box[] = [];
+  const colors: Record<string, string> = {};     // 字色 rgb → 一段用這個顏色的字（色盲檢查用）
   const all = Array.from(document.querySelectorAll('body *'));
   let cap: DOMRect | null = null;
   for (const el of all) {
@@ -117,10 +119,14 @@ const measure = (W: number, H: number) => {
     // ⑦ 文字對比：只量完全不透明（已出現、焦點中）的字；淡化中的非焦點項本來就是刻意壓暗。SVG 文字的字色在 fill
     const cs = getComputedStyle(el);
     const fg = rgba(el instanceof SVGElement ? cs.fill : cs.color);
+    // 畫面上實際的字高：HTML 用縮放比例換算；SVG 字（白板）跟著鏡頭縮放，用外框高度換算（中文字框約字級的 1.25 倍）
+    const font = el instanceof SVGElement ? r.height / 1.25 : parseFloat(cs.fontSize || '0') * (he.offsetHeight ? r.height / he.offsetHeight : 1);
+    // ⑧ 手機字小：手機上整個畫面縮小，1080p 畫面上的字要比電腦版下限（24px）大（門檻先訂 32px，看實際影片再調）
+    if (!EMOJI_ONLY.test(own) && font > 0 && font < 32 && visible(el) > 0.95)
+      issues.push({kind: '手機字小', detail: `「${b.text}」${Math.round(font)}px < 32px`});
+    if (!EMOJI_ONLY.test(own) && fg && fg[3] > 0.9 && visible(el) > 0.95) colors[fg.slice(0, 3).map(Math.round).join(',')] ??= b.text;
     if (!EMOJI_ONLY.test(own) && fg && fg[3] > 0.9 && visible(el) > 0.95 && cs.backgroundClip !== 'text') {
       const cr = contrastRatio(fg, bgOf(el));
-      const ratio = he.offsetHeight ? r.height / he.offsetHeight : 1;
-      const font = parseFloat(cs.fontSize || '0') * ratio;
       const need = font >= 32 || (font >= 24 && parseInt(cs.fontWeight || '400', 10) >= 700) ? 3 : 4.5;
       if (cr < need) issues.push({kind: '對比不足', detail: `「${b.text}」${cr.toFixed(2)}:1 < ${need}:1（${Math.round(font)}px）`});
     }
@@ -174,7 +180,7 @@ const measure = (W: number, H: number) => {
     for (const el of Array.from(document.querySelectorAll('[data-qa-box]')))
       if (visible(el) >= 0.35) { const r = el.getBoundingClientRect(); if (hit(r.left, r.top, r.width, r.height)) issues.push({kind: '壓到 LOGO', detail: `圖形 ${el.getAttribute('data-qa-box')}`}); }
   }
-  return {texts: leaves.length, issues};
+  return {texts: leaves.length, issues, colors};
 };
 
 export const QaProbe: React.FC<{w: number; h: number}> = ({w, h}) => {

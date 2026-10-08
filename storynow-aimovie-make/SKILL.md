@@ -101,6 +101,9 @@ final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用
                    系列教學影片品檢（2026-10-08）：code_check.py（A1 程式碼執行）、answer_check.py（A2 歷屆答案）、math_check.py（A3 計算與卡諾圖）、
                    read_list.py（唸法清單）、voice_check.py（B1 聲音一致性）、seam_check.py（合併長片的接縫與章節）、selftest.py（品檢自我測試）；
                    級別在 品檢分級.json，qa_record.py＋qa_summary.py 產出品檢總表（含耗時）
+                   階段 2：srt_tool.py（C1 SRT 字幕檔）、flash_check.py（E1 閃爍安全）、still_check.py（D4 畫面停太久）、colorblind_check.py（D2 色盲）、
+                   thumb_check.py（D3 縮圖）、sfx_check.py（E2 音效，make_video --sfx-check）、series_check.py（F1 系列一致性）；
+                   engine/scripts/splice_insert.py＝多範本結合（插入別的範本片段）
 ```
 
 ## 四項增強（2026-10-01）

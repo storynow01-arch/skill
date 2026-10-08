@@ -10,6 +10,7 @@
   "screen": false            輸出不顯示在畫面上（不檢查 A1.畫面）
   "timeout": 10              秒
 語言：python（本機 Python）、c（gcc）、cpp（g++）。缺編譯器 → A1.環境（擋），裝好再跑。
+C／C++ 用 -Wall -Wextra -O2 編譯：有警告 → A1.警告（提醒後擋；陣列越界這類「碰巧印對」的錯程式會在這裡現形）。
 沒標 verify、但畫面文字看起來是程式碼的場景 → A1.未標（提醒）。
 """
 import argparse, json, os, re, shutil, subprocess, sys, tempfile
@@ -19,6 +20,20 @@ from qa_record import Recorder
 
 LOOKS_LIKE_CODE = re.compile(r'#include\s*<|\bprintf\s*\(|\bscanf\s*\(|\bint\s+main\s*\(|\bdef\s+\w+\s*\(|\bprint\s*\(|\bfor\s*\(.*;.*;')
 TOOLS = {'python': None, 'c': 'gcc', 'cpp': 'g++'}
+WARNINGS = []      # 這一段程式的編譯警告（run_code 填入）
+
+
+def find_tool(name):
+    """先找 PATH；找不到再看 winget 裝 WinLibs 的預設位置（剛裝好、還沒重開的程式 PATH 裡沒有）"""
+    hit = shutil.which(name)
+    if hit or os.name != 'nt':
+        return hit
+    import glob
+    for d in glob.glob(os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Microsoft', 'WinGet', 'Packages', 'BrechtSanders.WinLibs*', 'mingw64', 'bin')):
+        p = os.path.join(d, name + '.exe')
+        if os.path.exists(p):
+            return p
+    return None
 
 
 def texts(o):
@@ -57,11 +72,17 @@ def run_code(v, base, work):
         cmd = [sys.executable, '-I', f]
     else:
         exe = os.path.join(work, 'prog.exe')
-        r = subprocess.run([TOOLS[lang], f, '-o', exe, '-std=c11' if lang == 'c' else '-std=c++17'],
+        # -Wall -Wextra -O2：讓 gcc 抓出「碰巧印對」的錯程式（陣列越界、未初始化變數…，2026-10-08 實測 i<=5 越界照樣印出 15）
+        r = subprocess.run([find_tool(TOOLS[lang]), f, '-o', exe, '-std=c11' if lang == 'c' else '-std=c++17', '-Wall', '-Wextra', '-O2'],
                            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=60)
+        warns = [ln.split(os.sep)[-1] for ln in r.stderr.splitlines() if ' warning: ' in ln]
         if r.returncode:
-            return '編譯失敗：' + (r.stderr.strip().splitlines() or ['?'])[0][:200], ''
+            lines = r.stderr.strip().splitlines() or ['?']
+            err = next((ln for ln in lines if ' error: ' in ln or ln.startswith('error')), lines[0])
+            return '編譯失敗：' + err.split(os.sep)[-1][:200], ''
         cmd = [exe]
+        if warns:
+            WARNINGS.append(warns[0][:200])
     try:
         r = subprocess.run(cmd, input=v.get('stdin', ''), capture_output=True, text=True,
                            encoding='utf-8', errors='replace', timeout=to, cwd=work)
@@ -84,11 +105,14 @@ def check(sb, base, rec):
             n += 1
             where = f'{sid} 第 {k} 段（{v.get("lang", "?")}）'
             tool = TOOLS.get(v.get('lang', '').lower())
-            if tool and not shutil.which(tool):
+            if tool and not find_tool(tool):
                 rec.problem('A1.環境', where, f'這台電腦沒有 {tool}，無法驗證（Windows 可裝 MSYS2 或 WinLibs 的 gcc）', sc)
                 continue
+            WARNINGS.clear()
             with tempfile.TemporaryDirectory() as work:
                 err, out = run_code(v, base, work)
+            for w in WARNINGS:
+                rec.problem('A1.警告', where, f'編譯警告（程式可能碰巧印對）：{w}', sc)
             if err:
                 rec.problem('A1.執行', where, err, sc)
                 continue
