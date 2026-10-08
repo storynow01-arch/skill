@@ -14,3 +14,12 @@ if [ -f "$ST" ]; then
   echo "pre-push：品檢自我測試（快速版）…"
   PYTHONIOENCODING=utf-8 "$PY" "$ST" --fast || { echo; echo "✗ 品檢自我測試沒過，push 已取消"; exit 1; }
 fi
+# F2 引擎改版回歸測試（2026-10-08）：這次要推的 commit 改到 engine/ 才跑（約 4 分鐘）；沒過不准推
+# Remotion 的 node_modules：git config storynow.nodeModules <路徑>（每台電腦設一次），或環境變數 STORYNOW_NODE_MODULES
+RG="$ROOT/storynow-aimovie-make/final_qa/regress.py"
+if [ -f "$RG" ] && git diff --name-only "@{u}..HEAD" 2>/dev/null | grep -q "^storynow-aimovie-make/engine/"; then
+  NM="${STORYNOW_NODE_MODULES:-$(git config --get storynow.nodeModules)}"
+  [ -n "$NM" ] || { echo "✗ 改到引擎要跑回歸測試，但沒設 Remotion 的 node_modules：git config storynow.nodeModules <路徑>"; exit 1; }
+  echo "pre-push：改到引擎 → 回歸測試（約 4 分鐘）…"
+  PYTHONIOENCODING=utf-8 "$PY" "$RG" --modules "$NM" || { echo; echo "✗ 回歸測試有差異，push 已取消（看 final_qa/regress/結果/回歸差異.html；是預期改進就 --accept）"; exit 1; }
+fi
