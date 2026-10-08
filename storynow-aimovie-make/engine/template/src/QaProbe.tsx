@@ -121,11 +121,16 @@ const measure = (W: number, H: number) => {
     const fg = rgba(el instanceof SVGElement ? cs.fill : cs.color);
     // 畫面上實際的字高：HTML 用縮放比例換算；SVG 字（白板）跟著鏡頭縮放，用外框高度換算（中文字框約字級的 1.25 倍）
     const font = el instanceof SVGElement ? r.height / 1.25 : parseFloat(cs.fontSize || '0') * (he.offsetHeight ? r.height / he.offsetHeight : 1);
+    // 鏡頭拉遠的全景（範本D 片尾「拉遠看整張白板」）：字被鏡頭縮到 75% 以下，那一刻是看全貌、不是閱讀，不量字級與對比
+    // （2026-10-08：卡諾圖 2 的 47 處手機字小／對比不足全部出在片尾全景那一格）
+    const zoom = el instanceof SVGGraphicsElement ? (() => { const m = el.getScreenCTM(); return m ? Math.hypot(m.a, m.b) : 1; })()
+      : (he.offsetHeight ? r.height / he.offsetHeight : 1);
+    const reading = zoom >= 0.75;
     // ⑧ 手機字小：手機上整個畫面縮小，1080p 畫面上的字要比電腦版下限（24px）大（門檻先訂 32px，看實際影片再調）
-    if (!EMOJI_ONLY.test(own) && font > 0 && font < 32 && visible(el) > 0.95)
+    if (reading && !EMOJI_ONLY.test(own) && font > 0 && font < 32 && visible(el) > 0.95)
       issues.push({kind: '手機字小', detail: `「${b.text}」${Math.round(font)}px < 32px`});
     if (!EMOJI_ONLY.test(own) && fg && fg[3] > 0.9 && visible(el) > 0.95) colors[fg.slice(0, 3).map(Math.round).join(',')] ??= b.text;
-    if (!EMOJI_ONLY.test(own) && fg && fg[3] > 0.9 && visible(el) > 0.95 && cs.backgroundClip !== 'text') {
+    if (reading && !EMOJI_ONLY.test(own) && fg && fg[3] > 0.9 && visible(el) > 0.95 && cs.backgroundClip !== 'text') {
       const cr = contrastRatio(fg, bgOf(el));
       const need = font >= 32 || (font >= 24 && parseInt(cs.fontWeight || '400', 10) >= 700) ? 3 : 4.5;
       if (cr < need) issues.push({kind: '對比不足', detail: `「${b.text}」${cr.toFixed(2)}:1 < ${need}:1（${Math.round(font)}px）`});
