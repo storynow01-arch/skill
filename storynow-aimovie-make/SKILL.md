@@ -32,6 +32,10 @@ metadata:
 | 「範本F」「開發者流程線」「01 風格」 | 照 [`templates/範本F_開發者流程線/README.md`](templates/範本F_開發者流程線/README.md)：有步驟的文本 → 深色開發者風（點陣底、上方流程節點列講到哪亮到哪、下方舞台換成對話氣泡／文件卡／任務卡／紅轉綠／檢查列，雙色標語收尾）＋輕柔配樂；可兩段式（活動說明→單位介紹）。寫 `storyboard.json` 後 `engine/make.py` 一行出片（edge-tts，不走 Remotion） |
 | 「範本G」「動態圖卡教學」「06 風格」 | 照 [`templates/範本G_動態圖卡教學/README.md`](templates/範本G_動態圖卡教學/README.md)：教學文本 → 深藍光暈＋格線，段落標題膠囊，圖卡／圓環／打字機／分鏡格／要點膠囊／時間軸／問題→解法**在旁白念到時彈出**，段落上飄重疊轉場；只有旁白。寫 `storyboard.json` 後 `engine/make.py` 一行出片 |
 | 「範本H」「螢幕模擬」「模擬螢幕錄影」「不錄螢幕的操作教學」 | 照 [`templates/範本H_螢幕模擬/README.md`](templates/範本H_螢幕模擬/README.md)：**給文本就產生像螢幕錄影的操作畫面**（不錄真實螢幕）——Windows 11 桌面＋Chrome（網址列打字、載入、DNS 錯誤頁、自訂網頁）＋Windows 終端機（指令逐行輸出）＋iPhone 訊息 App；游標滑過去點、逐字打字有按鍵聲、鏡頭平滑推近、白色泡泡＋螢光筆，**每個操作用旁白原文 cue 對時**。場景 title／screen／phone／recap，`make_video.py storyboard.json --template H`（同一套品質關卡） |
+| 「範本I」「漫畫風」「漫畫範本」 | 照 [`templates/範本I_漫畫風/README.md`](templates/範本I_漫畫風/README.md)：任何文本 → 漫畫風（每段一頁白紙漫畫：粗黑框分格依旁白出現、網點、靜止集中線、對話框、黃字擬聲字、簡筆小人，翻頁轉場）；共用 9 種場景，`make_video.py storyboard.json --template I`（同一套品質關卡） |
+| 「範本J」「地圖風」「地圖範本」 | 照 [`templates/範本J_地圖風/README.md`](templates/範本J_地圖風/README.md)：任何文本 → 地圖風（一張羊皮紙探索地圖，每個場景是一站：紅色虛線路線一站站畫過去、圖釘落下、墨線水彩地標、註記卡與蠟封章，回顧時重畫走過的路）；共用 9 種場景，`make_video.py storyboard.json --template J`（同一套品質關卡） |
+| 「範本K」「宇宙風」「宇宙範本」 | 照 [`templates/範本K_宇宙風/README.md`](templates/範本K_宇宙風/README.md)：任何文本 → 宇宙風（太空船星際航行，每個場景是一顆星體：航行星點拉光線、HUD 鎖定 LOCKED、全像資料面板逐行出現、片尾星圖）；共用 9 種場景，`make_video.py storyboard.json --template K`（同一套品質關卡） |
+| 「範本L」「黏土玩具風」「黏土範本」 | 照 [`templates/範本L_黏土玩具風/README.md`](templates/範本L_黏土玩具風/README.md)：任何文本 → 黏土玩具風（暖米白桌面攝影棚＋黏土玩具實景、立體字、章節膠囊、翻頁捲角、深色膠囊字幕；**固定主角是使用者畫的捲毛小狗**）；共用 9 種場景，`make_video.py storyboard.json --template L`（同一套品質關卡） |
 | 「做成範本」「新增範本」「把這個風格變成範本」「上傳範本」 | **照 [`templates/範本規格.md`](templates/範本規格.md) 的「新增範本 SOP」做**：先試作給使用者看 → 在 `templates/範本清單.json` 登記 → 寫程式（預設共用引擎型：`tpl/Template<代號>.tsx`＋`make_video.py --template <代號>`）→ 分鏡預覽給使用者看 ⛔ → 正式出片＋最終品檢全過 → 30 秒示範片（演出每一種場景與招牌特效）→ README 固定段落＋完整版提示詞 → 登記各處 → `python templates/check_templates.py` 全部 ✓ 才 push |
 | 「加封面／片頭／LOGO」 | **選用**：只有使用者要求時才在 storyboard 加 `"brand": {"dir": "<素材資料夾>"}`（cover.jpg、intro.mp4、logo.png）；沒寫就不加任何封面片頭。範本 A～D 的引擎都支援（10/5 在範本D 實作時使用者要求加入），範本E 用自己的 `assemble.py` 接封面片頭，細節見 [`templates/範本風格_場景語彙.md`](templates/範本風格_場景語彙.md) 的「品牌素材」 |
 | 「用範本做」＋文本（沒指定哪個） | AskUserQuestion 讓使用者選 A／B／C／D（附一句特色），或「全部都做」；有明確步驟的內容可另外推薦 F，觀念教學可推薦 G，要示範電腦／手機操作推薦 H（F／G 用自己的 storyboard 格式，不吃 A～D 的 storyboard） |
@@ -92,6 +96,11 @@ templates/範本E_教學課程產線/  整門課的教學影片產線（自成�
 templates/範本F_開發者流程線/  01 風格（自成一包）：engine（make.py 一行出片、lib_F.js 畫面庫、render.mjs 逐格截圖、build_audio.py、make_music.py）、
                    examples（04 研習＋資訊科兩段式、01 Matt Pocock）、截圖（逐段截圖）、原始提示詞與完整版提示詞
 templates/範本H_螢幕模擬/  給文本產生螢幕錄影般的操作畫面（共用 make_video；元件庫 engine/template/src/lib/screen.tsx、渲染器 tpl/TemplateH.tsx、build.py resolve_screen 把動作 cue 換算秒數）、範例 1-3 DNS、示範片、完整版提示詞
+templates/範本I_漫畫風/    漫畫風（共用 make_video、共用 9 種場景；元件 engine/template/src/lib/comic/（kit.tsx、icons.tsx）、渲染器 tpl/TemplateI.tsx）、示範片、9 場景完整測試分鏡、完整版提示詞
+templates/範本J_地圖風/    地圖風（共用 make_video、共用 9 種場景；元件 engine/template/src/lib/map/（kit、world、icons）、渲染器 tpl/TemplateJ.tsx）、示範片、9 場景完整測試分鏡、完整版提示詞
+templates/範本K_宇宙風/    宇宙風（共用 make_video、共用 9 種場景；元件 engine/template/src/lib/cosmos/（kit、icons）、渲染器 tpl/TemplateK.tsx）、示範片、9 場景完整測試分鏡、完整版提示詞
+templates/範本L_黏土玩具風/  黏土玩具風（共用 make_video、共用 9 種場景；元件 engine/template/src/lib/clay/（kit、pup＝固定主角小狗、props、objects、icons）、渲染器 tpl/TemplateL.tsx）、示範片、9 場景完整測試分鏡、完整版提示詞；
+                   範本I～L 的數字往上數共用 lib/rollnum.tsx（舊數字往上滑出淡出、新的從下滑入淡入）
 templates/範本G_動態圖卡教學/  06 風格（自成一包）：engine（make.py、lib_G.js、render.mjs、build_audio.py）、examples（06 教學動畫）、截圖、原始提示詞與完整版提示詞
 科目包/            科目專用的教法、念法（念法.json）、專用場景用法；storyboard 寫 "subject": "<科目>" 就套用（見 科目包/README.md）
 final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用）：final_qa.py、pron_check.py（唸法時長比對）、多音字清單.json；

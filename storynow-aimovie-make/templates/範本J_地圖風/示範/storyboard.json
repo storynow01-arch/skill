@@ -1,0 +1,183 @@
+{
+ "title": "範本J 測試範本",
+ "mode": "teach",
+ "snapBars": false,
+ "narrator": "小助手",
+ "voice": {
+  "provider": "edge",
+  "name": "zh-TW-YunJheNeural",
+  "rate": "+18%",
+  "pitch": "+0Hz"
+ },
+ "lineGap": 0.25,
+ "lead": 0.25,
+ "tail": 0.45,
+ "pauseSec": 1.2,
+ "scenes": [
+  {
+   "id": "S1",
+   "type": "title",
+   "sec": 2.2,
+   "props": {
+    "eyebrow": "範本J",
+    "title": "地圖風",
+    "subtitle": "一站一站走地圖",
+    "en": "MAP QUEST"
+   }
+  },
+  {
+   "id": "S2",
+   "type": "scenario",
+   "props": {
+    "heading": "做影片的煩惱",
+    "icon": "clock",
+    "pills": [
+     "沒時間",
+     "不會剪",
+     "太無聊"
+    ],
+    "cueMap": [
+     0,
+     0,
+     0
+    ]
+   },
+   "lines": [
+    "做影片常遇到三個煩惱：沒時間、不會剪、太無聊。"
+   ]
+  },
+  {
+   "id": "S3",
+   "type": "definition",
+   "props": {
+    "label": "範本是什麼",
+    "bigText": "丟進文本就出片",
+    "highlight": "就出片",
+    "sideNotes": [
+     "跟著旁白出現",
+     "路線一站站畫過去"
+    ],
+    "cueMap": [
+     0,
+     0
+    ],
+    "noteCues": [
+     1,
+     1
+    ]
+   },
+   "lines": [
+    "範本，就是丟進文本就出片。",
+    "畫面會跟著旁白出現，路線一站站畫過去。"
+   ]
+  },
+  {
+   "id": "S4",
+   "type": "cards",
+   "props": {
+    "heading": "三個步驟",
+    "cueMap": [
+     0,
+     0,
+     0
+    ],
+    "cards": [
+     {
+      "icon": "book",
+      "title": "寫文本",
+      "note": ""
+     },
+     {
+      "icon": "magnifier",
+      "title": "看分鏡",
+      "note": ""
+     },
+     {
+      "icon": "flag",
+      "title": "出影片",
+      "note": ""
+     }
+    ]
+   },
+   "lines": [
+    "只要三個步驟：寫文本、看分鏡、出影片。"
+   ]
+  },
+  {
+   "id": "S5",
+   "type": "vs",
+   "props": {
+    "left": {
+     "frame": "danger",
+     "icon": "clock",
+     "text": "自己剪要三天"
+    },
+    "right": {
+     "frame": "success",
+     "icon": "rocket",
+     "text": "用範本十分鐘"
+    },
+    "mid": "VS",
+    "cueMap": [
+     0,
+     0
+    ]
+   },
+   "lines": [
+    "自己剪要三天，用範本十分鐘。"
+   ]
+  },
+  {
+   "id": "S6",
+   "type": "stat",
+   "props": {
+    "value": 9,
+    "suffix": "種",
+    "label": "場景型別",
+    "sub": "同一份分鏡通用"
+   },
+   "lines": [
+    "九種場景型別，同一份分鏡通用。"
+   ]
+  },
+  {
+   "id": "S7",
+   "type": "quiz",
+   "props": {
+    "question": "範本最省什麼？",
+    "options": [
+     "時間",
+     "電費"
+    ],
+    "answerIndex": 0,
+    "afterNote": "省下剪接時間",
+    "revealCue": 2
+   },
+   "lines": [
+    "考考你：範本最省什麼？時間，還是電費？",
+    "……",
+    "答案是時間，省下剪接時間。"
+   ]
+  },
+  {
+   "id": "S8",
+   "type": "recap",
+   "props": {
+    "takeaway": [
+     "丟進文本就出片",
+     "每一段都是一站"
+    ],
+    "nextTeaser": "換你試試看",
+    "takeCues": [
+     0,
+     0
+    ],
+    "nextCue": 1
+   },
+   "lines": [
+    "記住：丟進文本就出片，每一段都是一站。",
+    "換你試試看！"
+   ]
+  }
+ ]
+}
