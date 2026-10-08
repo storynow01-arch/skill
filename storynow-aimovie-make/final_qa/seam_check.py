@@ -6,7 +6,7 @@
   M.長度  總長度在 --minutes 範圍內；也要等於各支加總（差 >1 秒＝合併時掉了東西）
   M.響度  整集響度在目標 ±1 LU、真峰值 ≤ −1 dBTP
   M.接縫  每個接點前後 1.5 秒：黑畫面 ≥0.5 秒、無聲跨過接點 ≥2.5 秒、接點 ±0.4 秒的爆音（20 毫秒的尖峰比前後都高 12 dB 以上、馬上掉回去）；
-          前一支結尾和下一支開頭的說話音量落差 >3 dB
+          前一支最後 30 秒和下一支最初 30 秒的說話音量落差 >3 dB（品牌素材、無聲段不比）
   M.章節  YouTube 章節規則：第一個 0:00、至少 3 個、時間遞增、每段 ≥10 秒、每個章節對到某一支的實際開頭（±1 秒）
 範本E 的整集檢查（E3）是整片掃黑畫面與無聲；這裡改成專看每個接點，並加上爆音、音量落差、章節。
 其他畫面問題（字幕閃爍、突跳、黑畫面）照樣用 final_qa.py 對長片跑一次。
@@ -52,13 +52,14 @@ def db(x):
 
 
 def speech_level(x):
-    """說話段的音量：只取 50 毫秒窗裡比最大值低 30 dB 以內的（排除停頓）"""
-    if len(x) < SR // 2:
+    """一段聲音的說話音量：0.5 秒窗的 RMS，只取 >−45 dBFS 的（排除停頓）取中位數；整段沒聲音回傳 None
+    （2026-10-08 EP2 實測：原本只看接點前後 10 秒，節尾的片尾測驗有 6 秒停頓，量到的是「叮」不是旁白，誤報 5.6 dB → 改 30 秒）"""
+    w = SR // 2
+    if len(x) < w:
         return None
-    w = SR // 20
     r = np.array([db(x[i:i + w]) for i in range(0, len(x) - w, w)])
-    r = r[r > r.max() - 30]
-    return float(np.median(r)) if len(r) else None
+    r = r[r > -45]
+    return float(np.median(r)) if len(r) >= 3 else None
 
 
 def check_seams(mp4, parts, x, rec):
@@ -66,6 +67,8 @@ def check_seams(mp4, parts, x, rec):
     names = [p['title'] for p in parts]
     for k, t in enumerate(joins, 1):
         where = f'接點 {k}（{names[k - 1]} → {names[k]}，{t:.1f}s）'
+        both_brand = parts[k - 1].get('brand') and parts[k].get('brand')
+        any_brand = parts[k - 1].get('brand') or parts[k].get('brand')
         for a, b in blacks(mp4, t - 1.5, t + 1.5):
             rec.problem('M.接縫', where, f'黑畫面 {a:.2f}～{b:.2f}s（{b - a:.2f} 秒）')
         i = int(t * SR)
@@ -84,15 +87,16 @@ def check_seams(mp4, parts, x, rec):
         # 爆音：接點 ±0.4 秒內，「突然一下、馬上掉回去」的尖峰——比前 3 格與後 3～8 格的中位數都高 12 dB
         # （2026-10-08 實測：下一支開場配樂從無聲直接進來、之後持續同音量，是正常開場，不能算爆音）
         c, r = mid, int(0.4 * SR / w)
-        for j in range(max(3, c - r), min(len(loud) - 8, c + r)):
+        # 封面、片頭、過渡彼此之間：是品牌素材自己的聲音設計（例：業主片頭配樂的鼓點），不查爆音
+        for j in (range(0) if both_brand else range(max(3, c - r), min(len(loud) - 8, c + r))):
             before, after = np.median(loud[j - 3:j]), np.median(loud[j + 3:j + 8])
             if loud[j] > -20 and loud[j] - before > 12 and loud[j] - after > 12:
                 rec.problem('M.接縫', where, f'爆音：{j * w / SR - 1.5:+.2f}s 處尖峰比前後高 {loud[j] - max(before, after):.0f} dB')
                 break
-        # 音量落差：前一支最後 10 秒 vs 下一支最初 10 秒的說話音量
-        a = speech_level(x[max(0, i - 10 * SR): i])
-        b = speech_level(x[i: i + 10 * SR])
-        if a is not None and b is not None and abs(a - b) > 3:
+        # 音量落差：前一支最後 30 秒 vs 下一支最初 30 秒的說話音量；有一邊是品牌素材或整段無聲（封面）就不比
+        a = speech_level(x[max(0, i - 30 * SR): i])
+        b = speech_level(x[i: i + 30 * SR])
+        if not any_brand and a is not None and b is not None and abs(a - b) > 3:
             rec.problem('M.接縫', where, f'前後音量落差 {b - a:+.1f} dB（上限 ±3）')
 
 

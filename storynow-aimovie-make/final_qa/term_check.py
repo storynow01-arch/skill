@@ -11,6 +11,7 @@
 服務水準協議）到成片才被發現，就要重配、重渲（2026-10-05 單元一的教訓）。
 """
 from __future__ import annotations
+import sys as _s; _s.stdout.reconfigure(encoding="utf-8", errors="replace")   # cp950 主控台印 ✗ 會當掉（2026-10-08 EP2 實測抓到）
 import argparse, html, json, re, sys
 from datetime import datetime
 from pathlib import Path

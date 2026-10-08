@@ -9,6 +9,7 @@
 語音辨識（whisper）對英文縮寫、數字唸法分辨不出來，所以不用它判斷。
 """
 from __future__ import annotations
+import sys as _s; _s.stdout.reconfigure(encoding="utf-8", errors="replace")   # cp950 主控台印 ✗ 會當掉（2026-10-08 EP2 實測抓到）
 import asyncio, json, subprocess, sys, tempfile
 from pathlib import Path
 

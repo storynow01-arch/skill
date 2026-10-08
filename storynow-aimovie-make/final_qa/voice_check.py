@@ -1,6 +1,6 @@
 """B1 聲音一致性（2026-10-08）：系列裡每一支的配音，要和樣片（甲5）是同一把聲音。
 
-    python voice_check.py <專案> --make-ref <系列>/qa_reference/voice_ref.json   # 樣片定案後建一次
+    python voice_check.py <專案> [<專案2> …] --make-ref <系列>/qa_reference/voice_ref.json   # 樣片定案後建一次；給多支就取平均
     python voice_check.py <專案> --ref <系列>/qa_reference/voice_ref.json [--out qa/品檢紀錄]
 
 讀專案的 qa/voice_meta.json（build.py 寫的：實際用的供應者、模型、聲音）、public/voice.wav（純旁白，沒有配樂）、
@@ -114,15 +114,21 @@ def compare(cur, ref, rec):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('project', nargs='?', default='.')
+    ap.add_argument('project', nargs='*', default=['.'])
     ap.add_argument('--ref'); ap.add_argument('--make-ref'); ap.add_argument('--out', default='qa/品檢紀錄')
     a = ap.parse_args()
-    cur = measure(a.project)
     if a.make_ref:
+        # 多支取平均（2026-10-08 EP2 實測：同一個 Gemini 聲音 7 節音高 107.9～118.5 Hz，單拿最高的一節當基準，最低那節就差 9% 誤報）
+        ms = [measure(p) for p in a.project]
+        cur = {'voice': ms[0]['voice'], 'pitch': float(np.mean([m['pitch'] for m in ms if m['pitch']])),
+               'rate': float(np.mean([m['rate'] for m in ms if m['rate']])),
+               'timbre': {'mean': np.mean([m['timbre']['mean'] for m in ms], 0).tolist(),
+                          'std': np.mean([m['timbre']['std'] for m in ms], 0).tolist()}}
         os.makedirs(os.path.dirname(os.path.abspath(a.make_ref)), exist_ok=True)
-        json.dump({**cur, 'from': os.path.abspath(a.project)}, open(a.make_ref, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-        print(f'✓ 樣片聲音基準 → {a.make_ref}（{cur["voice"]}，音高 {cur["pitch"]:.1f} Hz，語速 {cur["rate"]:.2f} 字/秒）')
+        json.dump({**cur, 'from': [os.path.abspath(p) for p in a.project]}, open(a.make_ref, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+        print(f'✓ 聲音基準 → {a.make_ref}（{len(ms)} 支平均；{cur["voice"]}，音高 {cur["pitch"]:.1f} Hz，語速 {cur["rate"]:.2f} 字/秒）')
         return
+    cur = measure(a.project[0])
     rec = Recorder('B1 聲音一致性', a.out)
     if not a.ref or not os.path.exists(a.ref):
         rec.note('沒有樣片聲音基準（--ref），跳過；系列樣片定案後用 --make-ref 建一次')

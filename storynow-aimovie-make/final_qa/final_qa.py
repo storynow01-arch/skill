@@ -20,6 +20,7 @@
 輸出：final_qa.html（報告＋截圖總覽）、sheet.jpg，以及<out>\\final_qa.json、<out>\\final_qa.md（摘要）
 """
 from __future__ import annotations
+import sys as _s; _s.stdout.reconfigure(encoding="utf-8", errors="replace")   # cp950 主控台印 ✗ 會當掉（2026-10-08 EP2 實測抓到）
 import argparse, json, re, subprocess
 from fractions import Fraction
 from pathlib import Path
