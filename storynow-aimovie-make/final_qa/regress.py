@@ -1,7 +1,7 @@
 """F2 引擎改版回歸測試（2026-10-08）：改了引擎（engine/template、build.py…）之後，用每個範本的示範分鏡重算固定畫格，
 和基準圖逐格比對——確認舊的範本沒有被改壞。
 
-    python regress.py [--templates A,B,C,D,H] [--modules <node_modules>]          # 比對（有差異 → 擋）
+    python regress.py [--templates A,B,C,D,H,I,J,K,L] [--modules <node_modules>]          # 比對（有差異 → 擋）
     python regress.py --accept [--templates D]                                     # 差異是預期中的改進：更新基準圖
 
 固定樣本：templates/範本X/示範/storyboard.json；不配音（--no-tts 用字數估時）、不配樂——每次結果一樣，不連網。
@@ -19,7 +19,8 @@ SKILL = os.path.abspath(os.path.join(HERE, '..'))
 sys.path.insert(0, HERE)
 from qa_record import Recorder
 
-TPL = {'A': '範本A_闖關遊戲', 'B': '範本B_創客手稿', 'C': '範本C_動態字體快剪', 'D': '範本D_白板手繪', 'H': '範本H_螢幕模擬'}
+TPL = {'A': '範本A_闖關遊戲', 'B': '範本B_創客手稿', 'C': '範本C_動態字體快剪', 'D': '範本D_白板手繪', 'H': '範本H_螢幕模擬',
+       'I': '範本I_漫畫風', 'J': '範本J_地圖風', 'K': '範本K_宇宙風', 'L': '範本L_黏土玩具風'}   # I～L：2026-10-09 另一個對話新增，合併後補進回歸測試
 BASE = os.path.join(HERE, 'regress', '基準')
 OUT = os.path.join(HERE, 'regress', '結果')
 TOL, RATIO = 8, 0.005     # 同一版本重跑差異是 0（渲染完全穩定），所以門檻可以很嚴；24 色階時紙色差 15 抓不到（2026-10-08）
@@ -39,7 +40,7 @@ def render(T, modules, work):
     sh([py, os.path.join(SKILL, 'engine', 'scripts', 'new_project.py'), proj, '--share-modules', modules], work)
     shutil.copy(os.path.join(SKILL, 'templates', TPL[T], '示範', 'storyboard.json'), os.path.join(proj, 'storyboard.json'))
     sh([py, os.path.join(SKILL, 'engine', 'scripts', 'build.py'), 'storyboard.json', '--no-tts', '--no-music'], proj)
-    if T in ('A', 'B', 'C', 'D', 'H'):                 # make_video 的範本音效檔：缺了 Remotion 會找不到 tpl_sfx.wav
+    if T in TPL:                                       # make_video 的範本音效檔：缺了 Remotion 會找不到 tpl_sfx.wav
         sh([py, os.path.join(SKILL, 'engine', 'scripts', 'tpl_sfx.py'), T], proj)
     spec = json.load(open(os.path.join(proj, 'src', 'data', 'spec.json'), encoding='utf-8'))
     frames = sorted({min(spec['totalFrames'] - 1, s['from'] + int(s['dur'] * r)) for s in spec['scenes'] for r in (0.5, 0.9)})
@@ -85,7 +86,7 @@ def compare(T, shots, rec, html):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--templates', default='A,B,C,D,H'); ap.add_argument('--modules', default=os.environ.get('STORYNOW_NODE_MODULES'))
+    ap.add_argument('--templates', default=','.join(TPL)); ap.add_argument('--modules', default=os.environ.get('STORYNOW_NODE_MODULES'))
     ap.add_argument('--accept', action='store_true'); ap.add_argument('--out', default=os.path.join(OUT, '品檢紀錄'))
     a = ap.parse_args()
     if not a.modules or not os.path.isdir(os.path.join(a.modules, 'remotion')):
