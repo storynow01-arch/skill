@@ -66,7 +66,7 @@
 | # | 步驟 | 做法 |
 |:-:|---|---|
 | 乙1 | 內容分析＋★老師提醒 ⛔ | 讀資料寫 `01_內容分析.md`（觀念、比喻、迷思、衝突→解答骨架）。**一定要問使用者一題**：「這支學生最常錯在哪？你的口訣或提醒？」——這段由老師提供，不讓 AI 自己編（YouTube 低原創 AI 內容政策的對策） |
-| 乙2 | 寫稿＋分鏡＋★存 AI 初稿 | `new_project.py <NN>_<單元> --example teach`，照系列設定的範本寫 `storyboard.json`（頂層 `subject`、系列的 voice）。結構：**前 30 秒講「這支教什麼、統測怎麼考」**；中段放老師提醒，那一場加 `"teacher": true`；結尾引導下一支。寫作規則：專業寫法（唸法交給程式，TTS 會念錯的用 `{"text","say"}`）、物件文字用旁白的說法、台灣用語、中英文空一格 🅴。寫完立刻 `python engine/scripts/revision.py save storyboard.json --label AI初稿` |
+| 乙2 | 寫稿＋分鏡＋★存 AI 初稿 | `new_project.py <NN>_<單元> --example teach --share-modules <頻道>/01_通用工作流與範本開發/_共用引擎/node_modules`（整個頻道共用一份 Remotion 引擎，不用每支 npm install），照系列設定的範本寫 `storyboard.json`（頂層 `subject`、系列的 voice）。結構：**前 30 秒講「這支教什麼、統測怎麼考」**；中段放老師提醒，那一場加 `"teacher": true`；結尾引導下一支。寫作規則：專業寫法（唸法交給程式，TTS 會念錯的用 `{"text","say"}`）、物件文字用旁白的說法、台灣用語、中英文空一格 🅴。寫完立刻 `python engine/scripts/revision.py save storyboard.json --label AI初稿` |
 | 乙3 | 第⓪關（自動） | `make_video.py storyboard.json --template <代號> --preview` 一起跑：① 文稿檢查（**必改 0 才往下**）〔關 1〕② **內容正確**：A1 程式碼實際執行（場景 `verify` 寫 `{"type":"code",…}`）〔關 2〕、A2 歷屆答案（場景寫 `"exam"`）〔關 3〕、A3 計算與化簡（卡諾圖自動；其他寫 `verify`）〔關 4〕③ 唸法清單 `qa/唸法清單/唸法清單.md`（提醒）④ 逐字審稿 `python final_qa/review_prep.py storyboard.json` → Claude 逐句審寫 `審稿筆記.json` → `python final_qa/review_report.py qa/逐字審稿`。審稿清單另加：字幕每頁 ≤16 字 ≤9 字/秒、物件文字＝旁白；A1 提醒「畫面像程式碼卻沒標 verify」要補標 |
 | 乙4 | 使用者審稿 ⛔ | 給稿＋審稿報告（原文 → 建議 → 理由）。使用者決定改哪些 → 改 storyboard → `revision.py save storyboard.json --label 審稿後` → 重跑乙3 |
 | 乙5 | 分鏡預覽 ⛔ | `python engine/scripts/make_video.py storyboard.json --template <代號> --preview`（edge 暫配、不花 Gemini 額度，每場截圖＋旁白 → `qa/分鏡預覽/分鏡預覽.html`）。畫面、圖示、文不對題在這裡改；有改就再 `revision.py save --label 預覽後` |

@@ -1,7 +1,9 @@
 """建立新影片專案：複製 template → 目標資料夾，放一份 storyboard 範本，npm install。
 
 用法：
-    python new_project.py <目標資料夾> [--example teach|promo] [--style blueprint] [--no-install]
+    python new_project.py <目標資料夾> [--example teach|promo] [--style blueprint] [--no-install] [--share-modules <共用的 node_modules>]
+--share-modules：不 npm install，直接用 junction 連到共用的 node_modules（系列影片共用一份 Remotion 引擎，2026-10-08）。
+  資料夾名稱一定要叫 node_modules（Node.js 只認這個名字），例：<頻道>/01_通用工作流與範本開發/_共用引擎/node_modules
 """
 import sys as _s; _s.stdout.reconfigure(encoding="utf-8", errors="replace")   # cp950 主控台印 ⚠ 會當掉（2026-10-08）
 import argparse, json, os, shutil, subprocess
@@ -14,7 +16,7 @@ EX = os.path.join(HERE, '..', 'examples')
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('dest'); ap.add_argument('--example', default='teach', choices=['teach', 'promo'])
-    ap.add_argument('--style'); ap.add_argument('--no-install', action='store_true')
+    ap.add_argument('--style'); ap.add_argument('--no-install', action='store_true'); ap.add_argument('--share-modules')
     a = ap.parse_args()
     dest = os.path.abspath(a.dest)
     if os.path.exists(os.path.join(dest, 'package.json')):
@@ -35,7 +37,14 @@ def main():
         open(gi, 'a', encoding='utf-8').write(('\n' if old and not old.endswith('\n') else '') + '\n'.join(add) + '\n')
     print('專案 →', dest)
     print('  ⚠ 配音規則：.env.local 填了 GEMINI_API_KEY 就用 Gemini Flash TTS，沒填就用 edge-tts')
-    if not a.no_install:
+    if a.share_modules:
+        src = os.path.abspath(a.share_modules)
+        if os.path.basename(src) != 'node_modules' or not os.path.isdir(os.path.join(src, 'remotion')):
+            raise SystemExit(f'--share-modules 要指到裝好 Remotion 的 node_modules 資料夾：{src}')
+        import _winapi
+        _winapi.CreateJunction(src, os.path.join(dest, 'node_modules')) if os.name == 'nt' else os.symlink(src, os.path.join(dest, 'node_modules'))
+        print('  ✓ node_modules 連到共用引擎：', src)
+    elif not a.no_install:
         subprocess.check_call('npm install --no-audit --no-fund', cwd=dest, shell=True)
     print('下一步：\n  1. 編輯 storyboard.json\n  2. python', os.path.join(HERE, 'build.py'), 'storyboard.json\n  3. npx remotion studio  或  npm run render')
 
