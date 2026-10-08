@@ -1,0 +1,8 @@
+{
+  "_說明": "數位邏輯設計專用的 edge-tts 念法（storyboard 寫 \"subject\": \"數位邏輯設計\" 時，build.py 併入全域詞典）。Gemini 不套詞典。",
+  "詞典": {
+    "AB": "A B",
+    "BC": "B C",
+    "CD": "C D"
+  }
+}

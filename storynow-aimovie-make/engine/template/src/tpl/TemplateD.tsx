@@ -6,7 +6,7 @@ import React, {useMemo} from 'react';
 import {AbsoluteFill, Audio, Easing, Sequence, interpolate, random, staticFile, useCurrentFrame} from 'remotion';
 import {loadFont as loadKai} from '@remotion/google-fonts/LXGWWenKaiTC';
 import {loadFont as loadSans} from '@remotion/google-fonts/NotoSansTC';
-import {DrawShape, DrawText, Item, Marker, Shape, Sfx, WB, arrow, box, card, check, circleMark, cross, iconFor, lerp, tipOf, underline, wbTextW} from '../lib/whiteboard';
+import {DrawShape, DrawText, Item, Marker, R, Shape, Sfx, WB, arrow, box, card, check, circleMark, cross, iconFor, lerp, tipOf, underline, wbTextW} from '../lib/whiteboard';
 import {QaProbe} from '../QaProbe';
 import {TplSpec, captionAt, cue, wrap} from './common';
 import {BrandLogo} from './brand';
@@ -40,6 +40,34 @@ type Kit = {
 const heading = (k: Kit, t: string | undefined, at: number) => {
   if (!t) return;
   wrap(t, 20).slice(0, 2).forEach((ln, i) => k.text(at + i * 6, 960, 160 + i * 78, ln, fitW(ln, k.logo ? 1240 : 1500, 72), {color: WB.blue}));
+};
+
+/* ---------- 布林項（2026-10-08，數位邏輯）：A'B'D 的撇號＝反相，畫成字母上方的橫線 ---------- */
+const TADV = 0.7;                                     // 每個字母佔的寬度（× 字級），固定寬度讓上橫線一定對準字母
+const termW = (t: string, size: number) => [...t].filter((c) => c !== "'").length * size * TADV;
+/** 一個字母一個字母寫，反相字母寫完補上橫線；回傳寬度 */
+const writeTerm = (k: Kit, at: number, x: number, y: number, t: string, size: number, col: string, step = 4) => {
+  const ch = [...t], adv = size * TADV; let j = 0;
+  ch.forEach((c, i) => {
+    if (c === "'") return;
+    const cx = x + j * adv + adv / 2, t0 = at + j * step;
+    k.text(t0, cx, y, c, size, {bold: true, color: col, dur: 3, sfx: 'none'});
+    if (ch[i + 1] === "'") k.shape(t0 + 3, cx - adv * 0.36, y - size * 0.86, 1, {strokes: [`M0 0 H${adv * 0.72}`], w: Math.max(5, size / 10), ink: col}, 3, 'none');
+    j++;
+  });
+  return termW(t, size);
+};
+/** 整條式子「F = 項 + 項 …」置中寫在 cx；cues[i]＝第 i 項開始的格（沒給就接著寫） */
+const writeExpr = (k: Kit, at: number, cx: number, y: number, fn: string, terms: string[], size: number, colors?: string[], cues?: number[]) => {
+  const head = `${fn} = `, gap = size * 1.1;
+  const total = wbTextW(head, size) + terms.reduce((a, t, i) => a + termW(t, size) + (i ? gap : 0), 0);
+  let x = cx - total / 2;
+  k.text(at, x, y, head, size, {bold: true, anchor: 'start', dur: 6, sfx: 'none'}); x += wbTextW(head, size);
+  terms.forEach((t, i) => {
+    const t0 = cues?.[i] ?? at + 8 + i * 14;
+    if (i) { k.text(t0, x + gap / 2, y, '+', size, {bold: true, dur: 3, sfx: 'none'}); x += gap; }
+    x += writeTerm(k, t0 + 2, x, y, t, size, colors?.[i] ?? WB.ink);
+  });
 };
 
 const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
@@ -167,6 +195,201 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
       k.text(at + 2, x, y + 20, `${String.fromCharCode(65 + i)}. ${o}`, fitW(o + 'AA', 660, 54), {dur: 6, sfx: 'none', box: k.id(`end${i}`)});
       if (i === p.answerIndex) k.shape(ans, x, y, 1, circleMark(400, 115), 12, 'ding');
     });
+  },
+  /* 布林式 → 每一項換成 0／1（2026-10-08）：上方寫整條式子，下方每項一張卡：字母在上、0／1 寫在正下方（有上橫線＝0） */
+  terms: (k, r) => {
+    const p = r.p, terms: string[] = p.terms ?? [], n = terms.length;
+    heading(k, p.heading, k.T0);
+    writeExpr(k, k.C(p.exprCue, 6), 960, p.heading ? 330 : 250, p.fn ?? 'F', terms, 64);
+    const size = 78, adv = size * TADV, gap = 70;
+    const ws = terms.map((t) => termW(t, size) + 70), total = ws.reduce((a, b) => a + b, 0) + gap * (n - 1);
+    let x = 960 - total / 2;
+    terms.forEach((t, i) => {
+      const at = k.C(p.termCues?.[i], 40 + i * 30), cx = x + ws[i] / 2, bx = cx - termW(t, size) / 2;
+      k.shape(at, cx, 600, 1, card(ws[i], 270, PASTEL[i % 4]), 8, 'none', 0, k.id(`term${i}`));
+      writeTerm(k, at + 4, bx, 545, t, size, WB.ink, 3);
+      const ch = [...t]; let j = 0;
+      ch.forEach((c, ci) => {
+        if (c === "'") return;
+        const bit = ch[ci + 1] === "'" ? '0' : '1';
+        k.text(at + 20 + j * 4, bx + j * adv + adv / 2, 680, bit, 70, {bold: true, color: bit === '1' ? WB.red : WB.blue, dur: 3, sfx: 'none'});
+        j++;
+      });
+      x += ws[i] + gap;
+    });
+    if (p.rule) k.text(k.C(p.ruleCue, 120), 960, 830, p.rule, fitW(p.rule, 1500, 50), {color: WB.red});
+  },
+  /* 逐個變數比對（2026-10-08，照使用者上課的講法）：把圈裡每一格的 0／1 列成表，一欄一欄看——不變的「保留」、有跳動的「淘汰」，最後組成這一圈的項 */
+  readTable: (k, r) => {
+    const p = r.p, vars: string[] = p.vars ?? ['A', 'B', 'C', 'D'], codes: string[] = p.codes ?? [], n = vars.length;
+    const col = p.color ?? WB.red;
+    heading(k, p.heading, k.T0);
+    const X = (j: number) => 960 + (j - (n - 1) / 2) * 240, top = p.heading ? 330 : 260, rh = 96;
+    const rAt = k.C(p.rowsCue, 10);
+    vars.forEach((v, j) => k.text(rAt + j * 2, X(j), top, v, 76, {bold: true, color: WB.blue, dur: 3, sfx: 'none'}));
+    codes.forEach((c, i) => [...c].forEach((b, j) => k.text(rAt + 12 + i * 10 + j * 2, X(j), top + 100 + i * rh, b, 76, {bold: true, dur: 3, sfx: 'none'})));
+    if (p.label) k.text(rAt + 4, X(0) - 220, top + 100 + ((codes.length - 1) * rh) / 2, p.label, 40, {color: col, anchor: 'middle', dur: 6, sfx: 'none'});
+    const lineY = top + 100 + (codes.length - 1) * rh + 50;
+    k.shape(rAt + 30, X(0) - 100, lineY, 1, {strokes: [`M0 0 H${X(n - 1) - X(0) + 200}`], w: 5}, 8, 'none');
+    let term = '';
+    vars.forEach((v, j) => {
+      const at = k.C(p.verdictCues?.[j], 60 + j * 30), bits = codes.map((c) => c[j]), same = bits.every((b) => b === bits[0]);
+      if (same) {
+        const t = bits[0] === '0' ? `${v}'` : v; term += t;
+        writeTerm(k, at, X(j) - termW(t, 76) / 2, lineY + 92, t, 76, WB.green);
+        k.text(at + 8, X(j), lineY + 150, '保留', 36, {color: WB.green, dur: 4, sfx: 'pop'});
+      } else {
+        k.shape(at, X(j), lineY + 66, 0.7, cross(), 8, 'buzz');
+        k.text(at + 8, X(j), lineY + 150, '跳動淘汰', 36, {color: WB.red, dur: 4, sfx: 'none'});
+      }
+    });
+    if (p.termCue !== undefined || p.showTerm !== false) {
+      const at = k.C(p.termCue, 160), size = 84, w = termW(term, size) + wbTextW('→ ', size);
+      const x = 960 - w / 2, y = Math.min(880, lineY + 260);
+      k.text(at, x, y, '→ ', size, {bold: true, color: col, anchor: 'start', dur: 4, sfx: 'ding'});
+      writeTerm(k, at + 4, x + wbTextW('→ ', size), y, term, size, col);
+    }
+  },
+  /* 卡諾圖（2026-10-08，數位邏輯）：畫格子 → 標格雷碼 → （選用）左邊真值表 → 逐格填 1／0／X → 紅筆圈組（跨邊界自動拆兩段、超出格線表示相連）→ 下方寫出化簡結果 */
+  kmap: (k, r) => {
+    const p = r.p;
+    heading(k, p.heading, k.T0);
+    const rows: string[] = p.rows ?? ['0', '1'], cols: string[] = p.cols ?? ['00', '01', '11', '10'];
+    const nr = rows.length, nc = cols.length, nv = rows[0].length + cols[0].length;
+    const cs = p.cell ?? (nr * nc >= 16 ? 118 : nr * nc >= 8 ? 150 : 170);
+    const W = nc * cs, H = nr * cs, hasT = !!p.table, side = !hasT && (p.groups ?? []).some((g: {term?: string}) => g.term);
+    const x0 = (hasT ? 1300 : side ? 700 : 1020) - W / 2, y0 = p.heading ? (nr >= 4 ? 330 : 350) : 270;
+    const mOf = (ri: number, ci: number) => parseInt(rows[ri] + cols[ci], 2);
+    const pos = (m: number) => { for (let ri = 0; ri < nr; ri++) for (let ci = 0; ci < nc; ci++) if (mOf(ri, ci) === m) return [ri, ci]; return [0, 0]; };
+    const ones: number[] = p.ones ?? [], dc: number[] = p.dc ?? [];
+    const val = (m: number) => ones.includes(m) ? '1' : dc.includes(m) ? 'X' : p.zeros === false ? '' : '0';
+    // 格子＋左上角斜線與變數名
+    const gAt = k.C(p.gridCue, 0), strokes = [R(0, 0, W, H)];
+    const mc = Math.floor(nc / 2), mr = Math.floor(nr / 2);   // 先畫中間十字、再細分（使用者手畫 16 格的方式，比較工整）
+    if (nc > 1) strokes.push(`M${mc * cs} 0 V${H}`);
+    if (nr > 1) strokes.push(`M0 ${mr * cs} H${W}`);
+    for (let c = 1; c < nc; c++) if (c !== mc) strokes.push(`M${c * cs} 0 V${H}`);
+    for (let q = 1; q < nr; q++) if (q !== mr) strokes.push(`M0 ${q * cs} H${W}`);
+    k.shape(gAt, x0, y0, 1, {strokes, w: 6}, 20, 'none');
+    k.shape(gAt + 2, x0 - 140, y0 - 110, 1, {strokes: ['M0 0 L140 110'], w: 4}, 4, 'none');
+    k.text(gAt + 4, x0 - 112, y0 - 14, p.rowVar ?? 'A', 42, {color: WB.blue, dur: 4, sfx: 'none'});
+    k.text(gAt + 6, x0 - 44, y0 - 74, p.colVar ?? 'BC', 42, {color: WB.blue, dur: 4, sfx: 'none'});
+    // 格雷碼標頭（橘色）
+    const hAt = k.C(p.headCue, 24);
+    cols.forEach((s, c) => k.text(hAt + c * 2, x0 + c * cs + cs / 2, y0 - 50, s, 46, {color: WB.orange, bold: true, dur: 5, sfx: 'none'}));
+    rows.forEach((s, q) => k.text(hAt + (nc + q) * 2, x0 - 54, y0 + q * cs + cs / 2 + 16, s, 46, {color: WB.orange, bold: true, dur: 5, sfx: 'none', anchor: 'middle'}));
+    // 格子編號（左上小字，依格雷碼順序一格一格寫）
+    if (p.showIndex) {
+      const iAt = k.C(p.indexCue, 50), order: [number, number][] = [];
+      for (let q = 0; q < nr; q++) for (let c = 0; c < nc; c++) order.push([q, c]);
+      order.forEach(([q, c], j) => k.text(iAt + j * (p.indexStep ?? 3), x0 + c * cs + 10, y0 + q * cs + (cs < 140 ? 28 : 34), `m${mOf(q, c)}`, cs < 140 ? 22 : 28, {color: '#7d8791', dur: 3, sfx: 'none', anchor: 'start'}));
+    }
+    // 真值表（左邊）：變數欄＋F 欄，F＝1 的列用紅字
+    if (hasT) {
+      const tAt = k.C(p.tableCue, 10), n = 1 << nv, rh = Math.min(56, 560 / (n + 1)), cw = 74, tx = 120, ty = y0 - 40;
+      const names: string[] = p.varNames ?? [...(p.rowVar ?? 'A') + (p.colVar ?? 'BC')];
+      const fn = p.fn ?? 'F', tw = (nv + 1) * cw, th = (n + 1) * rh;
+      k.shape(tAt, tx, ty, 1, {strokes: [R(0, 0, tw, th, 10), `M0 ${rh} H${tw}`, `M${nv * cw} 0 V${th}`], w: 5}, 14, 'none');
+      [...names, fn].forEach((s, c) => k.text(tAt + 4, tx + c * cw + cw / 2, ty + rh * 0.72, s, Math.min(40, rh * 0.75), {bold: true, color: c === nv ? WB.red : WB.blue, dur: 3, sfx: 'none'}));
+      for (let m = 0; m < n; m++) {
+        const bits = m.toString(2).padStart(nv, '0'), v = val(m) || '0', yy = ty + (m + 1) * rh + rh * 0.72;
+        k.text(tAt + 8 + m, tx + 10, yy, [...bits].join('    '), Math.min(34, rh * 0.68), {dur: 3, sfx: 'none', anchor: 'start'});
+        k.text(tAt + 8 + m, tx + nv * cw + cw / 2, yy, v, Math.min(34, rh * 0.68), {bold: true, color: v === '1' ? WB.red : '#7d8791', dur: 2, sfx: 'none'});
+      }
+    }
+    // 填值：依編號由小到大（跟真值表同順序），1 紅、X 藍、0 灰
+    if (ones.length || dc.length || p.zeros) {
+      const fAt = k.C(p.fillCue, 80), n = 1 << nv;
+      for (let m = 0, j = 0; m < n; m++) {
+        const v = val(m); if (!v) continue;
+        const [q, c] = pos(m);
+        const vs = Math.min(72, cs * 0.5);
+        k.text(fAt + j++ * (p.fillStep ?? 4), x0 + c * cs + cs / 2 + (cs < 140 && p.showIndex ? 14 : 0), y0 + q * cs + cs / 2 + vs * 0.36 + (cs < 140 && p.showIndex ? 14 : 0), v, vs,
+          {bold: true, color: v === '1' ? WB.red : v === 'X' ? WB.blue : '#9aa1a9', dur: 5, sfx: v === '1' ? 'pop' : 'none'});
+      }
+    }
+    // 照座標填 1（2026-10-08，使用者上課的方式）：0001 → 左邊列標 00 畫底線、上面行標 01 畫底線 → 交叉的格子寫 1
+    const placed: {code: string; cue?: number}[] = p.place ?? [];
+    placed.forEach((pl, i) => {
+      const rc = pl.code.slice(0, rows[0].length), cc = pl.code.slice(rows[0].length), q = rows.indexOf(rc), c = cols.indexOf(cc);
+      if (q < 0 || c < 0) return;
+      const at = k.C(pl.cue, 60 + i * 40), vs = Math.min(72, cs * 0.5);
+      k.shape(at, x0 - 54 - 32, y0 + q * cs + cs / 2 + 30, 1, underline(64, WB.red), 6, 'none');
+      k.shape(at + 8, x0 + c * cs + cs / 2 - 32, y0 - 34, 1, underline(64, WB.red), 6, 'none');
+      k.text(at + 16, x0 + c * cs + cs / 2, y0 + q * cs + cs / 2 + vs * 0.36, '1', vs, {bold: true, color: WB.red, dur: 5, sfx: 'pop'});
+    });
+    // 圈組：連續的一段畫一個圓角框；跨邊界拆成兩段，往外多畫 34px 表示「接到另一邊」
+    const spans = (idx: number[], n: number) => {
+      const u = [...new Set(idx)].sort((a, b) => a - b);
+      if (u.length === n || u[u.length - 1] - u[0] === u.length - 1) return [{a: u[0], b: u[u.length - 1], lo: false, hi: false}];
+      let g = 0; for (let i = 1; i < u.length; i++) if (u[i] - u[i - 1] > 1) g = i;
+      return [{a: u[0], b: u[g - 1], lo: true, hi: false}, {a: u[g], b: u[u.length - 1], lo: false, hi: true}];
+    };
+    const GC = [WB.red, WB.blue, WB.green, WB.orange, '#8e5cc4'];
+    const groups: {cells: number[]; term?: string; cue?: number; termCue?: number; color?: string; arrow?: boolean}[] = p.groups ?? [];
+    const gBox: {x: number; y: number}[][] = [];
+    groups.forEach((g, gi) => {
+      const at = k.C(g.cue, 120 + gi * 40), col = g.color ?? GC[gi % GC.length], pad = 8 + (gi % 3) * 6;
+      const pts = g.cells.map(pos);
+      const pcs: {x: number; y: number}[] = [];
+      spans(pts.map((t) => t[0]), nr).forEach((rs) => spans(pts.map((t) => t[1]), nc).forEach((ss, si) => {
+        const x = x0 + ss.a * cs + pad - (ss.lo ? 16 + pad : 0), y = y0 + rs.a * cs + pad - (rs.lo ? 16 + pad : 0);
+        const w = (ss.b - ss.a + 1) * cs - 2 * pad + (ss.lo || ss.hi ? 16 + pad : 0), h = (rs.b - rs.a + 1) * cs - 2 * pad + (rs.lo || rs.hi ? 16 + pad : 0);
+        k.shape(at + si * 2, x, y, 1, {strokes: [R(0, 0, w, h, Math.min(46, w / 2, h / 2))], w: 8, ink: col}, 14, si ? 'none' : 'ding');
+        pcs.push({x: x + w, y: y + h / 2});
+      }));
+      gBox.push(pcs);
+    });
+    // 化簡結果：F ＝ 各組的項依序寫出（顏色同圈）。項寫成 A'B 這種格式：撇號＝反相，畫成字母上方的橫線（2026-10-08 使用者指定上橫線）
+    const terms = groups.filter((g) => g.term);
+    if (terms.length) {
+      const size = side ? 66 : 62, adv = size * 0.7;
+      const letters = (t: string) => [...t].filter((ch) => ch !== "'");
+      const termW = (t: string) => letters(t).length * adv;
+      /** 一個字一個字寫，反相的字母寫完補一條上橫線；回傳寫完的寬度 */
+      const writeTerm = (at: number, x: number, y: number, t: string, col: string) => {
+        const ch = [...t]; let j = 0;
+        ch.forEach((c, i) => {
+          if (c === "'") return;
+          const cx = x + j * adv + adv / 2, t0 = at + j * 4;
+          k.text(t0, cx, y, c, size, {bold: true, color: col, dur: 3, sfx: 'none'});
+          if (ch[i + 1] === "'") k.shape(t0 + 3, cx - adv * 0.36, y - size * 0.86, 1, {strokes: [`M0 0 H${adv * 0.72}`], w: 7, ink: col}, 3, 'none');
+          j++;
+        });
+        return termW(t);
+      };
+      const parts: {t: string; c: string; at: number; term?: boolean}[] = [{t: `${p.fn ?? 'F'} = `, c: WB.ink, at: k.C(terms[0].termCue ?? terms[0].cue, 150) + 16}];
+      terms.forEach((g, i) => {
+        const at = k.C(g.termCue ?? g.cue, 150 + i * 40) + 16;
+        if (i) parts.push({t: '+ ', c: WB.ink, at});
+        parts.push({t: g.term!, c: g.color ?? GC[groups.indexOf(g) % GC.length], at: at + 1, term: true});
+      });
+      const w = (q: {t: string; term?: boolean}) => q.term ? termW(q.t) + size * 0.25 : wbTextW(q.t, size);
+      if (side) groups.forEach((g, gi) => {   // 箭頭：圈的右緣 → 這一項（使用者上課時從圈畫箭頭到旁邊寫結果）
+        const ti = terms.indexOf(g); if (!g.arrow || ti < 0) return;
+        const tx = 1150, ty = y0 + 70 + ti * 100 - size * 0.32;
+        const pc = gBox[gi].reduce((b2, q) => Math.abs(q.y - ty) < Math.abs(b2.y - ty) ? q : b2), sx = pc.x + 8, sy = pc.y;
+        const len = Math.hypot(tx - sx, ty - sy), ang = (Math.atan2(ty - sy, tx - sx) * 180) / Math.PI;
+        k.shape(k.C(g.termCue ?? g.cue, 150) + 8, sx, sy, 1, {...arrow(len, 0), ink: g.color ?? GC[gi % GC.length]}, 8, 'none', ang);
+      });
+      if (side) {   // 格子右邊直排：F ＝ 一行，之後每項一行（前面加 ＋）
+        let ln = 0, x = 1180;
+        parts.forEach((q) => {
+          if (q.t === '+ ') { ln++; x = 1180; }
+          const y = y0 + 70 + ln * 100;
+          if (q.term) x += writeTerm(q.at, x, y, q.t, q.c) + size * 0.25;
+          else { k.text(q.at, x, y, q.t, size, {bold: true, color: q.c, anchor: 'start', dur: tdur(q.t, 6), sfx: 'none'}); x += wbTextW(q.t, size); }
+        });
+      } else {
+        let x = (hasT ? 1300 : 960) - parts.reduce((a2, q) => a2 + w(q), 0) / 2;
+        const ry = y0 + H + 105;
+        parts.forEach((q) => {
+          if (q.term) x += writeTerm(q.at, x, ry, q.t, q.c) + size * 0.25;
+          else { k.text(q.at, x, ry, q.t, size, {bold: true, color: q.c, anchor: 'start', dur: tdur(q.t, 6), sfx: 'none'}); x += wbTextW(q.t, size); }
+        });
+      }
+    }
+    if (p.note) k.text(k.C(p.noteCue, 160), hasT ? 1300 : 960, Math.min(880, y0 + H + (terms.length && !side ? 190 : 100)), p.note, fitW(p.note, hasT ? 1000 : 1500, 50), {color: WB.red});
   },
 };
 

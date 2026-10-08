@@ -76,6 +76,7 @@ and high-impact, and the audio should be seamlessly programmed in with precise, 
 | quiz | 橘色「小測驗」標籤＋題目＋選項框，揭曉時紅筆圈出答案（「叮」） |
 | recap | 「今天帶走」逐項打勾，房子圖示＋「下一節：……」 |
 | qaEnd | 2×2 選項框，時間到紅筆圈答案 |
+| kmap、terms、readTable（數位邏輯設計專用） | 卡諾圖、布林式換成 0／1、逐個變數比對。畫面、props、教法與念法見 [`科目包/數位邏輯設計`](../../科目包/數位邏輯設計/README.md) |
 
 圖示：`icon` 可以填 emoji（💻📱✉️📮📦🏷️🔁🔀👂……）或白板圖示名稱：computer、laptop、phone、bubble、question、book、handshake、envelope、stamp、mailbox、house、ear、gauge、file、sofa、package、packet、road、routes、retry、tag、bulb、lock、clock、trophy、person、globe、cloud、wifi、rocket、warning、gear、magnifier、checklist、network、server。也可以填 `lib/sketches` 的線稿名稱。
 
