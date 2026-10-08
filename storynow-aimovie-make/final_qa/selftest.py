@@ -240,6 +240,38 @@ def stage2_video(work):
     run_case(work, 'F1 換範本換配色', [os.path.join(Q, 'series_check.py'), 'f1_b.mp4', '--template', 'H', '--ref', 'f1_ref.json'], {'F1.規格', 'F1.風格'})
 
 
+def caption_cases(work):
+    """F1 字幕閃爍、F2 字幕抖動、F11 畫面突跳——淺色與深色背景各做一次（2026-10-08 範本E 驗收抓到：
+    這三項原本只在範本E 的深色背景驗證過；淺色白板上 F1／F2 永遠 0、單格突跳從來抓不到）"""
+    sys.path.insert(0, Q)
+    from final_qa import band_boxes, flicker_and_jitter, jumps
+    from pathlib import Path
+    font = 'C\\:/Windows/Fonts/msjhbd.ttc'
+    for bg, label in (('0xeeeef0', '淺色'), ('0x181818', '深色')):
+        base = os.path.join(work, f'cap_{label}.mp4')
+        txt = lambda t, a, b: (f"drawtext=fontfile='{font}':text='{t}':fontsize=54:fontcolor=white:borderw=8:bordercolor=0x1d232a:"
+                               f"x=(w-tw)/2:y=950:enable='between(n,{a},{b})'")
+        ff('-f', 'lavfi', '-i', f'color=c={bg}:s=1920x1080:r=30:d=6', '-vf',
+           "drawbox=x=300:y=300:w=500:h=300:color=0x2b86bf:t=fill,drawbox=x=1100:y=250:w=400:h=420:color=0xe5543f:t=12,"
+           + txt('第一頁字幕測試', 0, 89) + ',' + txt('第二頁的字幕', 90, 179), '-pix_fmt', 'yuv420p', base)
+        bad = {
+            'F1 字幕閃 1 格': ['-vf', f"drawbox=x=0:y=930:w=iw:h=90:color={bg}:t=fill:enable='eq(n,90)'"],
+            'F2 字幕抖動': ['-filter_complex', "[0:v]split[m][s];[s]crop=1920:90:0:930[b];[m][b]overlay=x=12:y=930:enable='between(n,20,80)*not(mod(n,4))'"],
+            'F11 單格突跳': ['-filter_complex', "[0:v]split[m][s];[s]crop=1920:700:0:160[c];[m][c]overlay=x=0:y=200:enable='eq(n,120)'"],
+        }
+
+        def measure(p):
+            fl, jt = flicker_and_jitter(band_boxes(Path(p), 930, 90))
+            return {k for k, v in (('F1', fl), ('F2', jt), ('F11', jumps(Path(p)))) if v}
+        t0 = time.time()
+        case(f'{label}底 字幕與畫面乾淨', set(), measure(base), t0)
+        for name, args in bad.items():
+            t0 = time.time()
+            out = os.path.join(work, f'cap_{label}_{name[:3].strip()}.mp4')
+            ff('-i', base, *args, '-pix_fmt', 'yuv420p', out)
+            case(f'{label}底 {name}', {name.split()[0]}, measure(out), t0)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--fast', action='store_true'); ap.add_argument('--keep', action='store_true')
@@ -253,6 +285,7 @@ def main():
         stage2_fast(work)
         if not a.fast:
             stage2_video(work)
+            caption_cases(work)
             merge_cases(work)
     finally:
         if not a.keep: shutil.rmtree(work, ignore_errors=True)

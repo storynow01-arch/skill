@@ -214,11 +214,12 @@ export const Cursor: React.FC<{x: number; y: number; lf: number; clickF: number}
 };
 
 // ───────────── Windows 11 桌面與工作列 ─────────────
+// 工作列標 data-qa="chrome"：模擬的系統介面，版面探針不量它的間距與手機字級（2026-10-08）
 export const Wallpaper: React.FC = () => (
   <div style={{position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 30% 80%, #8fb6e8 0%, #3b6fb6 35%, #1d3f78 70%, #12285a 100%)'}} />
 );
 export const Taskbar: React.FC<{active: string[]; clock?: string; date?: string}> = ({active, clock = '下午 03:41', date = '2026/10/7'}) => (
-  <div style={{position: 'absolute', left: 0, top: H - TASKBAR, width: W, height: TASKBAR, background: 'rgba(238,242,247,0.94)',
+  <div data-qa="chrome" style={{position: 'absolute', left: 0, top: H - TASKBAR, width: W, height: TASKBAR, background: 'rgba(238,242,247,0.94)',
     borderTop: '1px solid rgba(0,0,0,0.08)', fontFamily: UI}}>
     {Object.entries(TASK_ICONS).map(([k, x]) => (
       <div key={k} style={{position: 'absolute', left: x - 22, top: 8, width: 44, height: 44, borderRadius: 6,

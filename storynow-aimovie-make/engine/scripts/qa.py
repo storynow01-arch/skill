@@ -27,6 +27,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 from qa_record import level as _qa_level
 L_CONTRAST = _qa_level('L.對比')     # 文字對比的級別看 final_qa/品檢分級.json（2026-10-08）
 D1_SMALL = _qa_level('D1.手機字小')
+L_DETAIL = _qa_level('L.版面細項')     # 範本E 移植的版面細項（2026-10-08）
+E_DETAIL = ('詞中斷行', '斷行不佳', '標題過長', '間距過小', '圖塊重疊', '版面偏移', '畫面空白')
 
 
 def layout_check(spec, comp):
@@ -46,8 +48,11 @@ def layout_check(spec, comp):
     for item in res:
         f = item.get('frame', -1)
         sid = next((s['id'] for s in spec['scenes'] if s['from'] <= f < s['from'] + s['dur']), '?')
+        sc0 = next((s['from'] for s in spec['scenes'] if s['id'] == sid), f)
+        if 'texts' in item and item['texts'] == 0 and (f - sc0) / spec['fps'] >= 4:   # 畫面空白（範本E 移植，2026-10-08）
+            item.setdefault('issues', []).append({'kind': '畫面空白', 'detail': f'場景開始 {(f - sc0) / spec["fps"]:.1f} 秒了，畫面上還沒有任何內容文字'})
         for iss in item.get('issues', []):
-            must = ('超出畫面', '闖進字幕區', '文字超出圖形', '壓到 LOGO') + (('對比不足',) if L_CONTRAST == '擋' else ())                    + (('手機字小',) if D1_SMALL == '擋' else ())
+            must = ('超出畫面', '闖進字幕區', '文字超出圖形', '壓到 LOGO') + (('對比不足',) if L_CONTRAST == '擋' else ())                    + (('手機字小',) if D1_SMALL == '擋' else ()) + (E_DETAIL if L_DETAIL == '擋' else ())
             lvl = '必修' if iss['kind'] in must else '建議'
             out.append((lvl, f'版面 {sid} @{f / spec["fps"]:.1f}s', f"{iss['kind']}：{iss['detail']}"))
     # 同一個問題在三個取樣點重複出現時只留一次

@@ -45,22 +45,45 @@ def band_boxes(mp4: Path, y0: int, h: int, scale: int = 2):
             break
         arr = np.frombuffer(buf, np.uint8)
         for fr in arr[: len(arr) // fsz * fsz].reshape(-1, hh, w):
-            m = fr > 190
+            # 字幕＝白字＋粗黑邊：只算「旁邊 2 格內有黑邊」的白色像素（2026-10-08 範本E 驗收抓到：
+            # 原本只看 >190 的白，範本D 白板紙本身 ≈238，整條字幕帶都當成字幕 → 淺色範本的 F1 閃爍、F2 抖動永遠 0）
+            dark = fr < 160          # 淡入中的字幕黑邊還是半透明灰（實測最暗 108～150），也要認得（2026-10-08）
+            near = dark.copy()
+            for k in (1, 2):
+                near[k:] |= dark[:-k]; near[:-k] |= dark[k:]; near[:, k:] |= dark[:, :-k]; near[:, :-k] |= dark[:, k:]
+            m = (fr > 190) & near
             if m.sum() < 12:
                 out.append(None)
                 continue
             xs = np.nonzero(m.any(0))[0]
             ys = np.nonzero(m.any(1))[0]
             out.append((int(xs[0]) * scale, int(xs[-1]) * scale, int(ys[0]) * scale, int(ys[-1]) * scale,
-                        int(m.sum())))
+                        int(m.sum()), m.sum(0).astype(np.uint16), m.sum(1).astype(np.uint16)))
     p.wait()
     return out
 
 
+def _shift(p, q, lim):
+    """q 相對 p 平移幾格最吻合（輪廓相關）；回傳 (位移, 相關度 0～1)"""
+    p, q = p.astype(np.float32), q.astype(np.float32)
+    best, at = -1.0, 0
+    for k in range(-lim, lim + 1):
+        a, b = (p[k:], q[:len(q) - k]) if k >= 0 else (p[:k], q[-k:])
+        c = float((a * b).sum() / (np.sqrt((a * a).sum() * (b * b).sum()) + 1e-6))
+        if c > best:
+            best, at = c, k
+    return at, best
+
+
 def flicker_and_jitter(boxes, fps=30.0, tol=2):
     """F1：None 夾在兩個有字的格子之間（最多 2 格）。
-    F2：前後兩格外框一致（同一頁字幕），中間那格外框不同——一頁字幕在播的時候不該變形。"""
+    F2：前後兩格是同一頁字幕，中間那格「整頁平移」——用字幕的左右、上下輪廓找最吻合的位移，≠0 才算。
+    （2026-10-08：原本比外框，範本D 的馬克筆滑進字幕帶也會讓外框變，誤判成抖動；局部闖入不會讓整頁輪廓平移）"""
     flick, jit = [], []
+    mass = [b[4] for b in boxes if b is not None]
+    if mass:      # 面積不到一般字幕 20% 的不算字幕（範本D 的馬克筆筆尖滑進字幕帶，2026-10-08）
+        floor = 0.2 * float(np.median(mass))
+        boxes = [b if b is not None and b[4] >= floor else None for b in boxes]
     n = len(boxes)
     for i in range(1, n - 1):
         if boxes[i] is None:
@@ -78,6 +101,10 @@ def flicker_and_jitter(boxes, fps=30.0, tol=2):
         diff_b = any(abs(a[k] - b[k]) > tol for k in range(4))
         # 像素數也要接近，排除「換頁」那一格（換頁時文字內容整個變了）
         if same_ac and diff_b and abs(a[4] - c[4]) < 0.05 * a[4]:
+            dx, cx = _shift(a[5], b[5], 15)
+            dy, cy = _shift(a[6], b[6], 8)
+            if not ((dx and cx > 0.9) or (dy and cy > 0.9)):
+                continue
             jit.append({"frame": i, "sec": round(i / fps, 2), "dx": max(abs(a[0] - b[0]), abs(a[1] - b[1])),
                         "dy": max(abs(a[2] - b[2]), abs(a[3] - b[3]))})
     return flick, jit
@@ -115,6 +142,12 @@ def jumps(mp4: Path, fps: float = 30.0, y0: int = 120, h: int = 780) -> list[dic
     for i in range(1, len(d) - 1):
         if d[i] > JUMP_TH and d[i - 1] < d[i] / 3 and d[i + 1] < d[i] / 3:
             out.append({"sec": round((i + 1) / fps, 2), "size": round(float(d[i]), 2)})
+        # 成對：只有一格跑掉又跳回來＝「跳過去」「跳回來」兩格一樣大（2026-10-08 範本E 驗收抓到：單格位移 40px
+        # 兩格都是 9.64，原本「下一格要小於 1/3」的條件兩格都不成立 → 最常見的「閃一下」從來抓不到）
+        elif i + 2 < len(d):
+            a, b = d[i], d[i + 1]
+            if min(a, b) > JUMP_TH and max(a, b) < 2.5 * min(a, b) and d[i - 1] < min(a, b) / 3 and d[i + 2] < min(a, b) / 3:
+                out.append({"sec": round((i + 1) / fps, 2), "size": round(float(a), 2), "pair": True})
     return out
 
 
@@ -242,7 +275,7 @@ def main():
         # 級別照 品檢分級.json：文字對比目前是「提醒後擋」未升級 → 只列出，不算未通過（2026-10-08）
         import sys as _sys; _sys.path.insert(0, str(Path(__file__).parent))
         from qa_record import level as _lv
-        soft = ({"對比不足"} if _lv("L.對比") != "擋" else set()) | ({"手機字小"} if _lv("D1.手機字小") != "擋" else set())
+        soft = ({"對比不足"} if _lv("L.對比") != "擋" else set()) | ({"手機字小"} if _lv("D1.手機字小") != "擋" else set())             | ({"詞中斷行", "斷行不佳", "標題過長", "間距過小", "圖塊重疊", "版面偏移", "畫面空白"} if _lv("L.版面細項") != "擋" else set())
         hard = {k: v for k, v in R["L"]["kinds"].items() if k not in soft}
         if hard:
             bad.append(f"L 版面問題 {sum(hard.values())} 個（{'、'.join(f'{k} {v}' for k, v in hard.items())}）")

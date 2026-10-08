@@ -2,7 +2,9 @@
    由 scripts/qa_layout.mjs 收集。檢查：①超出畫面 ②文字互相重疊 ③內容闖進字幕區 ④元素內容溢出
    ⑤物件標點（畫面文字不放「，；—」、不以「。」結尾）⑥文字貼邊（壓到圓角框／膠囊的弧線）——⑤⑥ 2026-10-05 從範本E 移植。
    ⑦文字對比（WCAG 2.x AA：一般字 4.5:1、大字 3:1）——2026-10-08 從範本E 移植。
-   ⑧手機字小（1080p 畫面上 <32px）⑨收集各格字色給色盲檢查（final_qa/colorblind_check.py）——2026-10-08。 */
+   ⑧手機字小（1080p 畫面上 <32px）⑨收集各格字色給色盲檢查（final_qa/colorblind_check.py）——2026-10-08。
+   ⑩範本E 版面細項（2026-10-08 取代範本E 驗收時移植，級別 L.版面細項＝提醒後擋）：詞中斷行、斷行不佳、標題過長（HTML 字，用 Range 量每一行）、
+   間距過小（兩段字 <12px）、圖塊重疊（卡片／膠囊／圖片互壓）、版面偏移——這三項只有根元素標 data-qa-strict 的卡片式範本才量（版面偏移另要 data-qa-centered）。 */
 import React, {useLayoutEffect, useState} from 'react';
 import {continueRender, delayRender, useCurrentFrame} from 'remotion';
 
@@ -87,6 +89,34 @@ const bgOf = (el: Element): number[] => {
   for (const c of stack.reverse()) base = base.map((x, i) => x * (1 - c[3]) + c[i] * c[3]);
   return base;
 };
+/** 一個 HTML 元素自己的文字排成幾行、每行多寬、幾個字（範本E lineBoxes 移植） */
+const lineBoxes = (el: Element) => {
+  const rows: {top: number; w: number; chars: number; last: string; first: string; zwAfter: boolean}[] = [];
+  for (const node of Array.from(el.childNodes)) {
+    if (node.nodeType !== 3) continue;
+    const txt = node.textContent ?? '';
+    for (let i = 0; i < txt.length; i++) {
+      if (!txt[i].trim()) continue;
+      const rg = document.createRange();
+      rg.setStart(node, i); rg.setEnd(node, i + 1);
+      const rect = rg.getBoundingClientRect();
+      if (!rect.width) continue;
+      let row = rows.find((x) => Math.abs(x.top - rect.top) < rect.height * 0.5);
+      if (!row) { row = {top: rect.top, w: 0, chars: 0, last: '', first: txt[i], zwAfter: false}; rows.push(row); }
+      row.w += rect.width; row.chars += 1; row.last = txt[i];
+      row.zwAfter = txt[i + 1] === '\u200b' || txt[i + 1] === ' ';
+    }
+  }
+  return rows.sort((a, b) => a.top - b.top);
+};
+/** 有實體外觀的圖塊：卡片、膠囊（有底色或框線）、圖片（範本E blockOf 移植） */
+const blockOf = (el: Element, W: number, H: number) => {
+  const r = el.getBoundingClientRect();
+  if (r.width < 24 || r.height < 24 || r.width * r.height > W * H * 0.5) return null;
+  const cs = getComputedStyle(el);
+  const solid = (rgba(cs.backgroundColor)?.[3] ?? 0) > 0.2 || parseFloat(cs.borderTopWidth) > 0;
+  return solid || el.tagName === 'IMG' ? r : null;
+};
 const EMOJI_ONLY = /^(?:[\p{Extended_Pictographic}️‍⃣\s]|[0-9#*](?=️?⃣))+$/u;
 
 const measure = (W: number, H: number) => {
@@ -127,13 +157,33 @@ const measure = (W: number, H: number) => {
       : (he.offsetHeight ? r.height / he.offsetHeight : 1);
     const reading = zoom >= 0.75;
     // ⑧ 手機字小：手機上整個畫面縮小，1080p 畫面上的字要比電腦版下限（24px）大（門檻先訂 32px，看實際影片再調）
-    if (reading && !EMOJI_ONLY.test(own) && font > 0 && font < 32 && visible(el) > 0.95)
+    const chrome = !!el.closest('[data-qa="chrome"]');      // 模擬的系統介面（工作列、時鐘）：不是內容，不量字級與間距
+    if (reading && !chrome && !EMOJI_ONLY.test(own) && font > 0 && font < 32 && visible(el) > 0.95)
       issues.push({kind: '手機字小', detail: `「${b.text}」${Math.round(font)}px < 32px`});
     if (!EMOJI_ONLY.test(own) && fg && fg[3] > 0.9 && visible(el) > 0.95) colors[fg.slice(0, 3).map(Math.round).join(',')] ??= b.text;
     if (reading && !EMOJI_ONLY.test(own) && fg && fg[3] > 0.9 && visible(el) > 0.95 && cs.backgroundClip !== 'text') {
       const cr = contrastRatio(fg, bgOf(el));
       const need = font >= 32 || (font >= 24 && parseInt(cs.fontWeight || '400', 10) >= 700) ? 3 : 4.5;
       if (cr < need) issues.push({kind: '對比不足', detail: `「${b.text}」${cr.toFixed(2)}:1 < ${need}:1（${Math.round(font)}px）`});
+    }
+    // ⑩ 換行（HTML 字才會自動換行；SVG 白板字一行一句，不會觸發）
+    if (!(el instanceof SVGElement)) {
+      const lines = lineBoxes(el);
+      if (lines.length >= 2) {
+        const last = lines[lines.length - 1], widest = Math.max(...lines.map((l) => l.w));
+        if (last.chars <= 3 && last.w < widest * 0.3)
+          issues.push({kind: '斷行不佳', detail: `「${b.text}」${lines.length} 行，最後一行只剩 ${last.chars} 字`});
+        for (let k = 0; k < lines.length - 1; k++) {
+          const endOk = /[，、：；。？！…」』）\s—\u200b]/u.test(lines[k].last) || lines[k].zwAfter;
+          const latin = /[A-Za-z0-9]/.test(lines[k + 1].first) && /[A-Za-z0-9]/.test(lines[k].last);
+          const punctHead = /^[，、：；。？！…・·」』）]/u.test(lines[k + 1].first);
+          if (!endOk || latin || punctHead) {
+            issues.push({kind: '詞中斷行', detail: `「${b.text}」第 ${k + 1} 行結尾「${lines[k].last}」→ 下一行「${lines[k + 1].first}」`});
+            break;
+          }
+        }
+        if (font >= 56 && lines.length > 2) issues.push({kind: '標題過長', detail: `「${b.text}」${Math.round(font)}px 標題排成 ${lines.length} 行`});
+      }
     }
   }
   for (let i = 0; i < leaves.length; i++) for (let j = i + 1; j < leaves.length; j++) {
@@ -145,6 +195,45 @@ const measure = (W: number, H: number) => {
     const contains = (p: Box, q: Box) => q.x >= p.x - 1 && q.y >= p.y - 1 && q.x + q.w <= p.x + p.w + 1 && q.y + q.h <= p.y + p.h + 1;
     if (small > 0 && inter / small > 0.18 && !contains(a, c) && !contains(c, a))
       issues.push({kind: '文字重疊', detail: `「${a.text}」×「${c.text}」 ${Math.round((inter / small) * 100)}%`});
+  }
+  // ⑩ 間距過小、圖塊重疊、版面偏移：範本E 卡片式排版的規則，只有根元素標 data-qa-strict 的範本才量
+  //   （2026-10-08 實測：範本A 像素遊戲風的方塊拼圖、HUD 標籤貼標題、範本H 視窗互疊都是設計，套用會出現上百處誤報）
+  const strict = !!document.querySelector('[data-qa-strict]');
+  const blockEl = (e: Element) => { let q: Element | null = e; while (q && getComputedStyle(q).display.startsWith('inline')) q = q.parentElement; return q; };
+  if (strict) for (let i = 0; i < leaves.length; i++) for (let j = i + 1; j < leaves.length; j++) {
+    const a = leaves[i], c = leaves[j];
+    if (a.el.contains(c.el) || c.el.contains(a.el) || blockEl(a.el) === blockEl(c.el)) continue;
+    if (a.el.closest('[data-qa="chrome"]') || c.el.closest('[data-qa="chrome"]')) continue;
+    if (a.el.parentElement === c.el.parentElement && a.el.tagName === 'SPAN' && c.el.tagName === 'SPAN') continue;
+    const ox = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x), oy = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
+    if (ox > 0 && oy > 0) continue;                              // 已經重疊，交給「文字重疊」
+    const gapY = Math.max(a.y, c.y) - Math.min(a.y + a.h, c.y + c.h), gapX = Math.max(a.x, c.x) - Math.min(a.x + a.w, c.x + c.w);
+    // SVG 字（白板）同一列左右相鄰＝同一個詞（為了畫上橫線，A'B'C'D 拆成一字一段），只看上下行的距離（2026-10-08 範本D 111 處誤報）
+    // SVG 字（白板）不量：位置是座標精確排的；左右相鄰是同一個詞拆開（畫上橫線用），上下緊貼是同一段的分行；真的撞到由「文字重疊」抓（2026-10-08）
+    if (a.el instanceof SVGElement && c.el instanceof SVGElement) continue;
+    const gap = ox > Math.min(a.w, c.w) * 0.3 ? gapY : oy > Math.min(a.h, c.h) * 0.3 ? gapX : 999;
+    if (gap >= 0 && gap < 12) issues.push({kind: '間距過小', detail: `「${a.text}」／「${c.text}」${Math.round(gap)}px < 12px`});
+  }
+  // SVG 分行（白板 wrap 依字數硬切）的詞中斷行：用位置猜「同一段」不可靠（清單會誤判、置中分行會漏），2026-10-08 試過三版後移除；
+  //   根源是 tpl/common.ts 的 wrap() 會切斷「L形」這類英數接中文的詞——待使用者決定是否修 wrap
+  // ⑩ 圖塊重疊：卡片、膠囊、圖片彼此不是父子關係卻壓在一起
+  const blocks: {el: Element; r: DOMRect}[] = [];
+  if (strict) for (const el of all) {
+    if (el.closest('[data-qa="caption"]') || el.closest('[data-qa="ignore"]') || visible(el) < 0.35) continue;
+    const r = blockOf(el, W, H);
+    if (r) blocks.push({el, r});
+  }
+  for (let i = 0; i < blocks.length; i++) for (let j = i + 1; j < blocks.length; j++) {
+    const a = blocks[i], c = blocks[j];
+    if (a.el.contains(c.el) || c.el.contains(a.el)) continue;
+    const ix = Math.min(a.r.right, c.r.right) - Math.max(a.r.left, c.r.left), iy = Math.min(a.r.bottom, c.r.bottom) - Math.max(a.r.top, c.r.top);
+    if (ix > 4 && iy > 4) issues.push({kind: '圖塊重疊', detail: `${(a.el.textContent ?? a.el.tagName).trim().slice(0, 12)} × ${(c.el.textContent ?? c.el.tagName).trim().slice(0, 12)} ${Math.round(ix)}×${Math.round(iy)}px`});
+  }
+  // ⑩ 版面偏移：只有宣告「置中排版」的範本（根元素 data-qa-centered）才量——範本D 卡諾圖刻意靠左、右邊寫結果
+  if (strict && document.querySelector('[data-qa-centered]') && leaves.length) {
+    const l = Math.min(...leaves.map((b) => b.x)), rr = Math.max(...leaves.map((b) => b.x + b.w));
+    const off = (l + rr) / 2 - W / 2;
+    if (Math.abs(off) > 60) issues.push({kind: '版面偏移', detail: `內容中心偏 ${Math.round(off)}px`});
   }
   if (cap) for (const b of leaves) {
     const hx = Math.min(b.x + b.w, cap.right) - Math.max(b.x, cap.left);

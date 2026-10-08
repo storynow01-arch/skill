@@ -130,3 +130,14 @@ python final_qa/final_qa.py out/成片.mp4 --lufs -14 \
 - E2：卡諾圖 2 講話時音效比旁白小 25 dB（中位數）；換場「咻」碰到旁白開頭結尾的 4 處只差 2～3 dB。只渲染音效要多 2 分 35 秒，所以預設不跑
 - F1：卡諾圖 1 vs 2 配色距離 0.09、網路概論 1-1（同範本D）0.15、範本H 0.78
 - 接片：重做卡諾圖 2（D＋H），長度 190.24 秒和原本手工接的一樣；AAC 編碼後峰值 −0.8 dBTP，加上量測後重轉聲音
+
+## 階段 3（2026-10-08）
+
+| 工具 | 什麼時候 | 代號（級別） | 做什麼 |
+|---|---|---|---|
+| `regress.py`＋`regress_stills.mjs` | 改了引擎（pre-push 自動） | F2.回歸（擋） | 範本 A／B／C／D／H 的示範分鏡不配音建置，固定 74 格和基準圖比（>8 色階的像素超過 0.5%）；`--accept` 更新基準。node_modules：`git config storynow.nodeModules <路徑>` |
+| `acceptance_e.py` | 驗收時 | — | 用範本E selftest 同一套做壞方法驗系列品檢（13/13 有效）；完整結果見 `references/replace-template-e.md` |
+| 版面探針 `QaProbe.tsx` | 渲染前 | L.版面細項（提醒後擋） | 範本E 移植：詞中斷行、斷行不佳、標題過長、畫面空白；間距過小、圖塊重疊、版面偏移只在 `data-qa-strict` 範本量 |
+
+- 回歸測試：同版本重跑差異 0；改墨色 16 格全抓到；門檻原本 24 色階，紙色差 15 抓不到 → 8
+- **final_qa F1／F2／F11 修正**：淺色範本的字幕閃爍與抖動原本永遠 0、單格突跳原本抓不到（細節見 `references/replace-template-e.md`）
