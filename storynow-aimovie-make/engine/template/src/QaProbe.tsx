@@ -1,6 +1,7 @@
 /* 品檢探針：只在 inputProps.qa=true 時掛上。字型載完後量測畫面上所有文字，輸出 QA:{json} 到瀏覽器 console，
    由 scripts/qa_layout.mjs 收集。檢查：①超出畫面 ②文字互相重疊 ③內容闖進字幕區 ④元素內容溢出
-   ⑤物件標點（畫面文字不放「，；—」、不以「。」結尾）⑥文字貼邊（壓到圓角框／膠囊的弧線）——⑤⑥ 2026-10-05 從範本E 移植。 */
+   ⑤物件標點（畫面文字不放「，；—」、不以「。」結尾）⑥文字貼邊（壓到圓角框／膠囊的弧線）——⑤⑥ 2026-10-05 從範本E 移植。
+   ⑦文字對比（WCAG 2.x AA：一般字 4.5:1、大字 3:1）——2026-10-08 從範本E 移植。 */
 import React, {useLayoutEffect, useState} from 'react';
 import {continueRender, delayRender, useCurrentFrame} from 'remotion';
 
@@ -49,6 +50,41 @@ const curveOverflow = (b: {x: number; y: number; w: number; h: number}, card: {r
   return Math.round(worst);
 };
 
+// ── 顏色與對比（2026-10-08 從範本E 移植）──
+const rgba = (c: string): number[] | null => {
+  const m = c.match(/rgba?\(([^)]+)\)/);
+  if (!m) return null;
+  const v = m[1].split(/[ ,/]+/).filter(Boolean).map((x) => parseFloat(x));
+  return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1];
+};
+const lum = ([r, g, b]: number[]) => {
+  const f = (x: number) => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+};
+const contrastRatio = (a: number[], b: number[]) => {
+  const [l1, l2] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (l1 + 0.05) / (l2 + 0.05);
+};
+/** 這段字底下實際看到的底色：文字中心點由上往下疊（elementsFromPoint），半透明就和下層混色。
+ *  完全找不到底色時當成黑色（Remotion 輸出 mp4 時透明＝黑）；範本E 原本寫死深灰 #181818，白底範本會誤判 */
+const bgOf = (el: Element): number[] => {
+  const r = el.getBoundingClientRect();
+  const stack: number[][] = [];
+  for (const e of document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2)) {
+    if (e !== el && el.contains(e)) continue;
+    const ecs = getComputedStyle(e);
+    // SVG 圖形（標籤、便利貼、手繪框）的底色在 fill，不在 background（2026-10-08 範本D「小測驗」標籤誤判）
+    const shape = e instanceof SVGGeometryElement && !(e instanceof SVGTextContentElement);
+    const c = rgba(shape ? ecs.fill : ecs.backgroundColor);
+    if (c && shape) c[3] *= parseFloat(ecs.fillOpacity || '1') * parseFloat(ecs.opacity || '1');
+    if (c && c[3] > 0) { stack.push(c); if (c[3] >= 0.99) break; }
+  }
+  let base = [0, 0, 0];
+  for (const c of stack.reverse()) base = base.map((x, i) => x * (1 - c[3]) + c[i] * c[3]);
+  return base;
+};
+const EMOJI_ONLY = /^(?:[\p{Extended_Pictographic}️‍⃣\s]|[0-9#*](?=️?⃣))+$/u;
+
 const measure = (W: number, H: number) => {
   const issues: {kind: string; detail: string}[] = [];
   const leaves: Box[] = [];
@@ -75,6 +111,16 @@ const measure = (W: number, H: number) => {
     const card = roundedCard(el);
     const over = card ? curveOverflow(b, card) : 0;
     if (over > 0) issues.push({kind: '文字貼邊', detail: `「${b.text}」超出圓角安全範圍 ${over}px`});
+    // ⑦ 文字對比：只量完全不透明（已出現、焦點中）的字；淡化中的非焦點項本來就是刻意壓暗。SVG 文字的字色在 fill
+    const cs = getComputedStyle(el);
+    const fg = rgba(el instanceof SVGElement ? cs.fill : cs.color);
+    if (!EMOJI_ONLY.test(own) && fg && fg[3] > 0.9 && visible(el) > 0.95 && cs.backgroundClip !== 'text') {
+      const cr = contrastRatio(fg, bgOf(el));
+      const ratio = he.offsetHeight ? r.height / he.offsetHeight : 1;
+      const font = parseFloat(cs.fontSize || '0') * ratio;
+      const need = font >= 32 || (font >= 24 && parseInt(cs.fontWeight || '400', 10) >= 700) ? 3 : 4.5;
+      if (cr < need) issues.push({kind: '對比不足', detail: `「${b.text}」${cr.toFixed(2)}:1 < ${need}:1（${Math.round(font)}px）`});
+    }
   }
   for (let i = 0; i < leaves.length; i++) for (let j = i + 1; j < leaves.length; j++) {
     const a = leaves[i], c = leaves[j];

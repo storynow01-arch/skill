@@ -239,7 +239,15 @@ def main():
         if G["G5"]["count"]: bad.append(f"G5 唸法文字殘留 {G['G5']['count']} 頁")
         if G["G6"]["count"]: bad.append(f"G6 斷句不佳 {G['G6']['count']} 頁")
     if R.get("L") and R["L"]["issues"]:
-        bad.append(f"L 版面問題 {R['L']['issues']} 個（{'、'.join(f'{k} {v}' for k, v in R['L']['kinds'].items())}）")
+        # 級別照 品檢分級.json：文字對比目前是「提醒後擋」未升級 → 只列出，不算未通過（2026-10-08）
+        import sys as _sys; _sys.path.insert(0, str(Path(__file__).parent))
+        from qa_record import level as _lv
+        soft = {"對比不足"} if _lv("L.對比") != "擋" else set()
+        hard = {k: v for k, v in R["L"]["kinds"].items() if k not in soft}
+        if hard:
+            bad.append(f"L 版面問題 {sum(hard.values())} 個（{'、'.join(f'{k} {v}' for k, v in hard.items())}）")
+        if R["L"]["kinds"].keys() & soft:
+            R["L"]["提醒"] = {k: R["L"]["kinds"][k] for k in soft if k in R["L"]["kinds"]}
     md = [f"# 最終品檢：{mp4.name}", "", f"- 長度 {R['F8']['minutes']} 分、{R['F5']['size']} {R['F5']['fps']}fps、"
           f"響度 {I} LUFS、峰值 {tp} dBTP、最長靜止 {R['F4']['max_still']}s", "",
           "## 結果", ""] + ([f"- ✗ {b}" for b in bad] or ["- ✓ 全部通過"])
@@ -258,6 +266,8 @@ def main():
                f"- 字幕＝旁白原文：{'是' if G['G3']['match'] else '否'}；不同步 {str(G['G4']['count']) + ' 頁' if G['G4'].get('measured') else '無法量（spec.json 沒有旁白時間）'}；唸法殘留 {G['G5']['count']}；斷句不佳 {G['G6']['count']}"]
     if R.get("L"):
         md += ["", "## 版面", "", f"- {R['L']['frames']} 格量測，{R['L']['issues']} 個問題"]
+        if R["L"].get("提醒"):
+            md += [f"- ⚠ 提醒（不算未通過，見 品檢分級.json）：" + "、".join(f"{k} {v}" for k, v in R["L"]["提醒"].items())]
     sheet = out / "sheet.jpg"
     contact_sheet(mp4, dur, sheet)
     R["result"] = "通過" if not bad else bad

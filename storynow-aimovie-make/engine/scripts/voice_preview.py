@@ -19,6 +19,7 @@
 金鑰：環境變數 GEMINI_API_KEY 或專案 .env.local。設計的聲音存在 Gemini 專案裡一年（上限 200 個）。
 """
 from __future__ import annotations
+import sys as _s; _s.stdout.reconfigure(encoding="utf-8", errors="replace")   # cp950 主控台印 ⚠ 會當掉（2026-10-08）
 import argparse, base64, html, json, os, re, subprocess, sys
 from pathlib import Path
 

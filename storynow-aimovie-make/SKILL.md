@@ -98,6 +98,9 @@ final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用
                    term_check.py＋用詞規範.json＝第⑤步文稿檢查（第⓪關：配音前檢查專業用詞與寫法）；
                    review_prep.py＋review_report.py＝逐字審稿、storyboard_page.py＝分鏡預覽頁、listen_crosscheck.py＋唸法接受清單.json＝兩個 AI 交叉聽、
                    pause_check.py＝句內停頓（2026-10-06 從範本E 移植，所有範本共用）
+                   系列教學影片品檢（2026-10-08）：code_check.py（A1 程式碼執行）、answer_check.py（A2 歷屆答案）、math_check.py（A3 計算與卡諾圖）、
+                   read_list.py（唸法清單）、voice_check.py（B1 聲音一致性）、seam_check.py（合併長片的接縫與章節）、selftest.py（品檢自我測試）；
+                   級別在 品檢分級.json，qa_record.py＋qa_summary.py 產出品檢總表（含耗時）
 ```
 
 ## 四項增強（2026-10-01）
@@ -115,6 +118,7 @@ final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用
 
 ## 硬規則
 - **在這個 skill 倉庫第一次 push 前，先確認 push 前檢查已啟用**：`git config --get core.hooksPath` 不是 `.githooks` 就執行 `git config core.hooksPath .githooks`（git 不會自動啟用倉庫帶來的 hook，每個 clone 要啟用一次；啟用後每次 push 都會自動跑範本檢查，沒過推不上去）。
+- **改了任何品檢規則（final_qa/、品檢分級.json、build.py／make_video.py 的品檢部分）就跑 `python final_qa/selftest.py`**，27 種故意做壞的材料都要被抓到才算數；pre-push 會自動跑快速版（2026-10-08）。
 - **push 這個 skill 之前一定跑 `python templates/check_templates.py`**，有 ✗ 就先補齊，不推（規格：[`templates/範本規格.md`](templates/範本規格.md)）。自帶產線型範本（E、F、G、資訊科範本1）的流程受保護：只補 README 段落與登記，不為了規格改它的流程、引擎、規範；範本E 只能在本機課程專案改再匯出。
 - **文稿寫專業寫法，唸法交給程式**：網址寫 mail.google.com（不寫「mail 點 google 點 com」）、年份與百分比用阿拉伯數字；配音前跑 `final_qa/term_check.py`，必改 0 才配音。
 - **配音選擇規則（2026-10-06，外層工作流與所有範本一致）**：專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS（自動最新正式版），沒有就用 edge-tts。只看這個專案的 `.env.local`，不讀系統環境變數、不借上層資料夾別的專案的金鑰。用 Gemini 時 `model="auto"` 自動挑最新版，不要寫死；金鑰不可進 git。Gemini 音檔一律過**壞音檔關卡**（`gemini_tts.bad_audio`：長時間無聲、語速異常 → 不進快取、重跑重新要）。

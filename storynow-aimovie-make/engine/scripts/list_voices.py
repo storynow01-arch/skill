@@ -10,6 +10,7 @@
 不列 Google 內建的兩千多個 prebuilt 聲音（沒有台灣華語原生聲音，教學影片用不到）。
 """
 from __future__ import annotations
+import sys as _s; _s.stdout.reconfigure(encoding="utf-8", errors="replace")   # cp950 主控台印 ⚠ 會當掉（2026-10-08）
 import html, json, sys
 from pathlib import Path
 

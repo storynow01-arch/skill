@@ -16,6 +16,7 @@
   provider = "edge"／"azure" 可指定；Gemini 音檔會過壞音檔關卡（長時間無聲、語速異常 → 不進快取、停下來重跑）。
 """
 import argparse, asyncio, hashlib, json, os, re, shutil, subprocess, sys, wave
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')   # cp950 主控台印 ⚠ 會當掉（2026-10-08，同 qa.py）
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -46,6 +47,7 @@ def _gemini_rules():
 
 GEMINI_RULES = _gemini_rules()
 SUBJECTS = os.path.join(HERE, '..', '..', '科目包')
+VOICE_USED = {}     # (provider, model, voice, style, rate, pitch) → 句數
 
 
 def load_subject_pron(subject):
@@ -200,6 +202,9 @@ def synth_line(text, cache, voice, proj='.'):
     provider = _provider(voice)
     say = voice.get('_say') or to_speech(text, provider)
     voice = _prep(voice, proj)
+    used = (provider, voice.get('_model', ''), voice.get('_gid') or voice.get('name', ''), voice.get('style', ''),
+            voice.get('rate', ''), voice.get('pitch', ''))
+    VOICE_USED[used] = VOICE_USED.get(used, 0) + 1     # B1 聲音一致性：記下實際用的供應者／模型／聲音（2026-10-08）
     h = hashlib.md5(_tag(say, voice, provider).encode()).hexdigest()[:12]
     wav = os.path.join(cache, f'{h}.wav')
     if not os.path.exists(wav):
@@ -697,6 +702,10 @@ def main():
             if bd.get(k2, dflt) and os.path.exists(f2): brand[k2] = f2
         print('  品牌素材：', '、'.join(k2 for k2 in ('cover', 'intro', 'logo') if k2 in brand) or '（資料夾裡找不到 cover／intro／logo）')
 
+    # 整支成功才覆寫（2026-10-08 從範本E 移植）：旁白、配樂、spec 先寫成 .new_*，全部完成才一起換上；
+    # 中途失敗時舊的三個檔案都不動，不會出現「新旁白配舊時間軸」
+    staged = {}
+    stage = lambda name: staged.setdefault(name, os.path.join(pub, '.new_' + name))
     voice_file = None
     if voice_parts:
         v = np.zeros(int((total + 1) * SR), np.float32)
@@ -704,14 +713,14 @@ def main():
             i0 = int(st * SR); v[i0:i0 + len(x)] += x
         v = v[: int(total * SR)]
         v = voice_chain(v)
-        with wave.open(os.path.join(pub, 'voice.wav'), 'wb') as w:
+        with wave.open(stage('voice.wav'), 'wb') as w:
             w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((v * 32767).astype(np.int16).tobytes())
         voice_file = 'voice.wav'
 
     music_file = None
     if not a.no_music:
         cmd = [sys.executable, os.path.join(HERE, 'make_music.py'), '--style', style, '--duration', f'{total:.3f}',
-               '--out', os.path.join(pub, 'music.wav'), '--bpm', str(bpm)]
+               '--out', stage('music.wav'), '--bpm', str(bpm)]
         mus = sb.get('music') or {}          # 範本可覆寫曲風：{"genre": "phonk", "bpm": 145, "key": "Em"}
         if mus.get('genre'): cmd += ['--genre', mus['genre']]
         if mus.get('key'): cmd += ['--key', mus['key']]
@@ -722,7 +731,7 @@ def main():
         subprocess.check_call(cmd)
         music_file = 'music.wav'
         if voice_file and sb.get('sidechain', True):   # 用旁白包絡做側鏈閃避，取代逐格音量
-            sidechain_duck(os.path.join(pub, 'music.wav'), v, os.path.join(pub, 'music_ducked.wav'), sb.get('duckDepth', 0.3))
+            sidechain_duck(staged['music.wav'], v, stage('music_ducked.wav'), sb.get('duckDepth', 0.3))
             music_file = 'music_ducked.wav'
             duck = []
 
@@ -732,7 +741,15 @@ def main():
             'duck': duck, 'impacts': [round(x * fps) for x in impacts], 'captions': caps if sb.get('captions', True) else [],
             'scenes': scenes, 'voiceLines': vlines, 'bpm': bpm, 'narrator': sb.get('narrator'), 'brand': brand}
     os.makedirs(os.path.join(proj, 'src', 'data'), exist_ok=True)
-    json.dump(spec, open(os.path.join(proj, 'src', 'data', 'spec.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    spec_path = os.path.join(proj, 'src', 'data', 'spec.json')
+    json.dump(spec, open(spec_path + '.new', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    for name, tmp in staged.items():
+        os.replace(tmp, os.path.join(pub, name))
+    os.replace(spec_path + '.new', spec_path)
+    os.makedirs(os.path.join(proj, 'qa'), exist_ok=True)
+    json.dump({'voices': [dict(zip(('provider', 'model', 'voice', 'style', 'rate', 'pitch'), k), lines=n) for k, n in VOICE_USED.items()],
+               'voice_wav': os.path.join('public', voice_file) if voice_file else None},
+              open(os.path.join(proj, 'qa', 'voice_meta.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     if missing:
         print('\n⚠ 缺照片（這些位置會自動改用插畫，影片照常產出）：')
         for m in missing: print('   ', m)

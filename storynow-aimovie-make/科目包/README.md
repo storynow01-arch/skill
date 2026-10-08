@@ -8,6 +8,7 @@ skill 本體（SKILL.md、engine、templates）只放**所有科目都適用的�
 |---|---|---|
 | `README.md` | 這科的教法、專用場景怎麼用、踩過的坑、做過的影片 | 做這科影片前 Claude 先讀 |
 | `念法.json` | 這科專用的 edge-tts 念法（`"寫法": "念法"`） | `build.py`：storyboard 寫 `"subject": "<科目>"` 時併入全域詞典 |
+| `歷屆答案.json` | 統測官方參考答案（`{"114": {"專二": {"23": "C"}}}`） | `final_qa/answer_check.py`：場景寫 `"exam": "114-專二-23"` 就比對（A2，擋） |
 
 ## 怎麼用
 

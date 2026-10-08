@@ -1,5 +1,7 @@
 """一行做出範本影片：同步引擎 → 檢查圖示 → ⓪文稿檢查 → 唸法標準題 → 建置（旁白、配樂、字幕；Gemini 過壞音檔關卡）
 → 文不對題檢查 → 範本音效 → AI 耳朵聽檢 → 兩個 AI 交叉聽 → 句內停頓 → 版面＋旁白品檢 → 算圖 → 響度 → 成片品檢。
+2026-10-08 加上：A1 程式碼執行、A2 答案核對、A3 計算與化簡、唸法清單（配音前）→ B1 聲音一致性（配音後）→ 最終品檢（渲染後自動跑）
+→ qa/品檢紀錄/品檢總表.md（每項結果、例外、每一步耗時）。級別看 final_qa/品檢分級.json。
 
 用法（在專案資料夾裡執行；專案由 new_project.py 建立，node_modules 已就緒）：
     python <skill>/engine/scripts/make_video.py storyboard.json --template B   # A／B／C／D／H
@@ -12,7 +14,8 @@
 配音選擇規則：專案自己的 .env.local 有 GEMINI_API_KEY 才用 Gemini Flash TTS，否則 edge-tts。
 storyboard 沒寫 music 時，自動用範本預設配樂。
 """
-import argparse, json, os, re, shutil, subprocess, sys
+import sys as _s; _s.stdout.reconfigure(encoding="utf-8", errors="replace")   # cp950 主控台印 ⚠ 會當掉（2026-10-08）
+import argparse, json, os, re, shutil, subprocess, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.abspath(os.path.join(HERE, '..', '..'))
@@ -32,6 +35,48 @@ def sh(cmd, check=True):
     if check and r.returncode != 0:
         raise SystemExit(f'失敗（結束碼 {r.returncode}）：{cmd}')
     return r.returncode
+
+
+REC = os.path.join('qa', '品檢紀錄')       # 每項品檢的紀錄＋_耗時.json（2026-10-08）
+STEPS = []
+
+
+def timed(step, cmd, check=True):
+    """跑一步並記下耗時（品檢總表的「製作各步驟耗時」）"""
+    t0 = time.time()
+    try:
+        return sh(cmd, check=check)
+    finally:
+        STEPS.append({'step': step, 'seconds': round(time.time() - t0, 1)})
+
+
+def write_summary(py, title):
+    os.makedirs(REC, exist_ok=True)
+    json.dump(STEPS, open(os.path.join(REC, '_耗時.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    sh([py, os.path.join(SKILL, 'final_qa', 'qa_summary.py'), REC, '--title', title], check=False)
+
+
+def find_up(start, rel, levels=4):
+    """從 storyboard 所在資料夾往上找（系列的 qa_reference/voice_ref.json 放在科目資料夾）"""
+    d = start
+    for _ in range(levels):
+        p = os.path.join(d, rel)
+        if os.path.exists(p): return p
+        d = os.path.dirname(d)
+    return None
+
+
+def record_final_qa(final, sec):
+    """最終品檢（final_qa.py 自己的報告）轉成品檢紀錄格式，進品檢總表"""
+    f = os.path.join(os.path.splitext(final)[0] + '_品檢', 'final_qa.json')
+    res = json.load(open(f, encoding='utf-8')).get('result') if os.path.exists(f) else ['找不到 final_qa.json']
+    bad = [] if res == '通過' else (res if isinstance(res, list) else [str(res)])
+    os.makedirs(REC, exist_ok=True)
+    json.dump({'name': 'F 最終品檢', 'seconds': sec, 'result': '擋' if bad else '通過',
+               'block': [{'code': 'F.最終品檢', 'where': '成片', 'msg': str(b), 'level': '擋'} for b in bad],
+               'warn': [], 'exempt': [], 'notes': [f'報告：{os.path.dirname(f)}']},
+              open(os.path.join(REC, 'F 最終品檢.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    return bool(bad)
 
 
 def sync_engine():
@@ -190,43 +235,61 @@ def main():
     check_icons(sb, T)
     py = sys.executable
     os.makedirs('qa', exist_ok=True)
+    shutil.rmtree(REC, ignore_errors=True)          # 每次重跑都是新的品檢紀錄，不混到上一次的
+    title = sb.get('title') or a.name or os.path.basename(os.path.abspath('.'))
     if not a.no_qa:   # ⓪ 文稿檢查（2026-10-05）：網址／協定／產品名寫法、年份百分比、大陸用語、唸法寫進稿子
-        rc = sh([py, os.path.join(SKILL, 'final_qa', 'term_check.py'), a.storyboard, '--out', 'qa/文稿檢查'], check=False)
+        rc = timed('⓪ 文稿檢查', [py, os.path.join(SKILL, 'final_qa', 'term_check.py'), a.storyboard, '--out', 'qa/文稿檢查'], check=False)
         if rc != 0 and not a.force:
             raise SystemExit('文稿檢查有「必改」，見 qa/文稿檢查/文稿檢查報告.html（改完重跑，或加 --force）')
+        # 內容正確（2026-10-08）：程式碼實際執行、歷屆答案、計算與化簡；擋下就不配音（改稿最便宜）
+        bad = [step for step, script in (('A1 程式碼執行', 'code_check.py'), ('A2 答案核對', 'answer_check.py'), ('A3 計算與化簡', 'math_check.py'))
+               if timed(step, [py, os.path.join(SKILL, 'final_qa', script), a.storyboard, '--out', REC], check=False)]
+        timed('唸法清單', [py, os.path.join(SKILL, 'final_qa', 'read_list.py'), a.storyboard, '--out', 'qa/唸法清單', '--rec', REC], check=False)
+        if bad and not a.force:
+            write_summary(py, title)
+            raise SystemExit(f'內容正確性沒過：{"、".join(bad)}（見上方 ✗ 與 qa/品檢紀錄/品檢總表.md；刻意的例外在場景寫 qaExempt，或加 --force）')
     if a.preview:     # 分鏡預覽：暫配 → 建置 → 截圖 → 預覽頁（2026-10-06）
         os.environ['TTS_FORCE_EDGE'] = '1'
-        sh([py, os.path.join(HERE, 'build.py'), build_sb])
-        sh(['node', os.path.join(HERE, 'preview_stills.mjs'), f'Template{T}', 'qa/分鏡預覽'])
+        timed('建置（edge 暫配）', [py, os.path.join(HERE, 'build.py'), build_sb])
+        timed('分鏡截圖', ['node', os.path.join(HERE, 'preview_stills.mjs'), f'Template{T}', 'qa/分鏡預覽'])
         sh([py, os.path.join(SKILL, 'final_qa', 'storyboard_page.py'), 'qa/分鏡預覽'])
+        write_summary(py, title + '（分鏡預覽）')
         print()
         print('⛔ 請使用者看 qa/分鏡預覽/分鏡預覽.html（畫面文字、圖示、比喻、順序），確認後再拿掉 --preview 正式配音出片')
         return
     if not a.no_qa:   # 唸法標準題（2026-10-06）：Gemini 規則或專案 唸法標準題.json 沒全過就不配音
-        if sh([py, os.path.join(HERE, 'pron_test.py')], check=False) != 0 and not a.force:
+        if timed('唸法標準題', [py, os.path.join(HERE, 'pron_test.py')], check=False) != 0 and not a.force:
             raise SystemExit('唸法標準題沒有全過（見上方 ✗），修好唸法規則再配音（或加 --force）')
-    sh([py, os.path.join(HERE, 'build.py'), build_sb])
+    timed('建置（配音、配樂、時間軸）', [py, os.path.join(HERE, 'build.py'), build_sb])
+    if not a.no_qa:   # B1 聲音一致性（2026-10-08）：和系列樣片比模型版本（擋）與聲紋（提醒）；系列資料夾沒有樣片基準就跳過
+        ref = find_up(os.path.dirname(os.path.abspath(a.storyboard)), os.path.join('qa_reference', 'voice_ref.json'))
+        if timed('B1 聲音一致性', [py, os.path.join(SKILL, 'final_qa', 'voice_check.py'), '.', *(['--ref', ref] if ref else []), '--out', REC],
+                 check=False) and not a.force:
+            write_summary(py, title)
+            raise SystemExit('配音的模型或聲音和系列樣片不同（見上方 ✗）：確認是 Google 換了模型還是設定改了，處理後重跑，或加 --force')
     tc = json.load(open('qa/text_check.json', encoding='utf-8')) if os.path.exists('qa/text_check.json') else {}
     if tc.get('文不對題') and not a.no_qa and not a.force:
+        write_summary(py, title)
         raise SystemExit('物件文字跟旁白對不上（文不對題）：' + '；'.join(tc['文不對題'])
                          + '\n→ 把物件文字改成旁白裡的說法；刻意不唸的場景在 storyboard 加 "allowStatic": true（或加 --force）')
     sh([py, os.path.join(HERE, 'tpl_sfx.py'), T])
     os.makedirs('out', exist_ok=True); os.makedirs('qa', exist_ok=True)
     comp = f'Template{T}'
     if not a.no_qa:   # 配音後 AI 耳朵聽檢：只提醒，不擋（AI 標出的要人工聽過才算）
-        if sh([py, os.path.join(HERE, 'ai_listen.py'), '--out', 'qa/聽檢'], check=False) == 2 and os.path.exists('qa/聽檢/聽檢.json'):
+        if timed('AI 耳朵聽檢', [py, os.path.join(HERE, 'ai_listen.py'), '--out', 'qa/聽檢'], check=False) == 2 and os.path.exists('qa/聽檢/聽檢.json'):
             # 兩個 AI 交叉聽：whisper 再聽一次，分確定／待聽／可接受／誤報，只有前兩種要人聽
-            sh([py, os.path.join(SKILL, 'final_qa', 'listen_crosscheck.py'), 'qa/聽檢/聽檢.json'], check=False)
+            timed('兩個 AI 交叉聽', [py, os.path.join(SKILL, 'final_qa', 'listen_crosscheck.py'), 'qa/聽檢/聽檢.json'], check=False)
             print('⚠ 請聽 qa/聽檢/交叉聽.html 的「確定／待聽」（確認唸錯就改稿或唸法規則後重跑）')
-        sh([py, os.path.join(SKILL, 'final_qa', 'pause_check.py')], check=False)   # 句內長停頓（只提醒）
+        timed('句內停頓', [py, os.path.join(SKILL, 'final_qa', 'pause_check.py')], check=False)   # 句內長停頓（只提醒）
     if not a.no_qa:
-        rc = sh([py, os.path.join(HERE, 'qa.py'), '--comp', comp], check=False)
+        rc = timed('版面＋旁白品檢', [py, os.path.join(HERE, 'qa.py'), '--comp', comp], check=False)
         shutil.copy('qa_report.md', f'qa/pre_{T}.md')
         if rc != 0 and not a.force:
+            write_summary(py, title)
             raise SystemExit(f'品檢有必修項目，見 qa/pre_{T}.md（修正後重跑，或加 --force）')
     name = a.name or os.path.splitext(os.path.basename(os.path.abspath(a.storyboard)))[0]
     raw, final = f'out/_raw_{T}.mp4', f'out/{name}_範本{T}_{info["name"]}.mp4'
-    sh(['npx', 'remotion', 'render', 'src/index.ts', comp, raw, '--concurrency=4', '--crf=18', '--audio-codec=aac', '--audio-bitrate=192k', '--log=error'] if os.name != 'nt'
+    timed('算圖', ['npx', 'remotion', 'render', 'src/index.ts', comp, raw, '--concurrency=4', '--crf=18', '--audio-codec=aac', '--audio-bitrate=192k', '--log=error'] if os.name != 'nt'
        else f'npx remotion render src/index.ts {comp} {raw} --concurrency=4 --crf=18 --audio-codec=aac --audio-bitrate=192k --log=error')
     spec = json.load(open(os.path.join('src', 'data', 'spec.json'), encoding='utf-8'))
     joined = f'out/_joined_{T}.mp4'
@@ -246,9 +309,22 @@ def main():
     if lead:
         json.dump({'lead': lead}, open(os.path.join('qa', 'brand_lead.json'), 'w', encoding='utf-8'))
     if not a.no_qa:
-        sh([py, os.path.join(HERE, 'qa.py'), '--comp', comp, '--skip-layout', '--skip-asr', '--video', final, '--lead', f'{lead:.3f}'], check=False)
+        timed('成片品檢', [py, os.path.join(HERE, 'qa.py'), '--comp', comp, '--skip-layout', '--skip-asr', '--video', final, '--lead', f'{lead:.3f}'], check=False)
         shutil.copy('qa_report.md', f'qa/post_{T}.md')
         if os.path.exists('qa_contact.jpg'): shutil.copy('qa_contact.jpg', f'qa/contact_{T}.jpg')
+        # 最終品檢（2026-10-08 起自動跑，以前要手動）：對要交出去的那支 mp4 再量一次
+        open('qa/旁白全文.txt', 'w', encoding='utf-8').write('\n'.join(x['text'] for x in spec.get('voiceLines', [])))
+        fq = [py, os.path.join(SKILL, 'final_qa', 'final_qa.py'), final, '--lufs', '-14', '--spec', os.path.join('src', 'data', 'spec.json'),
+              '--text', 'qa/旁白全文.txt']
+        if os.path.exists('qa_layout.json'): fq += ['--layout', 'qa_layout.json']
+        if lead: fq += ['--jump-skip', f'0-{lead:.1f}', '--silence-ok', f'{COVER_SEC + 0.5:.1f}']
+        if T in ('A', 'C'): fq.append('--jumps-by-design')      # 像素逐 2 格、硬切砸字是招牌設計
+        t0 = time.time()
+        timed('最終品檢', fq, check=False)
+        final_bad = record_final_qa(final, round(time.time() - t0, 1))
+        write_summary(py, title)
+        if final_bad:
+            print(f'\n✗ 最終品檢沒過（見 {os.path.splitext(final)[0]}_品檢/final_qa.html）：修好重跑，沒過不交付')
     print(f'\n✅ 成片：{final}')
     if lead:
         print(f'   （前 {lead:.1f} 秒是封面＋片頭；最終品檢請加 --jump-skip 0-{lead:.1f} --silence-ok {COVER_SEC + 0.5:.1f}）')

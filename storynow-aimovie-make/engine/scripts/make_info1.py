@@ -11,6 +11,7 @@
 配音規則：專案自己的 .env.local 有 GEMINI_API_KEY 才用 Gemini，否則 edge-tts。
 宣傳片快取在 <skill>/templates/資訊科範本1/cache/（不進 git）；沒有快取會自動在 ../trailer 重算一次再存回快取。
 """
+import sys as _s; _s.stdout.reconfigure(encoding="utf-8", errors="replace")   # cp950 主控台印 ⚠ 會當掉（2026-10-08）
 import argparse, os, shutil, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))

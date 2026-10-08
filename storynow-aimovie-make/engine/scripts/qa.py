@@ -23,6 +23,11 @@ def run(cmd, timeout=1800, **kw):
 
 
 # ───────────── 1. 版面 ─────────────
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'final_qa'))
+from qa_record import level as _qa_level
+L_CONTRAST = _qa_level('L.對比')     # 文字對比的級別看 final_qa/品檢分級.json（2026-10-08）
+
+
 def layout_check(spec, comp):
     frames = []
     for s in spec['scenes']:
@@ -41,7 +46,8 @@ def layout_check(spec, comp):
         f = item.get('frame', -1)
         sid = next((s['id'] for s in spec['scenes'] if s['from'] <= f < s['from'] + s['dur']), '?')
         for iss in item.get('issues', []):
-            lvl = '必修' if iss['kind'] in ('超出畫面', '闖進字幕區', '文字超出圖形', '壓到 LOGO') else '建議'
+            must = ('超出畫面', '闖進字幕區', '文字超出圖形', '壓到 LOGO') + (('對比不足',) if L_CONTRAST == '擋' else ())
+            lvl = '必修' if iss['kind'] in must else '建議'
             out.append((lvl, f'版面 {sid} @{f / spec["fps"]:.1f}s', f"{iss['kind']}：{iss['detail']}"))
     # 同一個問題在三個取樣點重複出現時只留一次
     seen, uniq = set(), []

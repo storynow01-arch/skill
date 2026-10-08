@@ -8,3 +8,9 @@ PY=$(command -v py || command -v python3 || command -v python)
 [ -n "$PY" ] || { echo "pre-push：找不到 Python，無法跑範本檢查"; exit 1; }
 echo "pre-push：範本規格檢查中…"
 PYTHONIOENCODING=utf-8 "$PY" "$CHK" || { echo; echo "✗ 範本規格沒過，push 已取消（照 storynow-aimovie-make/templates/範本規格.md 補齊）"; exit 1; }
+# 品檢自我測試（2026-10-08）：故意做壞的材料每一種都要被抓到；快速版不含影片合併（完整版：python final_qa/selftest.py）
+ST="$ROOT/storynow-aimovie-make/final_qa/selftest.py"
+if [ -f "$ST" ]; then
+  echo "pre-push：品檢自我測試（快速版）…"
+  PYTHONIOENCODING=utf-8 "$PY" "$ST" --fast || { echo; echo "✗ 品檢自我測試沒過，push 已取消"; exit 1; }
+fi

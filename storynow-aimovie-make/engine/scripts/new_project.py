@@ -3,6 +3,7 @@
 用法：
     python new_project.py <目標資料夾> [--example teach|promo] [--style blueprint] [--no-install]
 """
+import sys as _s; _s.stdout.reconfigure(encoding="utf-8", errors="replace")   # cp950 主控台印 ⚠ 會當掉（2026-10-08）
 import argparse, json, os, shutil, subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
