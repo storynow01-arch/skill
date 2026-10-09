@@ -18,16 +18,9 @@ def main():
     ids = [a for a in sys.argv[1:] if a.startswith("voice_")]
     if not ids:
         raise SystemExit(__doc__)
-    names = {}
-    tok = None
-    while True:
-        r = G.call("GET", "voices", query="pageSize=1000" + (f"&pageToken={tok}" if tok else ""))
-        for v in r.get("voices", []):
-            vid = v.get("name", "").split("/")[-1]
-            names[vid] = v.get("displayName") or v.get("description", "")[:40]
-        tok = r.get("nextPageToken")
-        if not tok:
-            break
+    from list_voices import fetch          # 和 list_voices.py 同一套讀法（欄位是 id、display_name）
+    G.api_key(Path.cwd())
+    names = {v["id"]: v.get("display_name") or (v.get("prompted") or {}).get("input", "")[:40] for v in fetch()}
     print("要永久刪除的聲音：")
     for i in ids:
         print(f"  {i}  {names.get(i, '（這個專案裡找不到）')}")
