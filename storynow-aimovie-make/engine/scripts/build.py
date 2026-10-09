@@ -798,7 +798,7 @@ def main():
             'hud': sb.get('hud'), 'music': music_file, 'voice': voice_file,
             'musicVolume': sb.get('musicVolume', 0.5 if mode == 'teach' else 1.0), 'duckTo': sb.get('duckTo', 0.14),
             'duck': duck, 'impacts': [round(x * fps) for x in impacts], 'captions': caps if sb.get('captions', True) else [],
-            'scenes': scenes, 'voiceLines': vlines, 'bpm': bpm, 'narrator': sb.get('narrator'), 'brand': brand, 'pen': sb.get('pen')}
+            'scenes': scenes, 'voiceLines': vlines, 'bpm': bpm, 'narrator': sb.get('narrator'), 'brand': brand, 'pen': sb.get('pen'), 'outro': sb.get('outro')}
     os.makedirs(os.path.join(proj, 'src', 'data'), exist_ok=True)
     spec_path = os.path.join(proj, 'src', 'data', 'spec.json')
     json.dump(spec, open(spec_path + '.new', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)

@@ -579,6 +579,7 @@ const FxSfx: React.FC<{spec: TplSpec}> = ({spec}) => (
 /* ---------- 鏡頭 ---------- */
 /** 片尾拉遠的起點：最後一句字幕結束後（最晚 = 片尾前 80 格） */
 const outroStart = (spec: TplSpec) => {
+  if (spec.outro === false) return spec.totalFrames + 999;   // storyboard "outro": false＝片尾不拉遠看全景（2026-10-09 系列教學：正式片不需要）
   const last = spec.captions.length ? spec.captions[spec.captions.length - 1].to + 6 : 0;
   return Math.min(spec.totalFrames - 40, Math.max(spec.totalFrames - 80, last));
 };

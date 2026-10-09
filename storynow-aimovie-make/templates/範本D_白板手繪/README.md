@@ -56,7 +56,7 @@ and high-impact, and the audio should be seamlessly programmed in with precise, 
 | 字幕 | 白字黑邊粗體、畫面底部；片尾拉遠時自動隱藏 |
 | 音效 | `tpl_sfx.py D`：產生 `public/sfx_d/*.wav`（沙沙、啵、叮、嗡），由 TemplateD 對準每一筆播放；換場 whoosh 寫進 `tpl_sfx.wav` |
 | 切點 | `"snapBars": true` |
-| 片尾 | 最後一個場景（通常是 recap）設 `"minSec"`，比旁白長約 3 秒，留給拉遠全景（例：旁白 10 秒 → `"minSec": 13`） |
+| 片尾 | 最後一個場景（通常是 recap）設 `"minSec"`，比旁白長約 3 秒，留給拉遠全景（例：旁白 10 秒 → `"minSec": 13`）。**不要片尾全景**：storyboard 頂層 `"outro": false`（字幕一路到最後、鏡頭不拉遠；系列教學正式片用，2026-10-09），最後一場就不用加 minSec |
 | 套件 | 需要 `@remotion/paths`（已寫進 `engine/template/package.json`；舊專案要補 `npm i @remotion/paths@4.0.300`） |
 
 ## 品牌素材與版面品檢（2026-10-05）
