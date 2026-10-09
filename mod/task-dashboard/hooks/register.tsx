@@ -62,7 +62,9 @@ export const register: Register = on => {
     if (b === null || e.props.hasSurvey) return below
     const { Box, Text } = $.ui.resolve(e)
     const running = b.projects.filter(p => p.state === 'running')
-    const pending = b.projects.filter(p => p.state !== 'running' && p.plan != null && p.plan.done < p.plan.total)
+    // 沒在執行、還沒做完的：dashboard.json 的進度，或還在動的對話工作清單（暫停中、工作清單.md 勾選框不列，免得一直佔位）
+    const pending = b.projects.filter(p => p.state !== 'running' && p.plan != null && p.plan.done < p.plan.total
+      && p.plan.source !== 'md' && p.plan.paused !== true)
     // 一個專案一行：狀態標籤 → 專案名 → 進度（有設定才有）→ 最近一句；名稱與標籤不縮，最後一段超出就截斷
     const rows = [...running.map(p => ({ p, run: true })), ...pending.map(p => ({ p, run: false }))]
     const shown = rows.slice(0, MAX_ROWS)
@@ -122,7 +124,9 @@ export const register: Register = on => {
                 <Text dimColor>{agoText(p.ago + age)}</Text>
                 {p.open > 0 && <Text dimColor>{`未完成 ${p.open}`}</Text>}
               </Box>
-              {p.plan != null && <Text color="cyan">{`  ${planText(p.plan, true)}`}</Text>}
+              {p.plan != null
+                ? <Text color="cyan">{`  ${planText(p.plan, true)}`}</Text>
+                : <Text dimColor>{'  進度：沒有工作清單，不估算'}</Text>}
               {p.title !== '' && <Text dimColor wrap="truncate">{`  ${p.title}`}</Text>}
               {p.state === 'waiting' && p.lastClaude !== '' && (
                 <Text wrap={isOpen ? 'wrap' : 'truncate'}>{`  Claude：${plain(p.lastClaude)}`}</Text>
@@ -156,11 +160,16 @@ export const plain = (s: string): string =>
 /** 輸入框上方最多列幾個專案，其餘收成「還有 N 個」 */
 export const MAX_ROWS = 4
 
-/** 「84% 47/56節 · 預計 17:47 完成」；long 加上其他單位與每項分鐘數 */
+/** 進度來源的前綴：對話工作清單「清單」、工作清單.md「勾選」；dashboard.json 不加 */
+const SOURCE: Record<NonNullable<Plan['source']>, string> = { tasks: '清單 ', md: '勾選 ' }
+
+/** 「84% 47/56節 · 預計 17:47 完成」；long 加上其他單位與每項分鐘數。工作清單來的前面加「清單」 */
 export const planText = (pl: Plan, long = false): string => {
-  const parts = [`${pl.pct}% ${pl.done}/${pl.total}${pl.label}`]
+  const parts = [`${pl.source ? SOURCE[pl.source] : ''}${pl.pct}% ${pl.done}/${pl.total}${pl.label}`]
   if (long) for (const x of pl.extra) parts.push(`${x.label} ${x.done}/${x.total}`)
   if (pl.done >= pl.total) parts.push('已完成')
+  else if (pl.paused) parts.push('暫停中')
+  else if (pl.source === 'md') parts.push('不估完成時間')
   else if (pl.waitUntil) parts.push(`等 ${pl.waitUntil} 繼續`, ...(pl.etaText !== '' ? [`預計 ${pl.etaText} 完成`] : []))
   else if (pl.etaText !== '') parts.push(`預計 ${pl.etaText} 完成`)
   else parts.push('完成時間估算中')
