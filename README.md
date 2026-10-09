@@ -45,6 +45,10 @@
 │   ├── 📂 concepts/                 # 做過的概念場景程式（闖關遊戲、創客手稿、動態字體、物流中心、小劇場、穿越網路線）
 │   └── 📂 templates/                # 資訊科範本1、範本A 闖關遊戲、範本B 創客手稿、範本C 動態字體快剪、範本D 白板手繪
 │
+├── 📂 reel-showcase/                # 模組：統一的素材／版本展示網站（所有專案共用同一套版面）
+│   ├── 📄 SKILL.md                  # 四個分區、三種頁面、視覺規格、挑選流程、同步規則、踩過的坑
+│   └── 📂 assets/                   # 標準程式：產生網頁、本機存檔伺服器、整理待挑選、樣式與互動
+│
 └── 📄 README.md                     # 本儲存庫總覽與各 Skill 詳細說明
 ```
 
@@ -60,6 +64,7 @@
 | [`vercel-supabase-latency`](#4-vercel-supabase-latency--vercel--supabase-整站都慢的診斷) | 效能調校 / 部署架構 | 「網站好慢」、「每一頁都要好幾秒」、「換到 Supabase 反而變慢」、「速度優化」 | 分離「網路距離」與「資料庫處理」兩件事，找出函式機房與資料庫不同洲的問題。實測案例快了六倍。 |
 | [`supabase-key-usage`](#5-supabase-key-usage--supabase-兩把-key-的用法與安全驗證) | 資安 / 部署架構 | 「接 Supabase」、「Supabase 的 key」、「RLS 要怎麼設」、「喚醒 Supabase」、「heartbeat」 | 伺服器專用架構：secret key 只在伺服器、publishable key 只給喚醒腳本；全表鎖 RLS 並用程式驗證「公開的 key 什麼都讀不到」。 |
 | [`storynow-aimovie-make`](#6-storynow-aimovie-make--從內容長出影片的-ai-影片工作流) | 影音製作 / 創意工作流 | 「做影片」、「招生片」、「宣傳片」、「教學影片」、「產生創意概念」、「做試看」、「資訊科範本1」 | 讀懂資料→三輪定調問答→從內容產生 3 個全新創意概念（含英文提示詞）→文本審閱→10 秒動態試看→程式手刻成片並自動品檢。另有「資訊科範本1」與範本風格 A／B／C／D（丟文本選範本即可產出）。 |
+| [`reel-showcase`](#7-reel-showcase--統一的素材版本展示網站) | 展示網頁 / 挑選流程 | 「做展示網頁」、「展示版面」、「更新展示網頁」、「挑完了」、「待挑選」 | 所有專案共用的展示網站：待挑選／純廣告／旁白影片／收進 skill 四區，按鈕自動存檔，說「挑完了」就自動分類。 |
 
 ### 🧩 Claude Code mod（外掛）
 
@@ -205,6 +210,16 @@
 
 ---
 
+### 7. `reel-showcase` — 統一的素材／版本展示網站
+- **模組路徑**：[`reel-showcase/`](reel-showcase/SKILL.md)
+- **核心定位**：所有專案的展示網頁共用同一套程式與外觀，要改版面先改這裡的 `assets/` 再同步到各專案，版面才會一致。
+- **四個分區**：01 待挑選（新做好、還沒決定）→ 按「要」自動依類型移到 02 純廣告或 03 旁白影片、按「不要」進資源回收筒；02／03 按「＋ 收進 skill」→ 04 收進 skill。
+- **三種頁面**：首頁（縮圖牆大標、四個入口卡、最新加入）、分區頁（滑過播 6 秒預覽、篩選搜尋）、單支頁（大播放器、品檢、附件、左右鍵換片）。
+- **挑選不用複製**：雙擊 `啟動展示網頁.bat` 開本機小伺服器，按鈕自動存到 `挑選紀錄.json`；說「挑完了」Claude 就執行 `整理待挑選.py`。
+- **視覺**：深色放映廳風（淺色模式自動切換）、單一重點色訊號橘、Noto Sans TC＋Space Grotesk。
+
+---
+
 ## 💻 怎麼在一台新機器上安裝使用
 
 Claude Code 是在每次對話開始時，掃描本機的 `~/.claude/skills/` 資料夾來列出可用的 skill —— 不會即時連線 GitHub 抓取。要在新機器使用：
@@ -241,6 +256,11 @@ Claude Code 是在每次對話開始時，掃描本機的 `~/.claude/skills/` �
    New-Item -ItemType SymbolicLink `
      -Path "$env:USERPROFILE\.claude\skills\supabase-key-usage" `
      -Target "D:\Claude\skill\supabase-key-usage"
+
+   # 連結 reel-showcase skill
+   New-Item -ItemType SymbolicLink `
+     -Path "$env:USERPROFILE\.claude\skills\reel-showcase" `
+     -Target "D:\Claude\skill\reel-showcase"
 
    # 連結 storynow-aimovie-make skill（另需 Node 18+、ffmpeg、pip install numpy scipy edge-tts）
    New-Item -ItemType SymbolicLink `
