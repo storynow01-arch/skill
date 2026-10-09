@@ -14,6 +14,7 @@
     {"code": "J", "dir": "範本J_地圖風", "type": "shared", "name": "地圖風", "trigger": "範本J／地圖風／地圖範本"},
     {"code": "K", "dir": "範本K_宇宙風", "type": "shared", "name": "宇宙風", "trigger": "範本K／宇宙風／宇宙範本"},
     {"code": "L", "dir": "範本L_黏土玩具風", "type": "shared", "name": "黏土玩具風", "trigger": "範本L／黏土玩具風／黏土範本"},
+    {"code": "廣A", "dir": "範本廣A_一個形狀不剪接", "type": "standalone", "kind": "ad", "name": "一個形狀不剪接", "trigger": "廣A／一個形狀不剪接／UI 動態廣告"},
     {"code": "info1", "dir": "資訊科範本1", "type": "standalone", "name": "資訊科範本1（活動說明＋資訊科宣傳片）", "trigger": "資訊科範本1",
      "legacy_name": true}
   ]

@@ -1,0 +1,18 @@
+{
+  "name": "範本廣A_示範_晴窗咖啡書房",
+  "_source": "engine/ad/範例文本_小店開幕.md（虛構）",
+  "states": [
+    {"type": "button", "label": "預約座位"},
+    {"type": "loading"},
+    {"type": "island", "tag": "SUNNY", "text": "11/1 開幕"},
+    {"type": "player", "cover": "SW", "coverSub": "晴窗咖啡書房", "title": "一杯咖啡的時間", "subtitle": "翻一本好書・綠川街 18 號"},
+    {"type": "slider", "label": "甜度"},
+    {"type": "toggle", "label": "會員免費加入"},
+    {"type": "tabs", "tabs": [{"a": "1F", "b": "咖啡"}, {"a": "2F", "b": "選書"}, {"a": "窗邊", "b": "甜點"}]},
+    {"type": "chart", "title": "48 席座位", "note": "每天 09:00～21:00",
+     "bars": [{"v": 20, "l": "一樓"}, {"v": 16, "l": "二樓"}, {"v": 12, "l": "窗邊"}],
+     "highlight": 0, "tip": {"head": "一樓 20 席", "lines": ["咖啡吧台就在旁邊", "藏書 3000 冊"]}},
+    {"type": "search", "placeholder": "搜尋飲品…", "query": "桂花", "result": "桂花拿鐵", "resultSub": "招牌飲品"},
+    {"type": "toast", "text": "開幕週全品項 8 折"}
+  ]
+}

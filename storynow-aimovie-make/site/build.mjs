@@ -15,6 +15,7 @@ const GH = 'https://github.com/storynow01-arch/skill/blob/main/storynow-aimovie-
 const TEMPLATES = [
   ['範本A_', 'a'], ['範本B_', 'b'], ['範本C_', 'c'], ['範本D_', 'd'],
   ['範本E_', 'e'], ['範本F_', 'f'], ['範本G_', 'g'], ['範本H_', 'h'], ['範本I_', 'i'], ['範本J_', 'j'], ['範本K_', 'k'], ['範本L_', 'l'], ['資訊科範本1', 'info1'],
+  ['範本廣A_', 'ad-a'],
 ];
 // README 抓不到「適合／觸發」時用這裡（範本E、資訊科範本1 的 README 格式不同）
 const FALLBACK = {
@@ -29,6 +30,7 @@ const DOCS = [
   { key: 'subjects', file: '科目包/README.md', title: '科目包', desc: '科目專用的教法、念法、專用場景；storyboard 寫 subject 就套用' },
   { key: 'e14', file: 'templates/範本E_教學課程產線/規範/完整工作流程.md', title: '範本E 完整 15 步流程', desc: '一整門課：文稿審查 → 審稿 → 分鏡預覽 → 選聲音 → 配音 → 聽檢 → 探針 → 渲染 → 品檢' },
   { key: 'scenes', file: 'templates/範本風格_場景語彙.md', title: '範本 A～D 共用場景語彙', desc: '9 種場景與欄位，同一份分鏡換範本就能重算' },
+  { key: 'adflow', file: 'references/廣告範本工作流.md', title: '廣告範本工作流', desc: '廣A、廣B…（無旁白）：文本怎麼拆成欄位、太多太少怎麼取捨、make_ad.py 一行出片' },
   { key: 'qa', file: 'final_qa/README.md', title: '品檢工具', desc: '最終品檢、文稿檢查、逐字審稿、分鏡預覽、交叉聽、停頓檢查' },
 ];
 
