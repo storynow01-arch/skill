@@ -16,7 +16,7 @@
   試聽.html      聲音內嵌（單檔就能傳給別人聽）、每個聲音附平均音高（越低越沉）、語速（字/秒）、選用的語音辨識吻合度
   voices.json    每個聲音的 id 與描述 → 使用者選定後，把 id 或描述寫進 storyboard 的 voice（或範本E 的 配音設定.json）
   <名稱>.mp3     各聲音的試聽檔
-金鑰：環境變數 GEMINI_API_KEY 或專案 .env.local。設計的聲音存在 Gemini 專案裡一年（上限 200 個）。
+金鑰：輸出資料夾（--out）所屬專案的 .env.local（不讀環境變數）。設計的聲音存在 Gemini 專案裡一年（上限 200 個）。
 """
 from __future__ import annotations
 import sys as _s; _s.stdout.reconfigure(encoding="utf-8", errors="replace")   # cp950 主控台印 ⚠ 會當掉（2026-10-08）

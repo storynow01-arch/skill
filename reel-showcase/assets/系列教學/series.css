@@ -1,0 +1,51 @@
+/* 系列教學模式：在 site.css 之上加狀態按鈕、網址、上架清單、進度表（顏色一律用 site.css 的變數） */
+.top .brand.subj{padding-left:18px;border-left:1px solid var(--line)}
+.top .brand.subj span{font-size:15px;font-weight:700;color:var(--ink)}
+.tiles.five{grid-template-columns:repeat(2,1fr)}
+.tiles.five .tile:last-child{grid-column:1/-1}
+.progress{position:relative;height:8px;border-radius:99px;background:var(--line2);margin-top:22px;max-width:520px;overflow:hidden}
+.progress i{position:absolute;inset:0 auto 0 0;background:var(--acc2);border-radius:99px}
+.progress em{position:absolute;inset:0 auto 0 0;background:var(--ok);border-radius:99px;width:0;transition:width .6s}
+.thumb .stbadge:not(:empty){position:absolute;left:10px;top:10px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:var(--acc);color:#fff}
+.card[data-st="確定使用"] .stbadge,.card[data-st="已上架"] .stbadge{background:var(--ok);color:#06210f}
+.card[data-st="要修改"] .stbadge{background:var(--warn);color:#2a1a00}
+.thumb .ytlink{position:absolute;right:10px;top:10px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:#ff0033;color:#fff;cursor:pointer}
+.decide.st button[data-v="要修改"].on{background:var(--warn);border-color:var(--warn);color:#2a1a00}
+.decide.st button[data-v="確定使用"].on,.decide.st button[data-v="已上架"].on{background:var(--ok);border-color:var(--ok);color:#06210f}
+.stnow{font-size:14px;color:var(--dim);margin-left:12px}
+.stnow b{color:var(--ink)}
+.fixbox,.ytbox,.checkbox{margin-top:18px;padding:16px 18px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);display:flex;flex-direction:column;gap:10px}
+.fixbox{border-color:var(--warn)}
+.fixbox b,.ytbox b,.checkbox b{font-size:14px}
+.fixbox textarea{min-height:96px;resize:vertical;font:inherit;color:var(--ink);background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:10px 12px}
+.ytbox{flex-direction:row;align-items:center;flex-wrap:wrap}
+.ytbox input{flex:1;min-width:220px;font:inherit;color:var(--ink);background:var(--bg2);border:1px solid var(--line2);border-radius:99px;padding:8px 16px}
+.ytbox a{color:#fff;background:#ff0033;border-radius:99px;padding:6px 14px;text-decoration:none;font-weight:700;font-size:14px}
+.checkbox label{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--dim);cursor:pointer}
+.checkbox input{margin-top:4px;accent-color:var(--ok);width:16px;height:16px}
+.checkbox input:checked+span{color:var(--ink);text-decoration:line-through;text-decoration-color:var(--ok)}
+table.plan{width:100%;border-collapse:collapse;margin:8px 0 60px;font-size:15px}
+.plan th{text-align:left;font-weight:500;color:var(--dim);font-size:13px;border-bottom:1px solid var(--line2);padding:10px 12px}
+.plan td{border-bottom:1px solid var(--line);padding:11px 12px}
+.plan td.lid{font-family:var(--en);font-weight:700;white-space:nowrap}
+.plan td.ty{color:var(--dim);font-size:13px}
+.plan a{color:var(--acc);text-decoration:none;font-size:14px}
+.stcell{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid var(--line2);color:var(--dim)}
+.stcell.s-待確認{border-color:var(--acc);color:var(--acc)}
+.stcell.s-要修改{border-color:var(--warn);color:var(--warn)}
+.stcell.s-確定使用,.stcell.s-已上架{background:var(--ok);border-color:var(--ok);color:#06210f}
+.stcell.mk{border-style:dashed}
+.stcell.no{opacity:.55}
+/* 頻道總覽 */
+.subjects{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:22px;margin:30px 0 70px}
+.subj-card{display:block;text-decoration:none;border:1px solid var(--line);border-radius:22px;background:var(--card);overflow:hidden;transition:transform .6s cubic-bezier(.2,.8,.2,1),border-color .3s}
+.subj-card:hover{transform:translateY(-4px);border-color:var(--acc)}
+.subj-card .cov{aspect-ratio:16/9;background:var(--bg2);display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.subj-card .cov img{width:100%;height:100%;object-fit:cover}
+.subj-card .cov .none{grid-column:1/-1;display:flex;align-items:center;justify-content:center;color:var(--dim2);font-size:14px}
+.subj-card .sb{padding:18px 20px}
+.subj-card h3{margin:2px 0 8px;font-size:21px}
+.subj-card .nums{display:flex;gap:18px;font-size:13px;color:var(--dim)}
+.subj-card .nums b{font-family:var(--en);font-size:20px;color:var(--ink);margin-right:4px}
+.subj-card .progress{margin-top:14px;max-width:none}
+@media (max-width:900px){.tiles.five{grid-template-columns:1fr}.subjects{grid-template-columns:1fr}.plan td.ty{display:none}}

@@ -41,14 +41,20 @@ def project_root(start: str | Path | None = None) -> Path:
 
 
 def project_key(start: str | Path | None = None) -> str:
-    """這個專案 .env.local 的 GEMINI_API_KEY；沒有（或還是範本的「請貼上」）回傳空字串"""
-    env = project_root(start) / ".env.local"
-    if env.exists():
-        for line in env.read_text(encoding="utf-8").splitlines():
-            if line.startswith("GEMINI_API_KEY="):
-                k = line.split("=", 1)[1].strip()
-                if k and "請貼" not in k:
-                    return k
+    """這個專案 .env.local 的 GEMINI_API_KEY；沒有（或還是範本的「請貼上」）回傳空字串。
+    系列教學（2026-10-09）：這一節沒有 .env.local 時，讀所屬科目資料夾（有 系列設定.md 的上一層）的 .env.local——
+    一科貼一次、整科共用；不會讀到不相干的上層專案。"""
+    root = project_root(start)
+    envs = [root / ".env.local"]
+    if not envs[0].exists() and (root.parent / "系列設定.md").exists():
+        envs.append(root.parent / ".env.local")
+    for env in envs:
+        if env.exists():
+            for line in env.read_text(encoding="utf-8").splitlines():
+                if line.startswith("GEMINI_API_KEY="):
+                    k = line.split("=", 1)[1].strip()
+                    if k and "請貼" not in k:
+                        return k
     return ""
 
 

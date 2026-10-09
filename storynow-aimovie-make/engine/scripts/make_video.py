@@ -369,6 +369,18 @@ def main():
         if final_bad:
             print(f'\n✗ 最終品檢沒過（見 {os.path.splitext(final)[0]}_品檢/final_qa.html）：修好重跑，沒過不交付')
     print(f'\n✅ 成片：{final}')
+    # 系列教學展示網頁（2026-10-09，reel-showcase 系列教學模式）：往上找頻道資料夾的 _展示網頁/，最終品檢過了就重建，
+    # 這一節自動出現在該科展示網頁的「待確認」（不搬檔案）
+    up = os.path.abspath('.')
+    for _ in range(5):
+        up = os.path.dirname(up)
+        gen = os.path.join(up, '_展示網頁', '產生頻道總覽.py')
+        if os.path.isfile(gen):
+            if locals().get('final_bad'):
+                print('   （最終品檢沒過，展示網頁先不更新）')
+            elif subprocess.run([py, gen], env={**os.environ, 'PYTHONUTF8': '1'}).returncode == 0:
+                print('🎞 展示網頁已更新：雙擊科目資料夾的「啟動展示網頁.bat」，這一節在「待確認」')
+            break
     if lead:
         print(f'   （前 {lead:.1f} 秒是封面＋片頭；最終品檢請加 --jump-skip 0-{lead:.1f} --silence-ok {COVER_SEC + 0.5:.1f}）')
     readme = os.path.join(SKILL, 'templates', info['dir'], 'README.md')
