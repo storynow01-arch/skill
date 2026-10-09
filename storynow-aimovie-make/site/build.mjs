@@ -101,64 +101,124 @@ function renderMd(mdFile, outDir) {
   return md.parse(fs.readFileSync(mdFile, 'utf8'));
 }
 
-// ---------- 版面 ----------
-const CSS = fs.readFileSync(path.join(SITE, 'style.css'), 'utf8');
-fs.writeFileSync(path.join(DIST, 'style.css'), CSS);
+// ---------- 版面（2026-10-09 改版：和本機展示網頁 reel-showcase 同一套樣式與結構） ----------
+// 樣式直接用 reel-showcase/assets/展示網頁樣式/site.css（同一個倉庫）：改展示網頁外觀，本機與網路一起變
+const BRAND = '皇小米', SITE_NAME = '影片工作室';
+const REEL_CSS = path.resolve(SKILL, '..', 'reel-showcase', 'assets', '展示網頁樣式', 'site.css');
+fs.writeFileSync(path.join(DIST, 'site.css'), fs.readFileSync(REEL_CSS, 'utf8'));
+fs.writeFileSync(path.join(DIST, 'extra.css'), fs.readFileSync(path.join(SITE, 'extra.css'), 'utf8'));
 for (const f of ['login.html', 'login.css', 'favicon.svg']) fs.copyFileSync(path.join(SITE, f), path.join(DIST, f));
+fs.writeFileSync(path.join(DIST, 'style.css'), fs.readFileSync(path.join(SITE, 'style.css'), 'utf8'));   // 登入頁還在用
+const VER = Date.now().toString(36);
+const FONTS = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+  + '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">';
 
-const page = (title, body, depth = 0) => `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>
-<link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css"><meta name="robots" content="noindex,nofollow"></head>
-<body><header class="top"><a class="brand" href="/">影片工作流</a><nav><a href="/#templates">範本</a><a href="/#workflows">工作流</a>
-<a href="/logout" class="out">登出</a></nav></header><main>${body}</main>
-<footer>內容直接來自 skill 倉庫（storynow-aimovie-make），每次推送自動更新</footer></body></html>`;
-
-// 範本詳細頁
+// 範本分兩區：有旁白的「範本」、沒有旁白的「廣告」（範本清單.json 的 "kind": "ad"）
+const REG = JSON.parse(fs.readFileSync(path.join(SKILL, 'templates', '範本清單.json'), 'utf8')).templates;
 for (const t of templates) {
-  const out = path.join(DIST, 't', t.slug); mk(out);
-  let video = '';
-  if (t.demo) {
-    mk(path.join(DIST, 'media'));
-    fs.copyFileSync(t.demo, path.join(DIST, 'media', `${t.slug}.mp4`));
-    if (t.poster) fs.copyFileSync(t.poster, path.join(DIST, 'media', `${t.slug}.jpg`));
-    video = `<video class="hero" controls playsinline preload="metadata" ${t.poster ? `poster="/media/${t.slug}.jpg"` : ''} src="/media/${t.slug}.mp4"></video>`;
-  }
-  const html = renderMd(t.readme, out);
-  fs.writeFileSync(path.join(out, 'index.html'), page(`${t.label} ${t.title}`,
-    `<p class="crumb"><a href="/">首頁</a> › ${esc(t.label)}</p>${video}
-     <p class="gh"><a href="${GH}templates/${encodeURI(t.name)}">在 GitHub 看這個範本的檔案 ↗</a></p><article class="md">${html}</article>`));
+  const r = REG.find((x) => x.dir === t.name) || {};
+  t.kind = r.kind === 'ad' ? 'ad' : 'narrated';
+  t.engine = r.type === 'standalone' ? '自帶產線' : '共用引擎';
 }
+// 文件分兩區：工作流與工具、科目包
+const TOOLS = [
+  { key: 'reel', file: path.resolve(SKILL, '..', 'reel-showcase', 'SKILL.md'), title: '展示網頁（reel-showcase）', desc: '挑版本模式＋系列教學模式（待確認／要修改／確定使用／已上架）、頻道總覽' },
+];
+for (const t of TOOLS) pageOf.set(path.normalize(t.file), `/w/${t.key}/`);
+const SUBJ = fs.readdirSync(path.join(SKILL, '科目包'), { withFileTypes: true }).filter((d) => d.isDirectory())
+  .map((d) => ({ key: 's-' + crypto.createHash('md5').update(d.name).digest('hex').slice(0, 6), name: d.name, file: path.join(SKILL, '科目包', d.name, 'README.md') }))
+  .filter((s) => fs.existsSync(s.file));
+for (const s of SUBJ) pageOf.set(path.normalize(s.file), `/w/${s.key}/`);
+// 作品集：site/作品集.json（本機 sync_works.py 從各科展示紀錄統計後推上來；只有文字＋一張封面）
+const WORKS = fs.existsSync(path.join(SITE, '作品集.json')) ? JSON.parse(fs.readFileSync(path.join(SITE, '作品集.json'), 'utf8')) : [];
+if (fs.existsSync(path.join(SITE, 'works'))) { mk(path.join(DIST, 'works')); for (const f of fs.readdirSync(path.join(SITE, 'works'))) fs.copyFileSync(path.join(SITE, 'works', f), path.join(DIST, 'works', f)); }
 
-// 完整版提示詞頁（沒有 skill 的地方貼這份）
+const narrated = templates.filter((t) => t.kind === 'narrated'), ads = templates.filter((t) => t.kind === 'ad');
+const FLOWS = [...DOCS.map((d) => ({ ...d, f: path.join(SKILL, d.file) })), ...TOOLS.map((t) => ({ ...t, f: t.file }))].filter((d) => fs.existsSync(d.f));
+const SECTIONS = [
+  { key: 'templates', title: '範本', en: 'Narrated Templates', desc: '有旁白與字幕的範本：教學、說明、招生。每張卡播 30 秒示範片；在 Claude Code 說出觸發詞就照那個範本做。', n: narrated.length, unit: '個' },
+  { key: 'ads', title: '廣告', en: 'Ads & Reels', desc: '沒有旁白、靠畫面與音樂節奏的範本：廣告短片、社群開場。從本機 REEL 的「純廣告」收進 skill 後出現在這裡。', n: ads.length, unit: '個' },
+  { key: 'workflows', title: '工作流與工具', en: 'Workflows & Tools', desc: '十二步流程、系列教學影片工作流、品檢工具、展示網頁……做影片時照這些走。', n: FLOWS.length, unit: '份' },
+  { key: 'subjects', title: '科目包', en: 'Subject Packs', desc: '每一科專用的教法、念法、專業符號；storyboard 寫 subject 就套用。', n: SUBJ.length, unit: '科' },
+  { key: 'works', title: '作品集', en: 'Works', desc: '已經做出來的系列作品統計：每一科多少節、已成片、已上架。只放文字與封面，影片在 YouTube。', n: WORKS.length, unit: '個' },
+];
+const posters = templates.filter((t) => t.poster).map((t) => `/media/${t.slug}.jpg`);
+
+const head = (title) => `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(title)}｜${BRAND}・${SITE_NAME}</title><link rel="icon" href="/favicon.svg">${FONTS}
+<link rel="stylesheet" href="/site.css?v=${VER}"><link rel="stylesheet" href="/extra.css?v=${VER}"><meta name="robots" content="noindex,nofollow"></head><body>`;
+const topbar = (cur) => `<header class="top"><a class="brand" href="/"><b>${BRAND}</b><span>${SITE_NAME}</span></a><nav>${
+  SECTIONS.map((s) => `<a class="${cur === s.key ? 'on' : ''}" href="/${s.key}/"><span>${s.title}</span><i>${s.n}</i></a>`).join('')}</nav>
+  <a class="picks-btn" href="/logout">登出</a></header>`;
+const foot = `<footer class="foot"><span>${BRAND} · ${SITE_NAME}</span><span>內容直接來自 GitHub 上的 skill 倉庫；每次推送自動更新。</span></footer>
+<script>${fs.readFileSync(path.join(SITE, 'site-public.js'), 'utf8')}</script></body></html>`;
+const html = (title, cur, body) => head(title) + topbar(cur) + body + foot;
+
+function tcard(t) {
+  return `<article class="card" data-tags="${esc(t.engine)} ${esc(t.label)}">
+  <a class="thumb" href="/t/${t.slug}/">${t.poster ? `<img loading="lazy" src="/media/${t.slug}.jpg" alt="">` : '<div class="emptystack">還沒有示範片</div>'}
+    ${t.demo ? `<video muted loop playsinline preload="none" data-src="/media/${t.slug}.mp4"></video><span class="dur" data-dur="/media/${t.slug}.mp4"></span>` : ''}</a>
+  <div class="cbody"><div class="kicker">${esc(t.label)} · ${esc(t.engine)}</div><h3><a href="/t/${t.slug}/">${esc(t.title)}</a></h3>
+    ${t.fit ? `<p>${esc(t.fit)}</p>` : ''}${t.trig ? `<div class="cfoot"><span class="qa ok">觸發詞</span><span>${esc(t.trig)}</span></div>` : ''}
+    <div class="cact">${t.prompt ? `<a class="ghost" href="/t/${t.slug}/prompt/">完整版提示詞</a>` : ''}<a class="ghost" href="/t/${t.slug}/">看說明 →</a></div></div></article>`;
+}
+const dcard = (href, title, desc, kick) => `<a class="doccard" href="${href}"><div class="kicker">${esc(kick)}</div><h3>${esc(title)}</h3><p>${esc(desc)}</p><span class="go">打開 →</span></a>`;
+function wcard(w) {
+  return `<article class="card work"><div class="thumb">${w.封面 ? `<img loading="lazy" src="/works/${esc(w.封面)}" alt="">` : '<div class="emptystack">沒有封面</div>'}</div>
+  <div class="cbody"><div class="kicker">${esc(w.類型 || '系列教學')} · ${esc(w.範本 || '')}</div><h3>${esc(w.名稱)}</h3><p>${esc(w.說明 || '')}</p>
+  <div class="nums"><span><b>${w.已成片 ?? 0}</b>/ ${w.全部 ?? 0} 節已成片</span><span><b>${w.已上架 ?? 0}</b>已上架</span>${w.章數 ? `<span><b>${w.章數}</b>章</span>` : ''}</div>
+  ${w.內容 ? `<ul class="wlist">${w.內容.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+  ${w.播放清單 ? `<div class="cfoot"><span class="qa ok">播放清單</span><span>${esc(w.播放清單)}</span></div>` : ''}<div class="cfoot"><span>更新 ${esc(w.更新 || '')}</span></div></div></article>`;
+}
+const phead = (s, extra = '') => `<section class="phead wrap"><div class="en">${s.en}</div><h1>${s.title}<small>${s.n} ${s.unit}</small></h1><p>${esc(s.desc)}</p>${extra}</section>`;
+const tools = (chips) => `<div class="tools"><div class="chips"><button class="chip on" data-filter="">全部</button>${chips.map((c) => `<button class="chip" data-filter="${esc(c)}">${esc(c)}</button>`).join('')}</div><input type="search" placeholder="搜尋名稱、說明…" data-search></div>`;
+
+// 範本單支頁（大播放器＋README）
+for (const [i, t] of templates.entries()) {
+  const out = path.join(DIST, 't', t.slug); mk(out);
+  if (t.demo) { mk(path.join(DIST, 'media')); fs.copyFileSync(t.demo, path.join(DIST, 'media', `${t.slug}.mp4`)); }
+  if (t.poster) { mk(path.join(DIST, 'media')); fs.copyFileSync(t.poster, path.join(DIST, 'media', `${t.slug}.jpg`)); }
+  const list = t.kind === 'ad' ? ads : narrated, j = list.indexOf(t), prv = list[j - 1], nxt = list[j + 1];
+  const sec = t.kind === 'ad' ? 'ads' : 'templates';
+  const body = `<main class="wrap detail"><div class="crumb"><a href="/${sec}/">← ${t.kind === 'ad' ? '廣告' : '範本'}</a><span>${j + 1} / ${list.length}</span></div>
+  <div class="theater">${t.demo ? `<video controls playsinline preload="metadata" ${t.poster ? `poster="/media/${t.slug}.jpg"` : ''} src="/media/${t.slug}.mp4"></video>` : '<div class="missing">還沒有示範片</div>'}</div>
+  <div class="dgrid"><div class="dmain"><div class="kicker">${esc(t.label)} · ${esc(t.engine)}</div><h1>${esc(t.title)}</h1>${t.fit ? `<p class="lead">${esc(t.fit)}</p>` : ''}
+    <div class="acts">${t.prompt ? `<a class="ghost" href="/t/${t.slug}/prompt/">完整版提示詞</a>` : ''}<a class="ghost" href="${GH}templates/${encodeURI(t.name)}" target="_blank">在 GitHub 看檔案 ↗</a></div>
+    <article class="md">${renderMd(t.readme, out)}</article></div>
+  <aside class="dside"><dl><dt>代號</dt><dd>${esc(t.label)}</dd><dt>類型</dt><dd>${t.kind === 'ad' ? '廣告（無旁白）' : '有旁白'}</dd><dt>引擎</dt><dd>${esc(t.engine)}</dd>
+    ${t.trig ? `<dt>觸發詞</dt><dd>${esc(t.trig)}</dd>` : ''}${t.demo ? `<dt>示範片長度</dt><dd data-dur="/media/${t.slug}.mp4"></dd>` : ''}</dl></aside></div>
+  <nav class="pnav">${prv ? `<a class="pn" data-key="prev" href="/t/${prv.slug}/"><span>← 上一個</span><b>${esc(prv.label)} ${esc(prv.title)}</b></a>` : '<span></span>'}${nxt ? `<a class="pn r" data-key="next" href="/t/${nxt.slug}/"><span>下一個 →</span><b>${esc(nxt.label)} ${esc(nxt.title)}</b></a>` : '<span></span>'}</nav></main>`;
+  fs.writeFileSync(path.join(out, 'index.html'), html(`${t.label} ${t.title}`, sec, body));
+}
+// 完整版提示詞頁
 for (const t of templates.filter((x) => x.prompt)) {
   const out = path.join(DIST, 't', t.slug, 'prompt'); mk(out);
-  fs.writeFileSync(path.join(out, 'index.html'), page(`${t.label} 完整版提示詞`,
-    `<p class="crumb"><a href="/">首頁</a> › <a href="/t/${t.slug}/">${esc(t.label)}</a> › 完整版提示詞</p><article class="md">${renderMd(t.prompt, out)}</article>`));
+  fs.writeFileSync(path.join(out, 'index.html'), html(`${t.label} 完整版提示詞`, t.kind === 'ad' ? 'ads' : 'templates',
+    `<main class="wrap detail"><div class="crumb"><a href="/t/${t.slug}/">← ${esc(t.label)} ${esc(t.title)}</a><span>完整版提示詞</span></div><article class="md">${renderMd(t.prompt, out)}</article></main>`));
 }
-
-// 工作流文件頁
-for (const doc of DOCS) {
-  const f = path.join(SKILL, doc.file);
-  if (!fs.existsSync(f)) continue;
-  const out = path.join(DIST, 'w', doc.key); mk(out);
-  fs.writeFileSync(path.join(out, 'index.html'), page(doc.title,
-    `<p class="crumb"><a href="/">首頁</a> › ${esc(doc.title)}</p><article class="md">${renderMd(f, out)}</article>`));
+// 文件頁（工作流與工具、科目包）
+for (const d of [...FLOWS.map((x) => ({ ...x, sec: 'workflows' })), ...SUBJ.map((x) => ({ key: x.key, f: x.file, title: x.name, sec: 'subjects' }))]) {
+  const out = path.join(DIST, 'w', d.key); mk(out);
+  fs.writeFileSync(path.join(out, 'index.html'), html(d.title, d.sec,
+    `<main class="wrap detail"><div class="crumb"><a href="/${d.sec}/">← ${d.sec === 'subjects' ? '科目包' : '工作流與工具'}</a><span>${esc(d.title)}</span></div><article class="md">${renderMd(d.f, out)}</article></main>`));
 }
-
+// 分區頁
+const secPage = (s, inner) => { mk(path.join(DIST, s.key)); fs.writeFileSync(path.join(DIST, s.key, 'index.html'), html(s.title, s.key, inner)); };
+const [S1, S2, S3, S4, S5] = SECTIONS;
+secPage(S1, phead(S1, tools(['共用引擎', '自帶產線'])) + `<main class="wrap"><div class="grid" data-grid>${narrated.map(tcard).join('')}</div><p class="empty" data-empty hidden>沒有符合的範本</p></main>`);
+secPage(S2, phead(S2) + `<main class="wrap"><div class="grid" data-grid>${ads.map(tcard).join('') || '<p class="empty">還沒有收進 skill 的廣告範本。本機 REEL「純廣告」區按「＋收進 skill」，Claude 收進後會出現在這裡。</p>'}</div></main>`);
+secPage(S3, phead(S3) + `<main class="wrap"><div class="docgrid">${FLOWS.map((d) => dcard(`/w/${d.key}/`, d.title, d.desc, TOOLS.includes(d) ? '工具' : '工作流')).join('')}</div></main>`);
+secPage(S4, phead(S4) + `<main class="wrap"><div class="docgrid">${SUBJ.map((x) => dcard(`/w/${x.key}/`, x.name, '教法、念法、專用場景與專業符號', '科目包')).join('')}</div></main>`);
+secPage(S5, phead(S5) + `<main class="wrap"><div class="grid">${WORKS.map(wcard).join('') || '<p class="empty">還沒有作品</p>'}</div></main>`);
 // 首頁
-const cards = templates.map((t) => `
-  <article class="card">
-    ${t.demo ? `<video controls playsinline preload="none" ${t.poster ? `poster="/media/${t.slug}.jpg"` : ''} src="/media/${t.slug}.mp4"></video>`
-              : '<div class="nodemo">還沒有示範片</div>'}
-    <div class="body"><span class="tag">${esc(t.label)}</span><h3>${esc(t.title)}</h3>
-      ${t.fit ? `<p>${esc(t.fit)}</p>` : ''}${t.trig ? `<p class="trig">在 Claude Code 說：${esc(t.trig)}</p>` : ''}
-      <div class="links"><a class="more" href="/t/${t.slug}/">看說明、截圖 →</a>${t.prompt ? `<a class="more" href="/t/${t.slug}/prompt/">完整版提示詞 →</a>` : ''}</div></div>
-  </article>`).join('');
-const flows = DOCS.map((d) => `<a class="flow" href="/w/${d.key}/"><b>${esc(d.title)}</b><span>${esc(d.desc)}</span></a>`).join('');
-fs.writeFileSync(path.join(DIST, 'index.html'), page('影片工作流與範本', `
-  <section class="intro"><h1>影片工作流與範本</h1>
-    <p>每個範本都有 30 秒左右的示範片，演出這個範本的每一種場景。挑好範本後，在 Claude Code 說出卡片上的觸發詞（任一個）就會照那個範本做；點「看說明」有完整版提示詞、截圖與流程。</p></section>
-  <section id="templates"><h2>範本</h2><div class="grid">${cards}</div></section>
-  <section id="workflows"><h2>工作流</h2><div class="flows">${flows}</div></section>`));
+const mosaic = (posters.length ? Array.from({ length: 18 }, (_, i) => posters[i % posters.length]) : []).map((p) => `<img src="${p}" alt="">`).join('');
+const stackOf = { templates: narrated.filter((t) => t.poster).slice(0, 3).map((t) => `/media/${t.slug}.jpg`), ads: ads.filter((t) => t.poster).slice(0, 3).map((t) => `/media/${t.slug}.jpg`),
+  works: WORKS.filter((w) => w.封面).slice(0, 3).map((w) => `/works/${w.封面}`) };
+const tiles = SECTIONS.map((s, i) => `<a class="tile" href="/${s.key}/"><div class="tnum">0${i + 1}</div><div class="ttext"><div class="en">${s.en}</div><h2>${s.title}</h2><p>${esc(s.desc)}</p>
+  <div class="tstat"><b>${s.n}</b> ${s.unit}</div><span class="go">進入 →</span></div><div class="stack">${(stackOf[s.key] || []).map((p, k) => `<img style="--i:${k}" src="${p}" alt="">`).join('') || '<div class="emptystack"></div>'}</div></a>`).join('');
+fs.writeFileSync(path.join(DIST, 'index.html'), html('首頁', '', `<section class="hero"><div class="mosaic">${mosaic}</div><div class="veil"></div><div class="htext"><div class="en">${BRAND} · VIDEO STUDIO</div>
+  <h1>丟進文本，<br>就出一支影片。</h1><p>每個範本都有 30 秒左右的示範片；挑好範本，在 Claude Code 說出觸發詞就照那個範本做。工作流、工具、科目包與作品統計都在這裡。</p>
+  <div class="hstat"><div><b>${narrated.length}</b><span>個範本</span></div><div><b>${ads.length}</b><span>個廣告</span></div><div><b>${WORKS.length}</b><span>個作品</span></div></div></div></section>
+  <main class="wrap"><div class="tiles five">${tiles}</div><div class="shead"><h2>範本</h2><span class="en">TEMPLATES</span></div><div class="grid">${narrated.slice(0, 6).map(tcard).join('')}</div></main>`));
 
-console.log(`網站 → ${DIST}：範本 ${templates.length} 個（有示範片 ${templates.filter((t) => t.demo).length}），文件 ${DOCS.length} 份`);
+console.log(`網站 → ${DIST}：範本 ${narrated.length}、廣告 ${ads.length}、工作流與工具 ${FLOWS.length}、科目包 ${SUBJ.length}、作品 ${WORKS.length}`);

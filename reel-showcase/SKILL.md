@@ -122,7 +122,7 @@ Claude 做好新影片 → 01 待挑選（版本.json 先寫好「分區」＝�
 
 **D. 使用者說「挑完了」**：讀 `挑選紀錄.json` 回報「要幾支（各去哪）、不要幾支、還沒決定幾支」→ `PYTHONUTF8=1 py 整理待挑選.py`（會自動重建網頁）。版本資料夾裡有 `node_modules` junction 的，程式會略過並提醒——先拆 junction 再處理，否則會刪到共用套件。
 
-**E. 收進 skill**：`挑選紀錄.json` 的「收進skill」清單不會自動處理。逐支照目標 skill 的範本規格（例如 storynow-aimovie-make 的 `templates/範本規格.md`）說明要怎麼收 → 使用者同意 → 做、commit／push 前再確認 → 在該版本 `版本.json` 加 `"收進skill": "範本X_名稱"`、從挑選紀錄移除該筆 → 重建網頁。
+**E. 收進 skill**：`挑選紀錄.json` 的「收進skill」清單不會自動處理。逐支照目標 skill 的範本規格（例如 storynow-aimovie-make 的 `templates/範本規格.md`）說明要怎麼收 → 使用者同意 → 做、commit／push 前再確認 → 收進的是**純廣告**（無旁白）時，`templates/範本清單.json` 那一筆加 `"kind": "ad"`（網路儀表板的「廣告」區）→ 在該版本 `版本.json` 加 `"收進skill": "範本X_名稱"`、從挑選紀錄移除該筆 → 重建網頁。
 
 ## 八、要改外觀或功能時（保持各專案一致）
 1. 改這份 skill 的 `assets/`（樣式改 `展示網頁樣式/`，結構改 `產生展示網頁.py`；**網站設定那一段以外**的改動才算共用改動）。

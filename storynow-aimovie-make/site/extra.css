@@ -1,0 +1,24 @@
+/* 網路儀表板：在 reel-showcase 的 site.css 之上，補文件卡、作品卡、markdown 文章 */
+.tiles.five{grid-template-columns:repeat(2,1fr)}
+.tiles.five .tile:last-child{grid-column:1/-1}
+.docgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;margin:10px 0 70px}
+.doccard{display:flex;flex-direction:column;gap:6px;text-decoration:none;padding:22px 24px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);transition:transform .6s cubic-bezier(.2,.8,.2,1),border-color .3s}
+.doccard:hover{transform:translateY(-3px);border-color:var(--acc)}
+.doccard h3{margin:0;font-size:19px}.doccard p{margin:0;color:var(--dim);font-size:14px}.doccard .go{margin-top:auto;color:var(--acc);font-size:14px}
+.card.work .nums{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--dim);margin:6px 0}
+.card.work .nums b{font-family:var(--en);font-size:19px;color:var(--ink);margin-right:3px}
+.wlist{margin:4px 0 8px;padding-left:18px;font-size:13px;color:var(--dim)}
+.cact .ghost{font-size:13px}
+article.md{margin:26px 0 60px;line-height:1.8;font-size:15.5px}
+article.md h1{font-size:30px;margin:10px 0 18px}article.md h2{font-size:22px;margin:34px 0 12px;padding-top:14px;border-top:1px solid var(--line)}
+article.md h3{font-size:18px;margin:24px 0 8px}
+article.md a{color:var(--acc)}article.md img,article.md video{border-radius:12px;margin:10px 0;max-width:100%}
+article.md code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;background:var(--bg2);padding:1px 6px;border-radius:6px}
+article.md pre{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow:auto}
+article.md pre code{background:none;padding:0}
+article.md table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px;display:block;overflow-x:auto}
+article.md th,article.md td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+article.md th{background:var(--bg2)}
+article.md blockquote{margin:12px 0;padding:6px 16px;border-left:3px solid var(--acc);color:var(--dim)}
+.detail .dmain article.md{margin-top:18px}
+@media (max-width:900px){.tiles.five{grid-template-columns:1fr}}
