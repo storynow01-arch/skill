@@ -57,6 +57,9 @@ def text_cases(work):
     json.dump({'114': {'專二': {'1': 'C'}}}, open(ans, 'w', encoding='utf-8'))
     storyboard_case(work, 'A2 答對', 'answer_check.py', {'scenes': [{'id': 'S1', 'exam': '114-專二-1', 'props': {'answerIndex': 2}}]}, set(), ('--answers', ans))
     storyboard_case(work, 'A2 答錯', 'answer_check.py', {'scenes': [{'id': 'S1', 'exam': '114-專二-1', 'props': {'answerIndex': 1}}]}, {'A2.答案'}, ('--answers', ans))
+    # 2026-10-10：歷屆題只放三個選項（1-1 原題 D 被標成 C）
+    storyboard_case(work, 'A2 少放選項', 'answer_check.py', {'scenes': [{'id': 'S1', 'exam': '114-專二-1', 'props': {'options': ['甲', '乙', '丙'], 'answerIndex': 2}}]}, {'A2.選項'}, ('--answers', ans))
+    storyboard_case(work, 'A2 四選項', 'answer_check.py', {'scenes': [{'id': 'S1', 'exam': '114-專二-1', 'props': {'options': ['甲', '乙', '丙', '丁'], 'answerIndex': 2}}]}, set(), ('--answers', ans))
     storyboard_case(work, 'A2 缺表', 'answer_check.py', {'scenes': [{'id': 'S1', 'exam': '113-專二-1', 'props': {'answerIndex': 1}}]}, {'A2.缺表'}, ('--answers', ans))
     sym = os.path.join(work, 'sym.json')
     json.dump({'名詞': {'及閘': {'符號': ['gate_and']}, '或閘': {'符號': ['gate_or']}}}, open(sym, 'w', encoding='utf-8'), ensure_ascii=False)
