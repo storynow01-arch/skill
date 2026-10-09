@@ -37,6 +37,9 @@ metadata:
 | 「範本K」「宇宙風」「宇宙範本」 | 照 [`templates/範本K_宇宙風/README.md`](templates/範本K_宇宙風/README.md)：任何文本 → 宇宙風（太空船星際航行，每個場景是一顆星體：航行星點拉光線、HUD 鎖定 LOCKED、全像資料面板逐行出現、片尾星圖）；共用 9 種場景，`make_video.py storyboard.json --template K`（同一套品質關卡） |
 | 「範本L」「黏土玩具風」「黏土範本」 | 照 [`templates/範本L_黏土玩具風/README.md`](templates/範本L_黏土玩具風/README.md)：任何文本 → 黏土玩具風（暖米白桌面攝影棚＋黏土玩具實景、立體字、章節膠囊、翻頁捲角、深色膠囊字幕；**固定主角是使用者畫的捲毛小狗**）；共用 9 種場景，`make_video.py storyboard.json --template L`（同一套品質關卡） |
 | 「廣A」「一個形狀不剪接」「UI 動態廣告」 | 照 [`templates/範本廣A_一個形狀不剪接/README.md`](templates/範本廣A_一個形狀不剪接/README.md)：**廣告範本（無旁白）**，任何文本 → 一個圓角形狀從頭到尾不剪接、游標驅動變形成按鈕／播放器／開關／分頁／圖表／⌘K／通知；照 README「內容欄位」寫 `storyboard.json`（狀態可任意排列、省略），`python engine/ad/make_ad.py 廣A <專案>` 一行出片，片長依內容伸縮。文本怎麼拆、太多太少怎麼辦見 [`references/廣告範本工作流.md`](references/廣告範本工作流.md) |
+| 「廣B」「日報號外」「報紙廣告」「號外風」 | 照 [`templates/範本廣B_日報號外/README.md`](templates/範本廣B_日報號外/README.md)：**廣告範本（無旁白）**，任何文本 → 深夜趕印號外：印刷機吐報、號外章蓋下、鏡頭在大報紙上讀頭條（打字機）與 2～4 個專欄（圖示統計／圓餅／打勾清單／分類廣告，可省略），翻到第二版、摺報丟上報紙堆、背面大名；紅鉛筆是主角。照 README「內容欄位」寫 `storyboard.json`，`python engine/ad/make_ad.py 廣B <專案>` 一行出片 |
+| 「廣C」「機密檔案」「偵探牆」「任務檔案」 | 照 [`templates/範本廣C_機密檔案/README.md`](templates/範本廣C_機密檔案/README.md)：**廣告範本（無旁白）**，任何文本 → 俯拍木桌上的機密檔案：極機密章、撕封條、文件攤成偵探牆（任務簡報打字＋紅筆圈、抽象地圖航線、拍立得與便利貼線索、裝備清單打勾，地圖／線索／清單可省略），最後蓋下「核准」大印章、檔案闔上；紅桿鋼筆是主角、冷爵士配樂。照 README「內容欄位」寫 `storyboard.json`，`python engine/ad/make_ad.py 廣C <專案>` 一行出片 |
+| 「廣D」「電視購物台」「購物台廣告」「綜藝廣告」 | 照 [`templates/範本廣D_電視購物台/README.md`](templates/範本廣D_電視購物台/README.md)：**廣告範本（無旁白）**，任何文本 → 熱鬧誇張的電視購物節目：測試條、台標砸下、卡通主持人，鏡頭在連續攝影棚往右甩過商品區（原價牌劃掉→「現在只要」大爆炸必備；加碼金卡／吊牌／小鳥禮盒／打勾膠囊／限時倒數可省略），最後電話號碼跳出、收尾大貼圖；綜藝立體字、搖擺大樂隊＋罐頭音效。照 README「內容欄位」寫 `storyboard.json`（不可編造價格），`python engine/ad/make_ad.py 廣D <專案>` 一行出片 |
 | 「做成範本」「新增範本」「把這個風格變成範本」「上傳範本」 | **照 [`templates/範本規格.md`](templates/範本規格.md) 的「新增範本 SOP」做**：先試作給使用者看 → 在 `templates/範本清單.json` 登記 → 寫程式（預設共用引擎型：`tpl/Template<代號>.tsx`＋`make_video.py --template <代號>`）→ 分鏡預覽給使用者看 ⛔ → 正式出片＋最終品檢全過 → 30 秒示範片（演出每一種場景與招牌特效）→ README 固定段落＋完整版提示詞 → 登記各處 → `python templates/check_templates.py` 全部 ✓ 才 push |
 | 「加封面／片頭／LOGO」 | **選用**：只有使用者要求時才在 storyboard 加 `"brand": {"dir": "<素材資料夾>"}`（cover.jpg、intro.mp4、logo.png）；沒寫就不加任何封面片頭。範本 A～D 的引擎都支援（10/5 在範本D 實作時使用者要求加入），範本E 用自己的 `assemble.py` 接封面片頭，細節見 [`templates/範本風格_場景語彙.md`](templates/範本風格_場景語彙.md) 的「品牌素材」 |
 | 「用範本做」＋文本（沒指定哪個） | AskUserQuestion 讓使用者選 A／B／C／D（附一句特色），或「全部都做」；有明確步驟的內容可另外推薦 F，觀念教學可推薦 G，要示範電腦／手機操作推薦 H（F／G 用自己的 storyboard 格式，不吃 A～D 的 storyboard） |
@@ -103,6 +106,9 @@ templates/範本K_宇宙風/    宇宙風（共用 make_video、共用 9 種場�
 templates/範本L_黏土玩具風/  黏土玩具風（共用 make_video、共用 9 種場景；元件 engine/template/src/lib/clay/（kit、pup＝固定主角小狗、props、objects、icons）、渲染器 tpl/TemplateL.tsx）、示範片、9 場景完整測試分鏡、完整版提示詞；
                    範本I～L 的數字往上數共用 lib/rollnum.tsx（舊數字往上滑出淡出、新的從下滑入淡入）
 templates/範本廣A_一個形狀不剪接/  廣告範本（無旁白、自帶產線）：engine（timeline.py＝欄位檢查＋依內容排時間表、music.py＝配樂與 UI 音效、remotion/src＝畫面），示範片、完整版提示詞
+templates/範本廣B_日報號外/  廣告範本（無旁白、自帶產線）：engine（timeline.py、music.py、remotion/src＝Ad.tsx 鏡頭鉛筆印刷機翻頁摺報＋pages.tsx 版面＋halftone.tsx 網點照片），示範片、完整版提示詞
+templates/範本廣C_機密檔案/  廣告範本（無旁白、自帶產線）：engine（timeline.py、music.py、remotion/src＝Ad.tsx 桌面檔案夾偵探牆鋼筆＋scene.ts 文件位置鏡頭鋼筆路線＋docs.tsx 文件內容＋parts.tsx 打字機手寫印章），示範片、完整版提示詞
+templates/範本廣D_電視購物台/  廣告範本（無旁白、自帶產線）：engine（timeline.py、music.py、remotion/src＝Ad.tsx 攝影棚甩鏡外框＋Scenes.tsx 七種商品區＋Host.tsx 主持人＋parts.tsx 綜藝立體字），示範片、完整版提示詞
 engine/ad/          廣告範本共用：make_ad.py（storyboard → 時間表 → 配樂 → 抽格 → 算圖 → 響度 → 最終品檢；--demo 產生示範檔）、stills.mjs、範例文本_小店開幕.md（示範片共用的虛構文本）；說明見 references/廣告範本工作流.md
 templates/範本G_動態圖卡教學/  06 風格（自成一包）：engine（make.py、lib_G.js、render.mjs、build_audio.py）、examples（06 教學動畫）、截圖、原始提示詞與完整版提示詞
 科目包/            科目專用的教法、念法（念法.json）、專用場景用法；storyboard 寫 "subject": "<科目>" 就套用（見 科目包/README.md）

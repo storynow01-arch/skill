@@ -1,0 +1,13 @@
+{
+  "name": "範本廣C_示範_晴窗咖啡書房",
+  "_source": "engine/ad/範例文本_小店開幕.md（虛構）",
+  "pace": 7,
+  "folder": {"label": "任務代號：開幕", "title": "晴窗咖啡書房", "en": "SUNNY WINDOW", "secret": "極機密", "file": "FILE No. SW-1101"},
+  "brief": {"head": "任務簡報", "en": "MISSION BRIEFING", "a": "任務地點：綠川街 18 號", "circle": "綠川街 18 號",
+            "b": "任務內容：咖啡、選書、甜點", "underline": "選書"},
+  "map": {"title": "目標地圖", "from": "你家", "to": "晴窗", "caption": "11/1 週六開幕"},
+  "clues": {"photos": [{"pic": "cup", "text": "招牌桂花拿鐵"}, {"pic": "book", "text": "藏書 3000 冊"}], "note": ["前100名", "送咖啡"]},
+  "check": {"title": "裝備清單", "items": ["預約座位", "會員免費加入"]},
+  "letter": {"title": "開幕通知", "en": "NOTICE OF OPENING", "line": "開幕週全品項 8 折", "stamp": "核准", "stampEn": "APPROVED", "foot": "SUNNY WINDOW BOOKS & COFFEE"},
+  "end": {"name": "晴窗", "slogan": "一杯咖啡的時間，翻一本好書", "url": "sunnywindow.example"}
+}

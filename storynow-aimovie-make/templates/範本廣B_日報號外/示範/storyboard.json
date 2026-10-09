@@ -1,0 +1,16 @@
+{
+  "name": "範本廣B_示範_晴窗咖啡書房",
+  "pace": 7,
+  "_source": "engine/ad/範例文本_小店開幕.md（虛構）",
+  "paper": {"name": "晴窗日報", "en": "SUNNY DAILY", "edition": "開幕特刊", "extra": "號外",
+            "sub": "The Sunny Window Daily — Opening Edition", "earA": "開幕", "earB": "特刊"},
+  "head": {"kicker": "開幕快報", "lines": ["11/1", "晴窗開幕"], "red": "11/1", "deck": "咖啡・選書・甜點"},
+  "picto": {"tag": "數據", "title": "開幕禮", "label": "前 100 名送手沖", "filled": 10, "value": "100", "under": "名額有限"},
+  "pie": {"title": "開幕週優惠", "fraction": 0.2, "lines": ["全品項", "一律"], "big": "8 折"},
+  "checklist": {"tag": "店內導覽", "title": "三區一次逛完", "items": ["一樓咖啡", "二樓選書", "窗邊甜點"]},
+  "ad": {"tag": "分類廣告", "mark": "座", "lines": ["座位開放預約", "全店座位"], "number": "48", "unit": "席"},
+  "page2": {"strip": "第二版　店內特寫", "kicker": "本報特寫", "words": ["咖啡", "選書", "甜點"],
+            "deck": "晴窗的三個角落", "line": "招牌桂花拿鐵・人氣伯爵茶戚風・每天 09:00～21:00"},
+  "back": {"strip": "晴窗日報・號外", "en": "SUNNY WINDOW BOOKS & COFFEE", "name": "晴窗書房",
+           "slogan": "一杯咖啡的時間，翻一本好書", "web": "sunnywindow.example", "full": "綠川街 18 號・11 月 1 日開幕"}
+}

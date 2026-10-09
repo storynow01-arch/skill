@@ -1,0 +1,18 @@
+{
+  "name": "範本廣D_示範_晴窗咖啡書房",
+  "_source": "engine/ad/範例文本_小店開幕.md（虛構）；原價 100% → 8 折＝文本裡的「開幕週全品項 8 折」",
+  "channel": {"name": "晴窗購物台", "standby": "晴窗購物台　即將開播", "tickerLabel": "開幕優惠"},
+  "bar": {"label": "預約座位", "sub": "訂位專線", "tel": "(02) 2345-6789", "web": "sunnywindow.example", "full": "綠川街 18 號・11/1 開幕"},
+  "say": {"hello": "大家好！", "shock": "原價耶！", "call": "快來預約！"},
+  "price": {"label": "開幕週全品項", "orig": "100", "unit": "%", "nowLabel": "現在只要", "now": "8", "nowUnit": "折！", "banner": "開幕週限定！", "tag": "11/1 起"},
+  "bonus": {"plus": "再加碼！", "title": "前 100 名", "pill": "免費送", "number": "1", "unit": "杯", "clang": "鏘！"},
+  "tags": [
+    {"title": "手沖豆", "sub": "精選", "amount": "12", "unit": "款"},
+    {"title": "藏書", "sub": "", "amount": "3000", "unit": "冊"},
+    {"title": "座位", "sub": "全店", "amount": "48", "unit": "席"}
+  ],
+  "gifts": {"sign": "會員加碼！", "a": ["會員", "免費加入"], "aBadge": "現在加入", "b": ["生日當月", "再送一杯"], "both": "可同時享有", "double": ["雙重", "好禮！"]},
+  "chips": {"title": "三大區", "burst": "一次逛完", "items": ["一樓咖啡", "二樓選書", "窗邊甜點"]},
+  "call": {"call": "立即預約！", "pill": "訂位專線", "number": "02-2345-6789", "web": "sunnywindow.example"},
+  "end": {"lines": ["一杯咖啡的時間", "翻一本好書"], "name": "晴窗咖啡書房"}
+}

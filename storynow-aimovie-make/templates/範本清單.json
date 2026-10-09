@@ -15,6 +15,9 @@
     {"code": "K", "dir": "範本K_宇宙風", "type": "shared", "name": "宇宙風", "trigger": "範本K／宇宙風／宇宙範本"},
     {"code": "L", "dir": "範本L_黏土玩具風", "type": "shared", "name": "黏土玩具風", "trigger": "範本L／黏土玩具風／黏土範本"},
     {"code": "廣A", "dir": "範本廣A_一個形狀不剪接", "type": "standalone", "kind": "ad", "name": "一個形狀不剪接", "trigger": "廣A／一個形狀不剪接／UI 動態廣告"},
+    {"code": "廣B", "dir": "範本廣B_日報號外", "type": "standalone", "kind": "ad", "name": "日報號外", "trigger": "廣B／日報號外／報紙廣告／號外風"},
+    {"code": "廣C", "dir": "範本廣C_機密檔案", "type": "standalone", "kind": "ad", "name": "機密檔案", "trigger": "廣C／機密檔案／偵探牆／任務檔案"},
+    {"code": "廣D", "dir": "範本廣D_電視購物台", "type": "standalone", "kind": "ad", "name": "電視購物台", "trigger": "廣D／電視購物台／購物台廣告／綜藝廣告"},
     {"code": "info1", "dir": "資訊科範本1", "type": "standalone", "name": "資訊科範本1（活動說明＋資訊科宣傳片）", "trigger": "資訊科範本1",
      "legacy_name": true}
   ]

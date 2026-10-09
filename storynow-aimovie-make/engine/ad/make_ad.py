@@ -182,8 +182,11 @@ def main():
     # 7. 示範檔（範本規格：25～35 秒、1920×1080、有聲；壓縮比照現有示範 3～16 MB）
     if a.demo:
         d = os.path.abspath(a.demo); os.makedirs(d, exist_ok=True)
-        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', final, '-c:v', 'libx264', '-preset', 'slow', '-crf', '20',
-                        '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', os.path.join(d, '示範.mp4')], check=True)
+        # 畫面細節多（網點、紙紋）的範本檔案會很大：超過 14 MB 就提高壓縮再壓一次（現有示範 3～16 MB）
+        for crf in (20, 23, 26, 28, 30):
+            subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', final, '-c:v', 'libx264', '-preset', 'slow', '-crf', str(crf),
+                            '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', os.path.join(d, '示範.mp4')], check=True)
+            if os.path.getsize(os.path.join(d, '示範.mp4')) <= 14e6: break
         pf = tl.get('poster', int(tl['frames'] * 0.4))
         ov = tl.get('overview') or [int(tl['frames'] * x) for x in (0.2, 0.5, 0.8)]
         tmp = os.path.join(proj, '抽格', '_demo')
