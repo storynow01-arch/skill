@@ -138,8 +138,8 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
       k.shape(at, x, 470 + dy, 1, card(760, 600, bg), 10, 'none', 0, k.id(`side${i}`));   // 右上角有 LOGO：整組往下讓開
       k.shape(at + 2, x, 330 + dy, 1.35, iconFor(sd.sketch ?? sd.icon), 14, 'pop', 0, undefined, k.id(`side${i}`));
       wrap(sd.text ?? '', 11).slice(0, 3).forEach((ln, j) => k.text(at + 6 + j * 4, x, 560 + dy + j * 70, ln, fitW(ln, 680, 58), {dur: tdur(ln), box: k.id(`side${i}`)}));
-      if (sd.frame === 'danger') k.shape(at + 10, x + 300, 240 + dy, 1.1, cross(), 8, 'buzz', 0, undefined, k.id(`side${i}`));
-      if (sd.frame === 'success') k.shape(at + 10, x + 300, 240 + dy, 1.1, check(), 8, 'ding', 0, undefined, k.id(`side${i}`));
+      if (sd.frame === 'danger') k.shape(at + 10, x + 300, 230 + dy, 1.1, cross(), 8, 'buzz', 0, undefined, k.id(`side${i}`));
+      if (sd.frame === 'success') k.shape(at + 10, x + 300, 230 + dy, 1.1, check(), 8, 'ding', 0, undefined, k.id(`side${i}`));
     };
     side(p.left ?? {text: ''}, 0);
     k.text(k.C(p.cueMap?.[1], 40) - 4, 960, 500, !p.mid || p.mid === 'vs' ? 'vs' : p.mid, 90, {bold: true, color: WB.orange, dur: 6, sfx: 'none'});
