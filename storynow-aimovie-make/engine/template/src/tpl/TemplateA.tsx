@@ -12,6 +12,8 @@ import {BrandLogo} from './brand';
 
 const PX = loadPixel('normal', {weights: ['400']}).fontFamily;
 const TC = loadTC('normal', {weights: ['900'], ignoreTooManyRequestsWarning: true}).fontFamily;
+/** 像素字沒有中文字形：中文（如 stat 單位「種」）接已載入的 NotoSansTC，不退回各電腦的系統字型 */
+const PXZ = `${PX}, ${TC}`;
 const C = {sky1: '#1A1C2C', sky2: '#3B5DC9', gold: '#FFCD75', white: '#F4F4F4', blue: '#41A6F6', green: '#A7F070', red: '#EF7D57', dark: '#333C57', ink: '#1A1C2C'};
 const step = (f: number, n = 2) => Math.floor(f / n) * n;
 const q8 = (v: number) => Math.round(v / 8) * 8;
@@ -19,7 +21,7 @@ const q8 = (v: number) => Math.round(v / 8) * 8;
 type P = {p: any; cues: number[]; dur: number};
 
 const T: React.FC<{children: React.ReactNode; size: number; color?: string; style?: React.CSSProperties; px?: boolean}> = ({children, size, color = C.white, style, px}) => (
-  <div style={{fontFamily: px ? PX : TC, fontWeight: px ? 400 : 900, fontSize: size, color, lineHeight: 1.3, textShadow: `${Math.max(3, size / 14)}px ${Math.max(3, size / 14)}px 0 ${C.ink}`, ...style}}>{children}</div>
+  <div style={{fontFamily: px ? PXZ : TC, fontWeight: px ? 400 : 900, fontSize: size, color, lineHeight: 1.3, textShadow: `${Math.max(3, size / 14)}px ${Math.max(3, size / 14)}px 0 ${C.ink}`, ...style}}>{children}</div>
 );
 const SPRITE = ['...11111....', '..1111111...', '..2222222...', '..2262262...', '..2222222...', '...22222....', '..3333333...',
   '.333333333..', '.2.33333.2..', '...33333....', '...44.44....', '...44.44....', '..55..55....'];

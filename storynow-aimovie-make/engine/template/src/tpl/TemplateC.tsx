@@ -14,7 +14,8 @@ import {TplSpec, captionAt, cue, fit, sceneIndex, wrap} from './common';
 import {BrandLogo} from './brand';
 
 const TC = loadTC('normal', {weights: ['700', '900'], ignoreTooManyRequestsWarning: true}).fontFamily;
-const EN = loadInter('normal', {weights: ['900']}).fontFamily;
+/** Inter 沒有中文字形：中文（如 stat 單位「種」）接已載入的 NotoSansTC，不退回各電腦的系統字型 */
+const EN = `${loadInter('normal', {weights: ['900']}).fontFamily}, ${TC}`;
 const BK = '#000', WH = '#fff', AC = '#D4FF00', RED = '#FF3B4E', GOLD = '#FFC23D';
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -216,24 +217,48 @@ const Quiz: React.FC<P> = ({p, cues, dur}) => {
   );
 };
 
-/** 數字裡面塞滿內容：把標籤文字排成斜向重複的圖樣（SVG data URI），用 background-clip:text 填進數字 */
-const fillSvg = (a: string, b: string) => {
-  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  const rows = [a, b || a, a].map((s, i) => `<text x="${i * 60}" y="${60 + i * 70}" font-family="Microsoft JhengHei, Noto Sans TC, sans-serif" font-weight="900" font-size="54" fill="${i === 1 ? WH : AC}">${esc(s)}　${esc(s)}　${esc(s)}</text>`).join('');
-  return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="760" height="220"><rect width="760" height="220" fill="#111"/>${rows}</svg>`);
-};
+/** 數字裡面塞滿內容：把標籤文字排成斜向重複的圖樣填進數字。
+    圖樣用頁面內的 SVG pattern（不用 data URI 圖片——圖片裡的 SVG 讀不到載入的網路字型，會退回各電腦的系統字型）；
+    白字數字層 × 圖樣（multiply，疊在 Full 的黑底上）＝ 只在字形裡看得到圖樣，效果同 background-clip:text。
+    三層各自套 slam（外層若有 transform 會自成合成群組，multiply 就疊不到 Full 的黑底，數字外會透出圖樣）。
+    圖樣層與外框層標 data-qa="ignore"：裝飾／重複的字，版面品檢只量數字本身。
+    中文單位（NotoSansTC 字形有重疊輪廓，text-stroke 會描出內部線）改用輪廓膨脹－侵蝕畫外框，數字照舊 text-stroke。 */
+const FillRows: React.FC<{a: string; b: string}> = ({a, b}) => <>
+  <rect width={760} height={220} fill="#111" />
+  {[a, b || a, a].map((s, i) => <text key={i} x={i * 60} y={60 + i * 70} fontFamily={TC} fontWeight={900} fontSize={54} fill={i === 1 ? WH : AC}>{`${s}　${s}　${s}`}</text>)}
+</>;
 
 const Stat: React.FC<P> = ({p, cues}) => {
   const lf = useCurrentFrame();
   const at = cue(cues, 0, 6);
   const v = Math.round(p.value * interpolate(lf, [at, at + 24], [0, 1], {...clamp, easing: Easing.out(Easing.cubic)}));
-  const txt = `${v}${p.suffix ?? ''}`;
+  const suf = String(p.suffix ?? '');
+  const txt = `${v}${suf}`;
+  const id = `stat${at}`, zh = /[^ -~]/.test(suf);   // 單位含非 ASCII 字（中文）
+  const fs = fit(String(p.value) + suf, 1250, 520), ext = Math.max(30, Math.round(fs * 0.2));   // 圖樣層往四周多鋪 ext：字形超出行框的部分（右：負字距、下：行高 0.85）也有圖樣；四邊等寬，slam 縮放中心才對得上
+  const num: React.CSSProperties = {fontFamily: EN, fontWeight: 900, fontSize: fs, lineHeight: 0.85, letterSpacing: -20, ...slam(lf, at)};
+  const layer: React.CSSProperties = {position: 'absolute', left: 0, top: 0, width: '100%', height: '100%'};
   return (
     <Full bg={BK}>
-      <div style={{fontFamily: EN, fontWeight: 900, fontSize: fit(String(p.value) + (p.suffix ?? ''), 1250, 520), lineHeight: 0.85, letterSpacing: -20,
-        backgroundImage: `url("${fillSvg(p.label ?? '', p.sub ?? '')}")`, backgroundSize: '760px 220px', backgroundPosition: `${-lf * 6}px ${lf * 2}px`,
-        WebkitBackgroundClip: 'text', backgroundClip: 'text',
-        color: 'transparent', WebkitTextStroke: `6px ${AC}`, ...slam(lf, at)}}>{txt}</div>
+      <div style={{position: 'relative'}}>
+        <div style={{...num, color: WH}}>{txt}</div>
+        <svg data-qa="ignore" style={{position: 'absolute', left: -ext, top: -ext, width: `calc(100% + ${2 * ext}px)`, height: `calc(100% + ${2 * ext}px)`, ...slam(lf, at), mixBlendMode: 'multiply'}}>
+          <defs>
+            <pattern id={`${id}p`} patternUnits="userSpaceOnUse" width={760} height={220} x={ext - lf * 6} y={ext + lf * 2}><FillRows a={p.label ?? ''} b={p.sub ?? ''} /></pattern>
+            <filter id={`${id}r`}>
+              <feMorphology in="SourceAlpha" operator="dilate" radius={3} result="d" />
+              <feMorphology in="SourceAlpha" operator="erode" radius={3} result="e" />
+              <feComposite in="d" in2="e" operator="out" result="ring" />
+              <feFlood floodColor={AC} />
+              <feComposite in2="ring" operator="in" />
+            </filter>
+          </defs>
+          <rect width="100%" height="100%" fill={`url(#${id}p)`} />
+        </svg>
+        <div data-qa="ignore" style={{...num, ...layer, color: 'transparent', WebkitTextStroke: `6px ${AC}`}}>
+          {zh ? <>{v}<span style={{color: AC, WebkitTextStroke: '0', filter: `url(#${id}r)`}}>{suf}</span></> : txt}
+        </div>
+      </div>
       <Big c={WH} size={fit(p.label ?? '', 1600, 90)} style={{position: 'absolute', bottom: 210, background: BK, padding: '0 30px', ...slam(lf, at + 12)}}>{p.label}</Big>
       {p.sub && <Big c={AC} size={fit(p.sub, 1600, 44)} style={{position: 'absolute', top: 130, ...slam(lf, at + 18)}}>{p.sub}</Big>}
     </Full>

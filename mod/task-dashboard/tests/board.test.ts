@@ -37,6 +37,15 @@ test('全部進度與預計完成時間', async () => {
   expect(planText({ ...pl, done: 51, pct: 91, waitUntil: '15:05', etaText: '17:40' })).toBe('91% 51/56節 · 等 15:05 繼續 · 預計 17:40 完成')
 })
 
+test('後備進度：對話工作清單與工作清單.md', async () => {
+  const pl = { label: '項', done: 2, total: 8, pct: 25, extra: [], perMin: 12, eta: 1, etaText: '15:30', source: 'tasks' as const }
+  expect(planText(pl)).toBe('清單 25% 2/8項 · 預計 15:30 完成')
+  expect(planText(pl, true)).toBe('清單 25% 2/8項 · 預計 15:30 完成 · 每項約 12 分')
+  expect(planText({ ...pl, paused: true, eta: null, etaText: '' })).toBe('清單 25% 2/8項 · 暫停中')
+  expect(planText({ ...pl, done: 8, pct: 100 })).toBe('清單 100% 8/8項 · 已完成')
+  expect(planText({ ...pl, source: 'md', perMin: 0, eta: null, etaText: '' }, true)).toBe('勾選 25% 2/8項 · 不估完成時間')
+})
+
 test('一列裡不出現 Markdown 符號', async () => {
   expect(plain('全部查清並修好了。先給你**今天的戰報結論**，## 一、')).toBe('全部查清並修好了。先給你今天的戰報結論，一、')
   expect(plain('用 `final_qa.py` 檢查')).toBe('用 final_qa.py 檢查')

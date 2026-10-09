@@ -14,7 +14,7 @@ export type Project = {
   open: number
   /** 背景工作（.claude/dashboard.json 登記的紀錄檔）30 分鐘內的最後一行；沒有就空字串 */
   bg?: string
-  /** 全部進度與預計完成時間（.claude/dashboard.json 的 progress）；沒設定就是 null */
+  /** 全部進度與預計完成時間：.claude/dashboard.json 的 progress → 最新對話的工作清單（TaskCreate） → 工作清單.md 勾選框；都沒有就是 null */
   plan?: Plan | null
 }
 
@@ -34,6 +34,10 @@ export type Plan = {
   etaText: string
   /** 還有項目在等這個時間才會開始（例：「15:05」）；沒有就空字串 */
   waitUntil?: string
+  /** 進度來源：沒有＝dashboard.json；tasks＝對話裡的工作清單（TaskCreate／TaskUpdate）；md＝工作清單.md 勾選框（不估時間） */
+  source?: 'tasks' | 'md'
+  /** 工作清單還沒做完、但對話 30 分鐘沒動作（不估完成時間） */
+  paused?: boolean
 }
 
 export type Board = { at: number; projects: Project[]; error?: string }

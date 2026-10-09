@@ -1,0 +1,2 @@
+# 批次檔是 Big5（cp950）＋CRLF，Windows 中文 cmd 才讀得懂；不要讓 git 轉換
+*.bat -text

@@ -461,7 +461,7 @@ def fix_short_pages(pages, durs, cap_max=16, slack=0.0):
 
 
 def word_cut(part, k, lo):
-    """沒有標點可斷時，切在 k 以前最後一個詞的交界（不把「號碼」切成兩頁）；找不到就硬切在 k"""
+    """沒有標點可斷時，切在 k 以前最後一個詞的交界（不把「號碼」切成兩頁）；找不到就硬切在 k（舊版切法，保留給外部呼叫）"""
     try:
         import jieba
         jieba.setLogLevel(60)
@@ -474,27 +474,82 @@ def word_cut(part, k, lo):
         return k
 
 
+def word_ends(text):
+    """每個詞結尾的位置（字元索引）。先轉簡體再斷詞（jieba 的詞典以簡體為主，繁體常斷錯，例「電機與電｜子群」）；
+    英數連成一段（2D、AI、1000、www.xxx.tw）整段不切開"""
+    try:
+        import jieba
+        jieba.setLogLevel(60)
+        seg = text
+        try:
+            from opencc import OpenCC
+            t = OpenCC('t2s').convert(text)
+            if len(t) == len(text): seg = t
+        except Exception:
+            pass
+        pos, ends = 0, set()
+        for w in jieba.cut(seg, HMM=False):
+            pos += len(w); ends.add(pos)
+    except ImportError:
+        ends = set(range(1, len(text)))
+    asc = lambda ch: bool(re.match(r'[A-Za-z0-9.%@/:_\-]', ch))
+    return {e for e in ends if 0 < e < len(text) and not (asc(text[e - 1]) and asc(text[e]))}
+
+
+CAP_KEEP = re.compile(r'\d[\d,.]*\s*(?:到|至|～|~|-)\s*\d[\d,.]*\s*\S?|\d[\d,.]*\s*[%％]|\d[\d,.]*\s*[萬億千百]?\s*[元人個次歲分秒年月日天名種科班群]')
+CAP_CONJ = '和與及或跟並而但且'
+CAP_COST = {0: 0.0, 1: 0.3, 'conj': 1.5, 2: 1.8, 3: 2.2}   # 標點明顯優先；同類切點才比兩邊是否等長
+
+
 def split_caption(text, mx=16):
-    """超過 mx 字的旁白切成多頁字幕：優先在句號/問號，其次逗號/頓號斷開。字數不算標點
-    （2026-10-05：17 字含句號的句子曾被切出只剩「。」的空白頁）。"""
+    """超過 mx 字的旁白切成多頁字幕（字數不算標點；2026-10-05：17 字含句號的句子曾被切出只剩「。」的空白頁）。
+    2026-10-08 改成「從中間附近找最好的切點」：舊版塞滿 mx 字才切，尾巴常只剩 1～3 字或把詞切開
+    （屏榮招生片：「電機與電｜子群」「影視動畫廣告｜班」「商業簡報｜金手獎」「1000 到｜5000 元」）。
+    切點成本＝種類（句末標點 0 < 逗號頓號 0.3 < 連接詞前 1.5 < 空白／英數交界 1.8 < 詞的交界 2.2）＋ 2×兩邊不等長的程度；
+    兩邊都要 ≤ mx（右邊太長之後再切）；數字範圍與「數字＋單位」整段不切；盡量不留 ≤3 字的頁。"""
     if cap_len(text) <= mx:
         return [text]
-    parts = re.split(r'(?<=[。？！；])', text)
-    parts = [x for x in parts if x]
-    out = []
-    for part in parts:
-        while cap_len(part) > mx:
-            k, n = 0, 0                              # 第 mx 個「顯示字」的位置
-            while k < len(part) and (n < mx or CAP_PUNCT.match(part[k])):
-                if not CAP_PUNCT.match(part[k]): n += 1
-                k += 1
-            cut = max((part.rfind(c, 0, k + 1) for c in '，、：—'), default=-1)
-            cut = cut + 1 if cut >= mx // 3 else word_cut(part, k, mx // 2)
-            out.append(part[:cut]); part = part[cut:]
-        if part:
-            if out and (cap_len(out[-1]) + cap_len(part) <= mx or not cap_len(part)): out[-1] += part
-            else: out.append(part)
-    return out
+    ends = word_ends(text)
+    keep = set()
+    for m_ in CAP_KEEP.finditer(text):
+        keep |= set(range(m_.start() + 1, m_.end()))
+    def best_cut(t, base):
+        n = len(t); tot = cap_len(t); best = None
+        for k in range(1, n):
+            L, R = cap_len(t[:k]), cap_len(t[k:])
+            if L == 0 or R == 0 or L > mx or (base + k) in keep: continue
+            prev, nxt = t[k - 1], t[k]
+            if CAP_PUNCT.match(nxt) and not re.match(r'\s', nxt): continue   # 標點不放在頁首
+            if re.match(r'[。？！；]', prev): w = 0
+            elif re.match(r'[，、：—]', prev): w = 1
+            elif nxt in CAP_CONJ and (base + k) in ends: w = 'conj'
+            elif prev == ' ' or nxt == ' ' or bool(re.match(r'[A-Za-z0-9]', prev)) != bool(re.match(r'[A-Za-z0-9]', nxt)): w = 2
+            elif (base + k) in ends: w = 3
+            else: continue
+            Rv = min(R, mx) if R > mx else R
+            bal = abs(L - Rv) / max(min(tot, 2 * mx), 1)
+            cost = CAP_COST[w] + 2 * bal + (3 if min(L, R) <= 3 else 0)
+            pv, nx = t[:k].rstrip()[-1:], t[k:].lstrip()[:1]
+            if w == 2 and re.match(r'[A-Za-z0-9]', pv) and re.match(r'[一-鿿]', nx) and nx not in CAP_CONJ:
+                cost += 0.5                             # 英文名通常跟著後面的中文詞（「Google 帳號」），盡量切在英文前面
+            if best is None or cost < best[0]: best = (cost, k)
+        return best[1] if best else None
+    out, stack = [], [(text, 0)]
+    while stack:
+        t, base = stack.pop(0)
+        if cap_len(t) <= mx:
+            if cap_len(t): out.append(t)
+            elif out: out[-1] += t                       # 只剩標點：併給上一頁
+            continue
+        k = best_cut(t, base)
+        if k is None:                                   # 完全沒有可切的地方：退回舊版硬切
+            k = max(1, min(len(t) - 1, word_cut(t, mx, mx // 2)))
+        stack[:0] = [(t[:k], base), (t[k:], base + k)]
+    merged = []                                         # 相鄰兩頁合起來仍 ≤ mx 就併回去（切太碎時）
+    for pg in out:
+        if merged and cap_len(merged[-1]) + cap_len(pg) <= mx and not re.search(r'[。？！]\s*$', merged[-1]): merged[-1] += pg
+        else: merged.append(pg)
+    return merged
 
 
 IMG_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.bmp'}
