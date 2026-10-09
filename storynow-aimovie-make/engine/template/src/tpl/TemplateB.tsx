@@ -11,7 +11,8 @@ import {TplSpec, captionAt, cue, fit, sceneIndex, textW, wrap} from './common';
 import {BrandLogo} from './brand';
 
 const KAI = loadKai('normal', {weights: ['700'], ignoreTooManyRequestsWarning: true}).fontFamily;
-const HAND = loadHand('normal', {weights: ['700']}).fontFamily;
+/** Caveat 沒有中文字形：中文（如 stat 單位「種」、中文 eyebrow）接已載入的霞鶩文楷，不退回各電腦的系統字型 */
+const HAND = `${loadHand('normal', {weights: ['700']}).fontFamily}, ${KAI}`;
 const INK = '#23324A', RED = '#E2483D', YEL = '#FFD84D', BLUE = '#2F6FD6', GREEN = '#2E9E5B', PAPER = '#FBF8F1';
 const io = Easing.inOut(Easing.cubic);
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
