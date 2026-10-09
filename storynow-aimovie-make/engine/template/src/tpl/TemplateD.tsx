@@ -160,6 +160,31 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
     const qw = wbTextW('小測驗', 42) + 70;                // 依字寬畫標籤（不借用吊牌圖示：字會壓到框與圓孔）
     k.shape(k.T0, 90 + qw / 2, 150, 1, card(qw, 80, WB.orange), 10, 'none', 0, k.id('qlabel'));
     k.text(k.T0 + 4, 90 + qw / 2, 165, '小測驗', 42, {bold: true, color: WB.ink, dur: 6, box: k.id('qlabel')});   // 深墨字：白字在橘標籤上只有 2.2:1（2026-10-08）
+    /* 四個選項（統測格式，2026-10-10）：歷屆題一律四個全放、照原題 A～D 順序、選項照原文（A2 品檢會擋）。
+       以前只放三個排成一列，字母卻照 A、B、C 重排，原題 (D) 被標成 C。
+       選項短（≤14 字）→ 2×2；長（原題常 20～30 字）→ 像考卷一樣四行直列、一行一個 */
+    if (opts.length >= 4) {
+      const four = opts.slice(0, 4), long = Math.max(...four.map((o) => wbTextW(o, 1))) > 14;
+      wrap(p.question ?? '', 24).slice(0, 2).forEach((ln, i) => k.text(k.T0 + 8 + i * 6, 960, (long ? 215 : 250) + i * 72, ln, fitW(ln, 1600, 60)));
+      if (long) {
+        const size = Math.min(48, ...four.map((o, i) => fitW(`${String.fromCharCode(65 + i)}. ${o}`, 1600, 48)));
+        four.forEach((o, i) => {
+          const y = 375 + i * 118, at = k.T0 + 30 + i * 12;
+          k.shape(at, 960, y, 1, box(1720, 100), 8, 'none', 0, k.id(`opt${i}`));
+          k.text(at + 4, 130, y + size * 0.35, `${String.fromCharCode(65 + i)}. ${o}`, size, {dur: tdur(o, 8), box: k.id(`opt${i}`), anchor: 'start'});
+          if (i === p.answerIndex) k.shape(reveal, 960, y, 1, circleMark(890, 62), 14, 'ding');
+        });
+      } else {
+        four.forEach((o, i) => {
+          const x = 960 + ((i % 2) - 0.5) * 840, y = 520 + Math.floor(i / 2) * 210, at = k.T0 + 30 + i * 12;
+          k.shape(at, x, y, 1, box(780, 170), 8, 'none', 0, k.id(`opt${i}`));
+          k.text(at + 4, x, y + 18, `${String.fromCharCode(65 + i)}. ${o}`, fitW(o + 'AA', 700, 54), {dur: tdur(o, 8), box: k.id(`opt${i}`)});
+          if (i === p.answerIndex) k.shape(reveal, x, y, 1, circleMark(420, 112), 14, 'ding');
+        });
+      }
+      if (p.afterNote) k.text(reveal + 16, 960, long ? 870 : 905, p.afterNote, fitW(p.afterNote, 1600, 48), {color: WB.red});
+      return;
+    }
     wrap(p.question ?? '', 20).slice(0, 2).forEach((ln, i) => k.text(k.T0 + 8 + i * 6, 960, 320 + i * 80, ln, fitW(ln, 1600, 66)));
     const n = Math.max(1, opts.length), w = Math.min(620, 1700 / n - 50);
     opts.forEach((o, i) => {
@@ -550,9 +575,11 @@ const FxLayer: React.FC<{spec: TplSpec; f: number}> = ({spec, f}) => {
         if (o.kind === 'bubble') {
           const t = String(p.text), size = p.size ?? 46, w = wbTextW(t, size) + 70, h = size * 1.9, sc = popIn(f, o.at, 1.08) * out;
           const dx = p.tx - o.x, dy = p.ty - o.y, by = dy > 0 ? h / 2 : -h / 2, bx = Math.max(-w / 2 + 40, Math.min(w / 2 - 40, dx * 0.4));
+          const tl = Math.hypot(dx - bx, dy - by) || 1, L = Math.min(32, tl * 0.85), tipX = bx + (dx - bx) / tl * L, tipY = by + (dy - by) / tl * L;
           return (
             <g key={i} transform={`translate(${o.x} ${o.y}) scale(${sc})`} data-qa-box={`bub${i}`}>
-              <path d={`M${bx - 24} ${by} L${dx * 0.85} ${dy * 0.85} L${bx + 24} ${by} Z`} fill="#fff" stroke={WB.ink} strokeWidth={6} strokeLinejoin="round" />
+              {/* 尖角最長 32px、只朝目標方向（2026-10-10：以前一路伸到目標點的 85%，目標在卡片框上時白底會蓋掉框線） */}
+              <path d={`M${bx - 24} ${by} L${tipX} ${tipY} L${bx + 24} ${by} Z`} fill="#fff" stroke={WB.ink} strokeWidth={6} strokeLinejoin="round" />
               <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={h / 2} fill="#fff" stroke={WB.ink} strokeWidth={6} />
               <rect x={bx - 21} y={by - 9} width={42} height={18} fill="#fff" />
               <text data-qa-in={`bub${i}`} x={0} y={size * 0.36} textAnchor="middle" style={{fontFamily: BOLD}} fontWeight={900} fontSize={size} fill={WB.ink}>{t}</text>

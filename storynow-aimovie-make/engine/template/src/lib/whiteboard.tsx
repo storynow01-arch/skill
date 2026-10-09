@@ -90,7 +90,8 @@ export const DrawShape: React.FC<{it: DrawItem; f: number}> = ({it, f}) => {
         return <path key={i} d={d} fill="none" stroke={shape.ink ?? WB.ink} strokeWidth={(shape.w ?? 7.5) / (it.s ?? 1)}
           strokeLinecap="round" strokeLinejoin="round" strokeDasharray={`${lens[i]} ${lens[i] + 10}`} strokeDashoffset={lens[i] - vis} />;
       })}
-      {shape.extra && <g opacity={fillP}>{shape.extra}</g>}
+      {/* 圖示上的數字／字一律無襯線（沒指定字型會掉回新細明體／Times，2026-10-10） */}
+      {shape.extra && <g opacity={fillP} style={{fontFamily: '"Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif'}}>{shape.extra}</g>}
     </g>
   );
 };
@@ -162,6 +163,29 @@ export const O = (cx: number, cy: number, r: number) =>
   `M${cx - r} ${cy} A${r} ${r} 0 1 0 ${cx + r} ${cy} A${r} ${r} 0 1 0 ${cx - r} ${cy} Z`;
 const Ln = (...p: number[]) => `M${p[0]} ${p[1]}` + Array.from({length: p.length / 2 - 1}, (_, i) => ` L${p[2 + i * 2]} ${p[3 + i * 2]}`).join('');
 const C = WB;
+const f1 = (n: number) => +n.toFixed(1);
+/** 七段顯示器數字（數位錶、電子儀器用）：每一位畫 7 條段，亮的段實色、暗的段淡淡留底（像真的液晶） */
+const SEG7: Record<string, string> = {'0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg'};
+export const seg7 = (txt: string, x: number, y: number, w: number, h: number, ink: string = C.ink, gap = w * 0.3) => {
+  const t = Math.max(3, w * 0.2), out: React.ReactNode[] = [];
+  let cx = x;
+  [...txt].forEach((ch, k) => {
+    if (ch === ':') {
+      out.push(<rect key={`c${k}`} x={cx} y={y + h * 0.25} width={t} height={t} fill={ink} />, <rect key={`d${k}`} x={cx} y={y + h * 0.7} width={t} height={t} fill={ink} />);
+      cx += t + gap; return;
+    }
+    const seg: Record<string, number[]> = {
+      a: [cx + t, y, w - 2 * t, t], g: [cx + t, y + h / 2 - t / 2, w - 2 * t, t], d: [cx + t, y + h - t, w - 2 * t, t],
+      f: [cx, y + t, t, h / 2 - t * 1.5], b: [cx + w - t, y + t, t, h / 2 - t * 1.5],
+      e: [cx, y + h / 2 + t / 2, t, h / 2 - t * 1.5], c: [cx + w - t, y + h / 2 + t / 2, t, h / 2 - t * 1.5],
+    };
+    const on = SEG7[ch] ?? '';
+    Object.entries(seg).forEach(([s, [rx, ry, rw, rh]]) =>
+      out.push(<rect key={`${k}${s}`} x={rx} y={ry} width={rw} height={rh} rx={t / 3} fill={ink} opacity={on.includes(s) ? 1 : 0.06} />));
+    cx += w + gap;
+  });
+  return <g>{out}</g>;
+};
 
 /* ---------- 標記（打勾、打叉、底線、圈起來、卡片、箭頭） ---------- */
 export const check = (): Shape => ({strokes: ['M-40 0 L-10 32 L45 -38'], w: 16, ink: C.green});
@@ -239,17 +263,72 @@ export const WB_ICONS: Record<string, () => Shape> = {
       ...[0, 1, 2].flatMap((r) => [0, 1, 2].map((c) => ({d: R(-46 + c * 33, -18 + r * 33, 26, 26, 5), c: c === 2 ? C.orange : C.white})))],
     extra: <text x={38} y={-42} textAnchor="end" fontSize={26} fontWeight={700} fill={C.ink}>12</text>,
   }),
-  /** 數位錶：液晶數字 */
-  dwatch: () => ({
-    strokes: [R(-38, -92, 76, 184, 18), R(-72, -48, 144, 96, 18), R(-56, -32, 112, 64, 6)],
-    fills: [{d: R(-38, -92, 76, 184, 18), c: C.blue}, {d: R(-72, -48, 144, 96, 18), c: C.gray}, {d: R(-56, -32, 112, 64, 6), c: '#dff3df'}],
-    extra: <text x={0} y={14} textAnchor="middle" fontSize={40} fontWeight={700} fill={C.ink}>12:05</text>,
-  }),
+  /** 數位錶（2026-10-10 重畫）：上下兩段錶帶只畫到錶殼邊（不穿過錶殼，描邊才不會疊在錶面上）＋側邊按鈕＋七段顯示器數字 */
+  dwatch: () => {
+    const top = 'M-32 -50 V-84 Q-32 -96 -20 -96 H20 Q32 -96 32 -84 V-50', bot = 'M-32 50 V84 Q-32 96 -20 96 H20 Q32 96 32 84 V50';
+    return {
+      strokes: [R(-74, -50, 148, 100, 20), top, bot, R(-60, -36, 120, 72, 8), 'M74 -14 H84 V14 H74'],
+      fills: [{d: top + ' Z', c: C.blue}, {d: bot + ' Z', c: C.blue}, {d: R(-74, -50, 148, 100, 20), c: C.gray}, {d: R(-60, -36, 120, 72, 8), c: '#dff3df'}],
+      extra: seg7('12:05', -47, -20, 18, 40),
+    };
+  },
   /** 電子溫度計（數位）：液晶顯示數字＋探針 */
-  dthermo: () => ({
-    strokes: [R(-46, -88, 92, 120, 16), R(-34, -72, 68, 44, 6), Ln(0, 32, 0, 90), O(-16, 6, 8), O(16, 6, 8)],
-    fills: [{d: R(-46, -88, 92, 120, 16), c: C.blue}, {d: R(-34, -72, 68, 44, 6), c: '#dff3df'}],
-    extra: <text x={0} y={-40} textAnchor="middle" fontSize={26} fontWeight={700} fill={C.ink}>25.4°</text>,
+  dthermo: () => ({   // 2026-10-10：螢幕加寬、字縮小，「25.4°」不再超出液晶框
+    strokes: [R(-58, -88, 116, 120, 16), R(-46, -74, 92, 46, 6), Ln(0, 32, 0, 90), O(-18, 6, 9), O(18, 6, 9)],
+    fills: [{d: R(-58, -88, 116, 120, 16), c: C.blue}, {d: R(-46, -74, 92, 46, 6), c: '#dff3df'}],
+    extra: <text x={0} y={-42} textAnchor="middle" fontSize={24} fontWeight={700} fill={C.ink}>25.4°C</text>,
+  }),
+  /** 汽車油表（類比，2026-10-10）：E～F 半圓錶盤、E 端紅區、指針、加油機小圖 —— 不可拿速度表（km/h）代替 */
+  fuel: () => {
+    const P = (r: number, t: number) => `${f1(r * Math.cos(Math.PI * (1 - t)))} ${f1(30 - r * Math.sin(Math.PI * (1 - t)))}`;
+    const dial = 'M-96 30 A96 96 0 0 1 96 30 Z';
+    const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => `M${P(t % 0.5 ? 72 : 64, t)} L${P(86, t)}`).join(' ');
+    const pump = R(16, -8, 20, 28, 3);
+    return {
+      strokes: [dial, ticks, `M0 30 L${P(70, 0.3)}`, O(0, 30, 9), pump, 'M36 -2 H41 V14 Q41 19 45 17 V0 L41 -5'],
+      fills: [{d: dial, c: C.white}, {d: `M${P(88, 0)} A88 88 0 0 1 ${P(88, 0.16)} L${P(76, 0.16)} A76 76 0 0 0 ${P(76, 0)} Z`, c: '#f2a093'},
+        {d: O(0, 30, 9), c: C.red}, {d: pump, c: C.orange}],
+      extra: <g>
+        <text x={-56} y={20} textAnchor="middle" fontSize={26} fontWeight={900} fill={C.red}>E</text>
+        <text x={62} y={20} textAnchor="middle" fontSize={26} fontWeight={900} fill={C.ink}>F</text>
+      </g>,
+      o: [0, 20],
+    };
+  },
+  /** 量化（2026-10-10）：淡格線＋平滑曲線（類比）＋貼著格子的階梯（數位）—— 「換成最接近的格子」 */
+  quantize: () => {
+    const curve = 'M-90 70 C -40 60, -20 -20, 20 -30 S 70 -70, 90 -80';
+    const stair = 'M-90 70 H-60 V50 H-30 V10 H0 V-20 H30 V-40 H60 V-60 H90';
+    const grid = [-60, -30, 0, 30, 60].map((x) => ({d: R(x - 1, -90, 2, 170), c: '#dfe3e7'}))
+      .concat([-50, -30, -10, 10, 30, 50, 70].map((y) => ({d: R(-90, y - 1, 180, 2), c: '#dfe3e7'})));
+    return {
+      strokes: [R(-100, -100, 200, 190, 10), stair],
+      fills: [{d: R(-100, -100, 200, 190, 10), c: C.white}, ...grid],
+      extra: <path d={curve} fill="none" stroke={C.blue} strokeWidth={6} strokeLinecap="round" strokeDasharray="2 12" />,
+    };
+  },
+  /** 卡諾圖（2026-10-10）：4×4 格、幾個 1、紅框把相鄰的 1 圈起來（化簡） */
+  kmap: () => {
+    const cells = [[0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0], [1, 0, 0, 1]];
+    const grid = [-40, 0, 40].map((v) => `M${v} -80 V80 M-80 ${v} H80`).join(' ');
+    return {
+      strokes: [R(-80, -80, 160, 160, 6), grid],
+      fills: [{d: R(-80, -80, 160, 160, 6), c: C.white}, {d: R(-38, -78, 76, 76, 14), c: '#fde7b0'}],
+      w: 5,
+      extra: <g>
+        {cells.flatMap((row, r) => row.map((v, c) => <text key={`${r}${c}`} x={-60 + c * 40} y={-48 + r * 40} textAnchor="middle" fontSize={26} fontWeight={700} fill={v ? C.ink : '#9aa3ad'}>{v}</text>))}
+        <rect x={-36} y={-76} width={72} height={72} rx={14} fill="none" stroke={C.red} strokeWidth={5} />
+      </g>,
+    };
+  },
+  /** 編碼（2026-10-10）：一張卡片寫著 0 和 1 */
+  binary: () => ({
+    strokes: [R(-90, -80, 180, 160, 14)],
+    fills: [{d: R(-90, -80, 180, 160, 14), c: C.white}],
+    extra: <g fontSize={40} fontWeight={900} textAnchor="middle">
+      <text x={0} y={-18} fill={C.ink} letterSpacing={10}>1011</text>
+      <text x={0} y={46} fill={C.blue} letterSpacing={10}>0110</text>
+    </g>,
   }),
   /** 液晶體重計（數位） */
   dscale: () => ({
@@ -337,9 +416,24 @@ export const WB_ICONS: Record<string, () => Shape> = {
     const d = 'M-30 60 C -60 40, -70 -20, -40 -60 C -10 -95, 55 -90, 60 -30 C 64 10, 30 20, 20 45 C 12 65, -10 80, -30 60 Z';
     return {strokes: [d, 'M-20 -30 C -5 -55, 30 -50, 30 -20 C 30 0, 5 0, 5 20'], fills: [{d, c: C.skin}]};
   },
+  /** 指針式速度表（類比，2026-10-10 重畫）：252° 錶盤、刻度、數字、綠黃紅色帶、指針、km/h —— 一看就是儀表，不會被看成扇形 */
   gauge: () => {
-    const arc = 'M-90 40 A 90 90 0 1 1 90 40 Z';
-    return {strokes: [arc, 'M0 30 L55 -40', O(0, 30, 10)], fills: [{d: arc, c: C.sky}, {d: O(0, 30, 10), c: C.ink}]};
+    const ang = (t: number) => Math.PI * (1.2 - 1.4 * t);
+    const P = (r: number, t: number) => `${f1(r * Math.cos(ang(t)))} ${f1(-r * Math.sin(ang(t)))}`;
+    const band = (t0: number, t1: number) => `M${P(88, t0)} A88 88 0 0 1 ${P(88, t1)} L${P(77, t1)} A77 77 0 0 0 ${P(77, t0)} Z`;
+    const major = [0, 0.25, 0.5, 0.75, 1].map((t) => `M${P(68, t)} L${P(88, t)}`).join(' ');
+    return {
+      strokes: [O(0, 0, 96), major, `M0 0 L${P(72, 0.625)}`, O(0, 0, 9)],
+      fills: [{d: O(0, 0, 96), c: C.white}, {d: band(0, 0.62), c: '#bfe5c9'}, {d: band(0.62, 0.82), c: C.yellow}, {d: band(0.82, 1), c: '#f2a093'}, {d: O(0, 0, 9), c: C.red}],
+      extra: <g>
+        {[0.125, 0.375, 0.625, 0.875].map((t) => <path key={t} d={`M${P(78, t)} L${P(88, t)}`} stroke={C.ink} strokeWidth={4} strokeLinecap="round" />)}
+        {['0', '40', '80', '120', '160'].map((s, i) => {
+          const [x, y] = P(54, i / 4).split(' ').map(Number);
+          return <text key={s} x={x} y={y + 6} textAnchor="middle" fontSize={17} fontWeight={700} fill={C.ink}>{s}</text>;
+        })}
+        <text x={0} y={62} textAnchor="middle" fontSize={17} fontWeight={700} fill={C.ink}>km/h</text>
+      </g>,
+    };
   },
   file: () => {
     const d = 'M-70 -95 H35 L70 -60 V95 H-70 Z';
@@ -378,7 +472,24 @@ export const WB_ICONS: Record<string, () => Shape> = {
     const body = R(-60, -10, 120, 95, 12);
     return {strokes: [body, 'M-38 -10 V-40 A 38 38 0 0 1 38 -40 V-10', 'M0 25 V50'], fills: [{d: body, c: C.yellow}]};
   },
-  clock: () => ({strokes: [O(0, 0, 80), 'M0 0 V-50 M0 0 L35 20'], fills: [{d: O(0, 0, 80), c: C.white}]}),
+  /** 指針時鐘（2026-10-10 重畫）：12 個刻度、12／3／6／9 數字、時針短粗分針長、紅色秒針、中心軸 —— 只有圓＋兩條線會被看成一般圖示 */
+  clock: () => {
+    const P = (r: number, a: number) => `${f1(r * Math.sin(a))} ${f1(-r * Math.cos(a))}`;
+    const major = [0, 3, 6, 9].map((h) => `M${P(62, (h * Math.PI) / 6)} L${P(76, (h * Math.PI) / 6)}`).join(' ');
+    return {
+      strokes: [O(0, 0, 88), major, `M0 0 L${P(34, (10 + 10 / 60) * Math.PI / 6)}`, `M0 0 L${P(58, (2 * Math.PI) / 6)}`],
+      fills: [{d: O(0, 0, 88), c: C.white}],
+      extra: <g>
+        {[1, 2, 4, 5, 7, 8, 10, 11].map((h) => <path key={h} d={`M${P(68, (h * Math.PI) / 6)} L${P(76, (h * Math.PI) / 6)}`} stroke={C.ink} strokeWidth={4} strokeLinecap="round" />)}
+        {[[12, 0], [3, 3], [6, 6], [9, 9]].map(([n, h]) => {
+          const [x, y] = P(46, (h * Math.PI) / 6).split(' ').map(Number);
+          return <text key={n} x={x} y={y + 7} textAnchor="middle" fontSize={20} fontWeight={700} fill={C.ink}>{n}</text>;
+        })}
+        <path d={`M${P(-14, (7 * Math.PI) / 6)} L${P(66, (7 * Math.PI) / 6)}`} stroke={C.red} strokeWidth={3} strokeLinecap="round" />
+        <circle r={7} fill={C.ink} /><circle r={3} fill={C.red} />
+      </g>,
+    };
+  },
   trophy: () => {
     const cup = 'M-55 -80 H55 V-30 A55 55 0 0 1 -55 -30 Z';
     return {strokes: [cup, 'M-55 -60 H-80 Q-80 -10 -40 -10 M55 -60 H80 Q80 -10 40 -10', 'M0 25 V55', R(-45, 55, 90, 30, 6)],

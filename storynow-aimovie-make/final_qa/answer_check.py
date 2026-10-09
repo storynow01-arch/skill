@@ -7,7 +7,9 @@
 場景（quiz、qaEnd 或任何有 answerIndex 的場景）：
   "exam": "114-專二-23"                  題號：學年度-考科-題號
   props.answerIndex（0 起算）或 props.answer（"C"）
-  "examOptions": ["A", "C", "D"]          畫面只放部分選項或換了順序時，寫出每個選項原本的代號（預設 A、B、C、D）
+  props.options 一律放滿四個、照原題 A～D 順序（2026-10-10 起；統測就是四選一）
+  ⛔ 不准只放部分選項或換順序：範本的字母永遠照 A、B、C、D 排，少放一個就會把原題 (D) 標成 C。
+     舊欄位 "examOptions" 已停用，出現就擋。
 """
 import argparse, json, os, sys
 
@@ -42,7 +44,12 @@ def check(sb, table, table_path, rec):
         if str(official).strip() == '送分':
             rec.problem('A2.送分', where, '這題官方公告送分（題目有瑕疵），不適合當例題，要用就要在影片裡講清楚', sc)
             continue
-        letters = sc.get('examOptions') or list('ABCDE')
+        if sc.get('examOptions'):
+            rec.problem('A2.選項', where, '不准只放部分選項（examOptions 已停用）：四個選項全放、照原題順序', sc)
+            continue
+        if 'options' in p and len(p['options']) != 4:
+            rec.problem('A2.選項', where, f'畫面放了 {len(p["options"])} 個選項；歷屆題要四個全放、照原題 A～D 順序', sc)
+        letters = list('ABCDE')
         if 'answer' in p:
             shown = str(p['answer']).strip().upper()
         elif isinstance(p.get('answerIndex'), int) and p['answerIndex'] < len(letters):
