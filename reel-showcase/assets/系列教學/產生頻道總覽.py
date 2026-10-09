@@ -7,7 +7,7 @@ import html, json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
-from 產生系列展示網頁 import FONTS, build  # noqa: E402
+from 產生系列展示網頁 import FONTS, VER, build, site_conf  # noqa: E402
 
 esc = html.escape
 
@@ -37,9 +37,10 @@ def main():
   <div class="progress"><i style="width:{s['videos'] / max(1, s['total']) * 100:.1f}%"></i><em style="width:{s['up'] / max(1, s['total']) * 100:.1f}%"></em></div></div></a>'''
     idle_html = ''.join(f'<span class="stcell no">{esc(n)}</span> ' for n in idle)
     tot_v, tot_up = sum(s['videos'] for s in subs), sum(s['up'] for s in subs)
+    BRAND, SITE = site_conf()
     page = f'''<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>頻道總覽</title>{FONTS}<link rel="stylesheet" href="_展示網頁/site.css"><link rel="stylesheet" href="_展示網頁/series.css"></head><body class="series">
-<header class="top"><a class="brand" href="展示網頁.html"><b>CH</b><span>頻道總覽</span></a><nav></nav></header>
+<title>{esc(SITE)}｜頻道總覽</title>{FONTS}<link rel="stylesheet" href="_展示網頁/site.css?v={VER}"><link rel="stylesheet" href="_展示網頁/series.css?v={VER}"></head><body class="series">
+<header class="top"><a class="brand" href="展示網頁.html"><b>{esc(BRAND)}</b><span>{esc(SITE)}</span></a><nav></nav></header>
 <main class="wrap"><section class="phead"><div class="en">Channel Overview</div><h1>頻道總覽<small>{len(subs)} 科</small></h1>
 <p>每一科的教學影片進度。點進去看那一科的成片、確認、上架狀態。已成片 {tot_v} 節、已上架 {tot_up} 節。</p></section>
 <div class="subjects">{cards or '<p class="empty">還沒有科目（科目資料夾裡要有 系列設定.md）</p>'}</div>

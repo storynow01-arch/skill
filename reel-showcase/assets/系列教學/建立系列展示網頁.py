@@ -19,6 +19,10 @@ def main():
     for f in ('啟動展示網頁.py', '產生系列展示網頁.py', '產生頻道總覽.py', 'series.css', 'series.js'):
         shutil.copyfile(os.path.join(HERE, f), os.path.join(prog, f))
     shutil.copyfile(os.path.join(HERE, '..', '展示網頁樣式', 'site.css'), os.path.join(prog, 'site.css'))
+    conf = os.path.join(prog, '網站設定.json')          # 品牌字：頻道自己的，同步時不覆蓋
+    if not os.path.exists(conf):
+        import json
+        json.dump({'品牌': 'REEL', '網站名': '教學影片庫'}, open(conf, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     # 頻道層的 bat：程式在 .\_展示網頁\；科目層：..\_展示網頁\（路徑一律用 %~dp0，bat 裡不放中文資料夾名）
     open(os.path.join(root, '啟動展示網頁.bat'), 'w', encoding='cp950', newline='').write(
         BAT.format(prog='%~dp0_展示網頁\\', root='%~dp0.'))

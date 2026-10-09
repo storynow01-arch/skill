@@ -35,6 +35,12 @@ class H(SimpleHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
+    def end_headers(self):
+        # 每次出片會重建網頁：不讓瀏覽器用快取的舊頁面（2026-10-09 實測：重建後還看到舊品牌字）
+        if not self.path.startswith('/api/'):
+            self.send_header('Cache-Control', 'no-cache')
+        super().end_headers()
+
     def _json(self, code, obj):
         b = json.dumps(obj, ensure_ascii=False).encode('utf-8')
         self.send_response(code)

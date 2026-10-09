@@ -9,7 +9,7 @@
   已上架   已上傳 YouTube（附網址）
   全部節次 大綱每一節的進度總表（未做／製作中／待確認……）
 用法：python 產生系列展示網頁.py <科目資料夾>      （每節出片後 make_video 會自動跑）"""
-import html, json, os, re, shutil, subprocess, sys
+import html, json, os, re, shutil, subprocess, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SECTIONS = [('待確認', 'To Review', '最終品檢通過、你還沒看過的成片。看完按「確定使用」或「要修改」（要修改請寫下哪裡要改）。'),
@@ -20,6 +20,33 @@ SECTIONS = [('待確認', 'To Review', '最終品檢通過、你還沒看過的�
 DEFAULT_CHECK = ['說明欄照模板寫（開頭兩行、章節時間軸、出處、AI 揭露、#標籤）', '上傳 SRT 字幕檔', '「變造或合成內容」勾「是」',
                  '加入播放清單、設定排程時間', '上線後檢查：#標籤、章節、轉錄稿']
 esc = html.escape
+VER = str(int(time.time()))      # 重建時換版本號：瀏覽器一定抓新的 css／js（不然會用快取的舊版）
+CHAP = {'0': '開場', '1': '第一章', '2': '第二章', '3': '第三章', '4': '第四章', '5': '第五章', '6': '第六章', '7': '第七章', '8': '第八章', '9': '第九章'}
+KIND = {'觀': '觀念課', '練': '練功課', '統': '章末統測題'}
+
+
+def site_conf():
+    """頻道層 _展示網頁/網站設定.json：{"品牌": "皇小米", "網站名": "教學影片庫"}（建立系列展示網頁.py 會建預設）"""
+    p = os.path.join(HERE, '網站設定.json')
+    try:
+        c = json.load(open(p, encoding='utf-8'))
+    except (OSError, ValueError):
+        c = {}
+    return c.get('品牌', 'REEL'), c.get('網站名', '教學影片庫')
+
+
+def blurb(d, sbj):
+    """卡片說明一句：storyboard 頂層 "說明" 優先；沒有就取 01_內容分析.md 第一個段落／條列"""
+    if sbj.get('說明'):
+        return sbj['說明']
+    f = os.path.join(d, '01_內容分析.md')
+    if not os.path.exists(f):
+        return ''
+    for ln in open(f, encoding='utf-8').read().splitlines()[1:]:
+        t = re.sub(r'^[-*\d.\s]+|\*\*|`', '', ln).strip()
+        if t and not ln.startswith(('#', '|', '>', '（')) and len(t) >= 8:
+            return t[:60]
+    return ''
 FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
          '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">')
 
@@ -68,6 +95,7 @@ def build(subject_dir):
     m = re.search(r'播放清單[^：:]*[：:]\s*([^\n（(]+)', md)
     playlist = m.group(1).strip().strip('「」') if m else ''
     plan, checks = outline(md), checklist(md)
+    BRAND, SITE = site_conf()
     A = os.path.join(S, '展示網頁素材')
     os.makedirs(os.path.join(A, 'preview'), exist_ok=True)
     for f in ('site.css', 'series.css', 'series.js'):
@@ -117,7 +145,7 @@ def build(subject_dir):
             if os.path.exists(os.path.join(d, x)):
                 files.append((label, rel(x)))
         vids[lid] = dict(id=lid, sid=sid, dir=name, video=rel(f'out/{f}'), dur=dur, size=size, w=w, h=h, poster=poster, prev=prev,
-                         ok=ok, items=items, title=mm.group(2).replace('_', ' '), sbtitle=sbj.get('title', ''), files=files,
+                         ok=ok, items=items, title=mm.group(2).replace('_', ' '), sbtitle=sbj.get('title', ''), files=files, desc=blurb(d, sbj),
                          date=__import__('datetime').datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M'), mtime=mtime)
     plan_ids = [r['id'] for r in plan]
     for lid in vids:                                  # 資料夾有、大綱沒有的節次也列出來
@@ -127,22 +155,26 @@ def build(subject_dir):
     V = [v for v in vids.values() if v.get('video')]
     order = {r['id']: i for i, r in enumerate(plan)}
     V.sort(key=lambda v: order.get(v['id'], 999))
+    kind = {r['id']: KIND.get(r['類型'], r['類型']) for r in plan}
     for v in V:
         v['topic'] = topic.get(v['id']) or v['title']
+        v['chap'] = CHAP.get(v['id'].split('-')[0], '')
+        v['kind'] = kind.get(v['id'], '')
 
-    meta = {v['sid']: {'節次': v['id'], '主題': v['topic'], 'ok': v['ok']} for v in V}
+    meta = {v['sid']: {'節次': v['id'], '主題': v['topic'], 'ok': v['ok'], '頁': f'片_{v["sid"]}.html'} for v in V}
     boot = (f'<script>window.SERIES={json.dumps({"subject": subject, "items": meta, "checks": checks, "total": len(plan)}, ensure_ascii=False)};</script>')
 
     def head(t, rel=''):
         return (f'<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-                f'<title>{esc(t)}</title>{FONTS}<link rel="stylesheet" href="{rel}site.css"><link rel="stylesheet" href="{rel}series.css"></head><body class="series">')
+                f'<title>{esc(t)}</title>{FONTS}<link rel="stylesheet" href="{rel}site.css?v={VER}"><link rel="stylesheet" href="{rel}series.css?v={VER}"></head><body class="series">')
 
     def topbar(rel, cur):
         links = ''.join(f'<a class="{"on" if cur == k else ""}" href="{rel}區_{k}.html"><span>{k}</span><i data-count="{k}">0</i></a>' for k, *_ in SECTIONS)
         home, chan = ('展示網頁.html', '../展示網頁.html') if rel else ('../展示網頁.html', '../../展示網頁.html')
         return (f'<div class="savebar" data-savebar hidden>現在是直接開檔，按鈕不會存到檔案。請雙擊這個資料夾裡的「啟動展示網頁.bat」打開。</div>'
-                f'<header class="top"><a class="brand" href="{chan}" title="回頻道總覽"><b>CH</b><span>頻道總覽</span></a>'
-                f'<a class="brand subj" href="{home}"><span>{esc(title)}</span></a><nav>{links}</nav></header>')
+                f'<header class="top"><a class="brand" href="{chan}" title="回頻道總覽"><b>{esc(BRAND)}</b><span>{esc(SITE)}</span></a>'
+                f'<a class="brand subj" href="{home}"><span>{esc(title.split("｜")[-1])}</span></a><nav>{links}</nav>'
+                f'<button class="picks-btn" data-open-picks>進度 <i data-pick-count>0</i></button></header>')
 
     def badge(v):
         if v['ok']:
@@ -150,19 +182,22 @@ def build(subject_dir):
         return '<span class="qa warn">品檢有項目</span>' if v['ok'] is False else '<span class="qa na">未品檢</span>'
 
     def card(v, rel):
-        return f'''<article class="card" data-id="{v['sid']}">
+        return f'''<article class="card" data-id="{v['sid']}" data-tags="{esc(v['chap'])} {esc(v['kind'])}">
   <a class="thumb" href="{rel}片_{v['sid']}.html"><img loading="lazy" src="{rel}{v['poster']}" alt="">
     <video muted loop playsinline preload="none" data-src="{rel}{v['prev']}"></video>
     <span class="dur">{mmss(v['dur'])}</span><span class="stbadge" data-st-badge></span><span class="ytlink" data-yt hidden>▶ YouTube</span></a>
-  <div class="cbody"><div class="kicker">{esc(v['id'])}</div>
+  <div class="cbody"><div class="kicker">{esc(v['id'])}{' · ' + esc(v['kind']) if v['kind'] else ''}</div>
     <h3><a href="{rel}片_{v['sid']}.html">{esc(v['topic'])}</a></h3>
+    <p>{esc(v['desc'])}</p>
     <div class="cfoot">{badge(v)}<span>{v['date']}</span></div>
     <div class="cact"><div class="decide st" data-status="{v['sid']}">{''.join(f'<button data-v="{s}">{s}</button>' for s in ('確定使用', '要修改', '已上架'))}</div></div>
   </div></article>'''
 
     def footer():
         return (f'<footer class="foot"><span>{esc(title)} · 系列教學展示網頁</span><span>用「啟動展示網頁.bat」打開，按鈕自動存到 展示紀錄.json；'
-                '每一節出片後會自動重建。</span></footer>')
+                '每一節出片後會自動重建。</span></footer>'
+                '<aside class="drawer" data-drawer><div class="dhead"><b>進度</b><button data-close-picks>關閉</button></div>'
+                '<div class="dlist" data-pick-list></div><p class="hint" data-save-hint></p></aside>')
 
     # ---------- 首頁 ----------
     mosaic = ''.join(f'<img src="展示網頁素材/{v["poster"]}" alt="">' for v in (V * 6)[:18]) if V else ''
@@ -180,16 +215,18 @@ def build(subject_dir):
   <div class="progress"><i style="width:{len(V) / max(1, len(plan)) * 100:.1f}%"></i><em data-progress-yt></em></div></div></section>
 <main class="wrap"><div class="tiles five">{tiles}</div>
 <div class="shead"><h2>最新成片</h2><span class="en">LATEST</span></div><div class="grid">{''.join(card(v, '展示網頁素材/') for v in latest) or '<p class="empty">還沒有成片</p>'}</div></main>
-{footer()}{boot}<script src="展示網頁素材/series.js"></script></body></html>'''
+{footer()}{boot}<script src="展示網頁素材/series.js?v={VER}"></script></body></html>'''
     open(os.path.join(S, '展示網頁.html'), 'w', encoding='utf-8').write(home)
 
     # ---------- 分區頁（四個狀態分區放全部影片，由 series.js 依狀態篩） ----------
+    tags = [x for x in dict.fromkeys(v['chap'] for v in V) if x] + [x for x in KIND.values() if any(v['kind'] == x for v in V)]
+    chips = '<button class="chip on" data-filter="">全部</button>' + ''.join(f'<button class="chip" data-filter="{esc(x)}">{esc(x)}</button>' for x in tags)
     for k, en, it in SECTIONS[:4]:
         page = head(f'{k}｜{title}') + topbar('', k) + f'''
 <section class="phead wrap"><div class="en">{en}</div><h1>{k}<small data-count="{k}">0</small></h1><p>{esc(it)}</p>
-  <div class="tools"><div class="chips"></div><input type="search" placeholder="搜尋節次、主題…" data-search></div></section>
+  <div class="tools"><div class="chips">{chips}</div><input type="search" placeholder="搜尋節次、主題、說明…" data-search></div></section>
 <main class="wrap"><div class="grid" data-grid data-section="{k}">{''.join(card(v, '') for v in V)}</div>
-<p class="empty" data-empty hidden>這一區目前沒有影片</p></main>{footer()}{boot}<script src="series.js"></script></body></html>'''
+<p class="empty" data-empty hidden>這一區目前沒有影片</p></main>{footer()}{boot}<script src="series.js?v={VER}"></script></body></html>'''
         open(os.path.join(A, f'區_{k}.html'), 'w', encoding='utf-8').write(page)
 
     # 全部節次：進度表
@@ -206,7 +243,7 @@ def build(subject_dir):
     page = head(f'全部節次｜{title}') + topbar('', '全部節次') + f'''
 <section class="phead wrap"><div class="en">All Lessons</div><h1>全部節次<small>{len(plan)}</small></h1><p>{esc(SECTIONS[4][2])}</p></section>
 <main class="wrap"><table class="plan"><thead><tr><th>節次</th><th>主題</th><th>類型</th><th>進度</th><th></th></tr></thead><tbody>{rows}</tbody></table></main>
-{footer()}{boot}<script src="series.js"></script></body></html>'''
+{footer()}{boot}<script src="series.js?v={VER}"></script></body></html>'''
     open(os.path.join(A, '區_全部節次.html'), 'w', encoding='utf-8').write(page)
 
     # ---------- 單支頁 ----------
@@ -226,14 +263,14 @@ def build(subject_dir):
 <main class="wrap detail" data-detail="{v['sid']}">
   <div class="crumb"><a href="區_全部節次.html">← 全部節次</a><span>{i + 1} / {len(V)}</span></div>
   <div class="theater"><video controls preload="metadata" poster="{v['poster']}" src="{esc(v["video"])}"></video></div>
-  <div class="dgrid"><div class="dmain"><div class="kicker">{esc(v['id'])}</div><h1>{esc(v['topic'])}</h1>
+  <div class="dgrid"><div class="dmain"><div class="kicker">{esc(v['id'])}{' · ' + esc(v['kind']) if v['kind'] else ''}</div><h1>{esc(v['topic'])}</h1>{f'<p class="lead">{esc(v["desc"])}</p>' if v['desc'] else ''}
     <div class="acts"><div class="decide big st" data-status="{v['sid']}">{''.join(f'<button data-v="{s}">{s}</button>' for s in ('確定使用', '要修改', '已上架'))}</div>
       <span class="stnow">目前：<b data-st-text="{v['sid']}">待確認</b></span></div>
     <div class="fixbox" data-fixbox="{v['sid']}" hidden><b>哪裡要改？</b><textarea data-note="{v['sid']}" placeholder="例：2:15 的圖示不對；口訣要改成……（Claude 會讀這裡去改）"></textarea></div>
     <div class="ytbox" data-ytbox="{v['sid']}"><b>YouTube 網址</b><input type="url" data-ytin="{v['sid']}" placeholder="上傳後貼上 https://youtu.be/…"><a data-yt target="_blank" hidden>▶ 開啟</a></div>
     <div class="checkbox"><b>上架清單</b>{chk}</div>{qa_html}</div>
   <aside class="dside"><dl>{dl}</dl><div class="extras"><b>檔案</b>{files}</div></aside></div>
-  <nav class="pnav">{nav_}</nav></main>{footer()}{boot}<script src="series.js"></script></body></html>'''
+  <nav class="pnav">{nav_}</nav></main>{footer()}{boot}<script src="series.js?v={VER}"></script></body></html>'''
         open(os.path.join(A, f'片_{v["sid"]}.html'), 'w', encoding='utf-8').write(page)
 
     alive = {f'片_{v["sid"]}.html' for v in V} | {f'區_{k}.html' for k, *_ in SECTIONS}

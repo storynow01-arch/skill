@@ -43,6 +43,9 @@
       const a = e.parentElement.querySelector('[data-yt]'); if (a) { a.hidden = !S.YouTube[e.dataset.ytin]; a.href = S.YouTube[e.dataset.ytin] || '#'; }
     });
     document.querySelectorAll('[data-check]').forEach(e => e.checked = !!(S.上架清單[e.dataset.check] || [])[+e.dataset.i]);
+    document.querySelectorAll('[data-pick-count]').forEach(x => x.textContent = cnt.要修改 + cnt.確定使用 + cnt.已上架);
+    document.querySelectorAll('.picks-btn').forEach(b => b.classList.toggle('has', cnt.要修改 > 0));
+    if (document.querySelector('[data-drawer].open')) paintDrawer();
     const p = document.querySelector('[data-progress-yt]'); if (p) p.style.width = (cnt.已上架 / Math.max(1, C.total) * 100) + '%';
     const bar = document.querySelector('[data-savebar]'); if (bar) bar.hidden = !!API;
     applyFilter();
@@ -74,12 +77,40 @@
     c.addEventListener('mouseleave', () => { v.pause(); c.classList.remove('playing'); });
   });
 
-  // 分區頁：只顯示這個狀態的影片；搜尋
+  // 進度抽屜（同 REEL 的「挑選進度」）：要修改（附備註）／確定使用／已上架（附網址）／待確認
+  const el = (tag, txt, cls) => { const e = document.createElement(tag); if (txt != null) e.textContent = txt; if (cls) e.className = cls; return e; };
+  const pageOf = id => (document.querySelector('link[href="site.css"]') ? '' : '展示網頁素材/') + (C.items[id].頁 || '');
+  function paintDrawer() {
+    const box = document.querySelector('[data-pick-list]'); if (!box) return;
+    box.replaceChildren();
+    const group = (title, ids, note, extra) => {
+      const sec = el('section', null, 'dgroup'); sec.append(el('h4', `${title}（${ids.length}）`));
+      if (note && ids.length) sec.append(el('p', note, 'hint'));
+      const ol = el('ol');
+      ids.forEach(id => { const li = el('li'); const a = el('a', `${C.items[id].節次} ${C.items[id].主題}`); a.href = pageOf(id); li.append(a); const x = extra && extra(id); if (x) li.append(el('div', x, 'to')); ol.append(li); });
+      if (ids.length) sec.append(ol); box.append(sec);
+    };
+    group('要修改', IDS.filter(id => st(id) === '要修改'), '跟 Claude 說「看完了」，Claude 會照備註去改', id => S.修改備註[id] ? '備註：' + S.修改備註[id] : '（還沒寫哪裡要改）');
+    group('確定使用', IDS.filter(id => st(id) === '確定使用'), '上傳時照單支頁的上架清單一項一項勾');
+    group('已上架', IDS.filter(id => st(id) === '已上架'), null, id => S.YouTube[id] || '（還沒貼網址）');
+    group('待確認', IDS.filter(id => st(id) === '待確認'));
+    const h = document.querySelector('[data-save-hint]'); if (h) h.textContent = API ? '按鈕會自動存到 展示紀錄.json' : '直接開檔：只暫存在這個瀏覽器';
+  }
+  document.addEventListener('click', e => {
+    const dr = document.querySelector('[data-drawer]'); if (!dr) return;
+    if (e.target.closest('[data-open-picks]')) { paintDrawer(); dr.classList.add('open'); }
+    else if (e.target.closest('[data-close-picks]')) dr.classList.remove('open');
+  });
+
+  // 分區頁：只顯示這個狀態的影片；章節／類型篩選；搜尋
   const grid = document.querySelector('[data-grid]');
-  let q = '';
+  let q = '', tag = '';
+  document.querySelectorAll('[data-filter]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-filter]').forEach(x => x.classList.remove('on')); b.classList.add('on'); tag = b.dataset.filter; applyFilter();
+  }));
   function applyFilter() {
     if (!grid) return; let n = 0; const sec = grid.dataset.section;
-    grid.querySelectorAll('.card').forEach(c => { const ok = (!sec || c.dataset.st === sec) && (!q || c.textContent.toLowerCase().includes(q)); c.hidden = !ok; n += ok; });
+    grid.querySelectorAll('.card').forEach(c => { const ok = (!sec || c.dataset.st === sec) && (!tag || (c.dataset.tags || '').includes(tag)) && (!q || c.textContent.toLowerCase().includes(q)); c.hidden = !ok; n += ok; });
     const em = document.querySelector('[data-empty]'); if (em) em.hidden = n > 0;
   }
   const sb = document.querySelector('[data-search]');
@@ -90,6 +121,7 @@
     if (e.target.closest('video,input,textarea')) return;
     const k = e.key === 'ArrowLeft' ? 'prev' : e.key === 'ArrowRight' ? 'next' : '';
     const a = k && document.querySelector(`[data-key="${k}"]`); if (a) location.href = a.href;
+    if (e.key === 'Escape') document.querySelector('[data-drawer]')?.classList.remove('open');
   });
 
   load().then(paint);
