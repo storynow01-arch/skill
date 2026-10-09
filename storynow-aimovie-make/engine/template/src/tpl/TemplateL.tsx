@@ -563,7 +563,7 @@ export const TemplateL: React.FC<TplSpec> = (spec) => {
             boxShadow: '0 6px 14px rgba(0,0,0,0.18)'}}>{cap.text}</div>
         </div>
       )}
-      <BrandLogo logo={spec.brand?.logo} />
+      <BrandLogo logo={spec.brand?.logo} width={spec.brand?.logoWidth} />
       <AbsoluteFill style={{background: '#000', opacity: fade, pointerEvents: 'none'}} />
       {spec.qa && <QaProbe w={spec.width} h={spec.height} />}
       {spec.music && <Audio src={staticFile(spec.music)} volume={spec.musicVolume ?? 0.4} />}

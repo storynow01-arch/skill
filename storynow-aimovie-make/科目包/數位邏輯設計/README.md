@@ -10,7 +10,7 @@ storyboard 加 `"subject": "數位邏輯設計"`。
 2. **用座標找格子**：左邊找列、上面找行，交叉處寫 1；不用 m 編號 → `kmap` 的 `place`
 3. **逐個變數比對**：圈裡的格子，不變的變數「保留」、有跳動就「淘汰」，再從圈畫箭頭寫結果 → 場景 `readTable`＋`kmap` 的 `arrow`
 
-反相寫法：畫面用**上橫線**（term 寫 `A'B`，畫成字母上方橫線）；字幕與旁白用「A bar」。
+反相寫法：畫面用**上橫線**（term 寫 `A'B`，畫成字母上方橫線）；字幕與旁白用「A bar」，**bar 念四聲「霸」**（`念法.json` 已設，2026-10-09 使用者指定）。
 
 ## 專用場景（程式在範本D：`engine/template/src/tpl/TemplateD.tsx`）
 
@@ -26,6 +26,13 @@ storyboard 加 `"subject": "數位邏輯設計"`。
 
 **terms 的 props**：`terms`、`fn`、`exprCue`、`termCues`、`rule`、`ruleCue`
 **readTable 的 props**：`vars`、`codes`、`label`、`color`、`rowsCue`、`verdictCues`、`termCue`
+
+## 專業符號（2026-10-09）
+
+講到專業名詞就畫標準符號（`術語符號.json`，S1 品檢擋）。已畫好的白板圖示：
+`gate_and` 及閘、`gate_or` 或閘、`gate_not` 反閘、`gate_nand`、`gate_nor`、`gate_xor`、`gate_xnor`（IEEE Std 91 特徵形）、
+`truthtable` 真值表、`abar` A bar、`adc`、`dac`、`thermometer`、`calculator`、`dwatch`、`mic`、`speaker`。
+後面章節要用的（正反器、多工器、解碼器、七段顯示器……）列在 `術語符號.json` 的「待補」，做到那一節時先查標準畫法再畫。
 
 ## 念法
 

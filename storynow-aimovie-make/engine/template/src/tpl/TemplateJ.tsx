@@ -630,7 +630,7 @@ export const TemplateJ: React.FC<TplSpec> = (spec) => {
         <div data-qa="caption" style={{position: 'absolute', left: 60, right: 60, top: 954, textAlign: 'center', opacity: capO, fontFamily: SERIF, fontWeight: 900,
           fontSize: capS, color: '#fff', letterSpacing: 2, whiteSpace: 'nowrap', WebkitTextStroke: '9px #111', paintOrder: 'stroke fill'}}>{cap.text}</div>
       )}
-      <BrandLogo logo={spec.brand?.logo} />
+      <BrandLogo logo={spec.brand?.logo} width={spec.brand?.logoWidth} />
       <AbsoluteFill style={{background: '#000', opacity: fade, pointerEvents: 'none'}} />
       {spec.qa && <QaProbe w={spec.width} h={spec.height} />}
       {spec.music && <Audio src={staticFile(spec.music)} volume={spec.musicVolume ?? 0.4} />}

@@ -420,7 +420,7 @@ export const TemplateA: React.FC<TplSpec & {narrator?: string}> = (spec) => {
         );
       })()}
       <AbsoluteFill style={{background: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0 2px, transparent 2px 4px)', pointerEvents: 'none'}} />
-      <BrandLogo logo={spec.brand?.logo} />
+      <BrandLogo logo={spec.brand?.logo} width={spec.brand?.logoWidth} />
       <AbsoluteFill style={{background: '#000', opacity: fade, pointerEvents: 'none'}} />
       {spec.qa && <QaProbe w={spec.width} h={spec.height} />}
       {spec.music && <Audio src={staticFile(spec.music)} volume={spec.musicVolume ?? 0.45} />}

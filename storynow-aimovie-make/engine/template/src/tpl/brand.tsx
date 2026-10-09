@@ -4,5 +4,5 @@ import React from 'react';
 import {Img, staticFile} from 'remotion';
 
 export const LOGO_BOX = {right: 40, top: 26, width: 220};
-export const BrandLogo: React.FC<{logo?: string | null}> = ({logo}) =>
-  logo ? <Img data-qa="logo" src={staticFile(logo)} style={{position: 'absolute', top: LOGO_BOX.top, right: LOGO_BOX.right, width: LOGO_BOX.width, zIndex: 50}} /> : null;
+export const BrandLogo: React.FC<{logo?: string | null; width?: number}> = ({logo, width}) =>
+  logo ? <Img data-qa="logo" src={staticFile(logo)} style={{position: 'absolute', top: LOGO_BOX.top, right: LOGO_BOX.right, width: width ?? LOGO_BOX.width, zIndex: 50}} /> : null;

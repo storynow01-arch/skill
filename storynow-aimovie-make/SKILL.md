@@ -136,6 +136,7 @@ final_qa/          第⑪步最終品檢（只需要 mp4，任何範本都能用
 - **配音選擇規則（2026-10-06，外層工作流與所有範本一致）**：專案自己的 `.env.local` 有 `GEMINI_API_KEY` 才用 Gemini Flash TTS（自動最新正式版），沒有就用 edge-tts。只看這個專案的 `.env.local`，不讀系統環境變數、不借上層資料夾別的專案的金鑰。用 Gemini 時 `model="auto"` 自動挑最新版，不要寫死；金鑰不可進 git。Gemini 音檔一律過**壞音檔關卡**（`gemini_tts.bad_audio`：長時間無聲、語速異常 → 不進快取、重跑重新要）。
 - **配音前先讀 [`references/gemini-voice-lessons.md`](references/gemini-voice-lessons.md)**：網址唸法（字母間的 . → 點、單獨 com 前加點、edu／gov／tw 逐字母）、「；」與「……」的切句坑、AI 耳朵唸法約定。使用者說「用我的聲音／克隆聲音」→ 照 `engine/scripts/voices.json` 的 `storynow01`（voice_id＋選定風格）。
 - **使用者問「目前我的語音有哪些可以選擇」**（或「我有哪些聲音」「列出我的語音」）→ 在專案資料夾跑 `python <skill>/engine/scripts/list_voices.py`（要 `.env.local` 的 GEMINI_API_KEY），把結果整理成表格回覆：名稱、類型（克隆／文字設計）、voice_id、選定風格與其他風格、語速、到期日，★標預設；最後告訴使用者怎麼指定（「用 storynow01 配音，風格 11C」）。要給人看的頁面加 `--html 我的語音.html`。只列這把金鑰專案裡的聲音，不列 Google 內建的 prebuilt。
+- **專業名詞一定要畫正確的標準符號（2026-10-09，使用者要求，所有科目）**：旁白提到專業名詞（邏輯閘、正反器、電路元件、網路設備、程式結構……），寫稿前先上網或查標準找出它**正確的符號／圖形**（寫明來源，例 IEEE Std 91 特徵形），畫進 `lib/whiteboard` 的 `WB_ICONS`，登記到 `科目包/<科目>/術語符號.json`；`01_內容分析.md` 要有「專業名詞與符號」表。**不准用一般圖示（紙箱、文件、齒輪）代替專業符號**。`final_qa/symbol_check.py`（S1）在第⓪關自動擋下「講到名詞卻沒有對應符號」的場景。起因：0-0 旁白講「及閘像 D」，畫面是紙箱。
 - **做某一科的教學影片前，先讀 `科目包/<科目>/README.md`**，storyboard 加 `"subject": "<科目>"`；這科新學到的教法、念法、坑寫回科目包，不寫進 SKILL.md 或範本 README（2026-10-08）。
 - 數字、校名、名次**逐條對資料**；資料與提示詞衝突時照資料，並明講差異。
 - 會轉傳的影片：手機、個人 Email、學生姓名等**先問再放**。

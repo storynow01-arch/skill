@@ -6,7 +6,7 @@ import React, {useMemo} from 'react';
 import {AbsoluteFill, Audio, Easing, Sequence, interpolate, random, staticFile, useCurrentFrame} from 'remotion';
 import {loadFont as loadKai} from '@remotion/google-fonts/LXGWWenKaiTC';
 import {loadFont as loadSans} from '@remotion/google-fonts/NotoSansTC';
-import {DrawShape, DrawText, Item, Marker, R, Shape, Sfx, WB, arrow, box, card, check, circleMark, cross, iconFor, lerp, tipOf, underline, wbTextW} from '../lib/whiteboard';
+import {DrawShape, DrawText, Item, Marker, R, Shape, Sfx, WB, arrow, box, card, check, circleMark, cross, iconFor, lerp, textInk, tipOf, underline, wbTextW} from '../lib/whiteboard';
 import {QaProbe} from '../QaProbe';
 import {TplSpec, captionAt, cue, wrap} from './common';
 import {BrandLogo} from './brand';
@@ -28,7 +28,7 @@ const tdur = (s: string, min = 10) => Math.max(min, Math.round([...s].length * 2
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Sc = {p: any; cues: number[]; dur: number; from: number};
 type Kit = {
-  shape: (at: number, x: number, y: number, s: number, sh: Shape, dur?: number, sfx?: Sfx, rot?: number, boxId?: string) => void;
+  shape: (at: number, x: number, y: number, s: number, sh: Shape, dur?: number, sfx?: Sfx, rot?: number, boxId?: string, inBox?: string) => void;
   text: (at: number, x: number, y: number, t: string, size: number, o?: {color?: string; bold?: boolean; anchor?: 'start' | 'middle'; dur?: number; sfx?: Sfx; box?: string}) => void;
   id: (name: string) => string;                       // 容器 id（品檢：裡面的字不可超出）
   logo: boolean;                                      // 右上角有 LOGO：標題寬度讓開
@@ -101,12 +101,12 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
       k.text(k.T0 + 8, 960, 208, String(p.label), 50, {color: WB.blue, dur: 8, box: k.id('label')});
     }
     const lines = wrap(big, 13).slice(0, 2);
-    const size = Math.min(...lines.map((ln) => fitW(ln, 1600, 124)));
-    lines.forEach((ln, i) => k.text(k.C(p.cueMap?.[0], 6) + i * 10, 960, 430 + i * (size + 20), ln, size, {bold: true, color: WB.orange, dur: tdur(ln, 16), sfx: i ? 'none' : 'ding'}));
+    const size = Math.min(...lines.map((ln) => fitW(ln, 1600, 124))), lh = Math.round(size * 1.3);   // 行距：兩行大字不重疊（2026-10-09 0-0 開場品檢抓到）
+    lines.forEach((ln, i) => k.text(k.C(p.cueMap?.[0], 6) + i * 10, 960, 430 + i * lh, ln, size, {bold: true, color: WB.orange, dur: tdur(ln, 16), sfx: i ? 'none' : 'ding'}));
     const li = lines.findIndex((ln) => hl && ln.includes(hl));
     if (li >= 0) {
       const ln = lines[li], x0 = 960 - wbTextW(ln, size) / 2 + wbTextW(ln.slice(0, ln.indexOf(hl)), size);
-      k.shape(k.C(p.cueMap?.[1], 40), x0, 430 + li * (size + 20) + 26, 1, underline(wbTextW(hl, size), WB.red), 12, 'none');
+      k.shape(k.C(p.cueMap?.[1], 40), x0, 430 + li * lh + 26, 1, underline(wbTextW(hl, size), WB.red), 12, 'none');
     }
     const notes: string[] = p.sideNotes ?? [];
     const w = Math.min(520, 1600 / Math.max(1, notes.length) - 40);
@@ -123,7 +123,7 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
     cards.forEach((c, i) => {
       const at = k.C(p.cueMap?.[i], 20 + i * 30), x = 960 + (i - (n - 1) / 2) * (w + 40);
       k.shape(at, x, 520, 1, card(w, 500, PASTEL[i % 4]), 10, 'none', 0, k.id(`card${i}`));
-      k.shape(at + 2, x, 410, Math.min(1.25, w / 260), iconFor(c.sketch ?? c.icon), 14);
+      k.shape(at + 2, x, 410, Math.min(1.25, w / 260), iconFor(c.sketch ?? c.icon), 14, 'pop', 0, undefined, k.id(`card${i}`));
       k.text(at + 4, x, 610, c.title, fitW(c.title, w - 50, 58), {bold: true, dur: tdur(c.title, 8), box: k.id(`card${i}`)});
       if (c.note) wrap(c.note, Math.max(4, Math.floor((w - 50) / 38))).slice(0, 2).forEach((ln, j) =>
         k.text(at + 8 + j * 4, x, 680 + j * 50, ln, fitW(ln, w - 50, 38), {color: '#5b6672', dur: tdur(ln, 8), box: k.id(`card${i}`)}));
@@ -133,13 +133,13 @@ const SCENES: Record<string, (k: Kit, r: Sc) => void> = {
   vs: (k, r) => {
     const p = r.p;
     const side = (sd: {frame?: string; icon?: string; sketch?: string; text: string}, i: number) => {
-      const at = k.C(p.cueMap?.[i], i ? 40 : 6), x = i ? 1420 : 500;
+      const at = k.C(p.cueMap?.[i], i ? 40 : 6), x = i ? 1420 : 500, dy = k.logo ? 25 : 0;
       const bg = sd.frame === 'danger' ? '#fde3df' : sd.frame === 'success' ? '#e3f4e6' : '#dff0f9';
-      k.shape(at, x, 470, 1, card(760, 600, bg), 10, 'none', 0, k.id(`side${i}`));
-      k.shape(at + 2, x, 330, 1.35, iconFor(sd.sketch ?? sd.icon), 14);
-      wrap(sd.text ?? '', 11).slice(0, 3).forEach((ln, j) => k.text(at + 6 + j * 4, x, 560 + j * 70, ln, fitW(ln, 680, 58), {dur: tdur(ln), box: k.id(`side${i}`)}));
-      if (sd.frame === 'danger') k.shape(at + 10, x + 300, 230, 1.1, cross(), 8, 'buzz');
-      if (sd.frame === 'success') k.shape(at + 10, x + 300, 230, 1.1, check(), 8, 'ding');
+      k.shape(at, x, 470 + dy, 1, card(760, 600, bg), 10, 'none', 0, k.id(`side${i}`));   // 右上角有 LOGO：整組往下讓開
+      k.shape(at + 2, x, 330 + dy, 1.35, iconFor(sd.sketch ?? sd.icon), 14, 'pop', 0, undefined, k.id(`side${i}`));
+      wrap(sd.text ?? '', 11).slice(0, 3).forEach((ln, j) => k.text(at + 6 + j * 4, x, 560 + dy + j * 70, ln, fitW(ln, 680, 58), {dur: tdur(ln), box: k.id(`side${i}`)}));
+      if (sd.frame === 'danger') k.shape(at + 10, x + 300, 240 + dy, 1.1, cross(), 8, 'buzz', 0, undefined, k.id(`side${i}`));
+      if (sd.frame === 'success') k.shape(at + 10, x + 300, 240 + dy, 1.1, check(), 8, 'ding', 0, undefined, k.id(`side${i}`));
     };
     side(p.left ?? {text: ''}, 0);
     k.text(k.C(p.cueMap?.[1], 40) - 4, 960, 500, !p.mid || p.mid === 'vs' ? 'vs' : p.mid, 90, {bold: true, color: WB.orange, dur: 6, sfx: 'none'});
@@ -404,12 +404,32 @@ const buildItems = (spec: TplSpec): Item[] => {
       C: (ci, fb) => s.from + cue(s.cues, ci, fb),
       id: (name) => `${s.id}-${name}`,
       logo: !!spec.brand?.logo,
-      shape: (at, x, y, sc, sh, dur = 16, sfx = 'pop', rot = 0, boxId) =>
-        items.push({kind: 'shape', at, dur, x: g.x + x, y: g.y + y, s: sc, rot, shape: sh, boxId, sfx: sh.fills?.length ? sfx : sfx === 'pop' ? 'none' : sfx}),
+      shape: (at, x, y, sc, sh, dur = 16, sfx = 'pop', rot = 0, boxId, inBox) =>
+        items.push({kind: 'shape', at, dur, x: g.x + x, y: g.y + y, s: sc, rot, shape: sh, boxId, inBox, sfx: sh.fills?.length ? sfx : sfx === 'pop' ? 'none' : sfx}),
       text: (at, x, y, t, size, o = {}) =>
         items.push({kind: 'text', at, dur: o.dur ?? tdur(t), x: g.x + x, y: g.y + y, text: t, size, color: o.color, bold: o.bold, anchor: o.anchor ?? 'middle', sfx: o.sfx, box: o.box}),
     };
     (SCENES[s.type] ?? SCENES.definition)(k, {p: s.props ?? {}, cues: s.cues ?? [], dur: s.dur, from: s.from});
+    // 加料特效（筆畫型）：hl 螢光筆、sticky 便利貼——由同一支筆畫出來（其餘特效見 fxOf）
+    ((s.props?.fx ?? []) as Fx[]).forEach((e, j) => {
+      const at = k.C(e.cue, 30), x = e.x ?? 960, y = e.y ?? 540;
+      if (e.type === 'hl') k.shape(at, x, y, 1, {strokes: [`M0 0 L${e.w ?? 400} 0`], w: e.h ?? 50, ink: 'rgba(247,201,74,0.55)'}, 10, 'none');
+      if (e.type === 'sticky') {
+        const w = e.w ?? 400, h = e.h ?? 230, lines = wrap(e.text ?? '', e.wrap ?? 8).slice(0, 3), size = e.size ?? 46;
+        k.shape(at, x, y, 1, card(w, h, '#fff1a8'), 8, 'pop', e.rot ?? -3, k.id(`sticky${j}`));
+        lines.forEach((ln, i) => k.text(at + 6 + i * 4, x, y - ((lines.length - 1) * size * 1.25) / 2 + size * 0.35 + i * size * 1.25, ln, size,
+          {dur: tdur(ln, 8), color: e.color, box: k.id(`sticky${j}`)}));
+      }
+    });
+    // 跨章引用角標（2026-10-09，系列教學）：props.ref＝"5-1" 或 ["5-1","5-3"]，refCue＝第幾句旁白出現；畫在區域左上角
+    const refs: string[] = ([] as string[]).concat(s.props?.ref ?? []);
+    let rx = 40;
+    refs.forEach((rf, j) => {
+      const t = `👉 ${rf}`, w = wbTextW(t, 44) + 60, at = k.C(s.props?.refCue, 30) + j * 10;
+      k.shape(at, rx + w / 2, 62, 1, card(w, 76, '#fde2dc'), 8, 'pop', 0, k.id(`ref${j}`));
+      k.text(at + 6, rx + w / 2, 78, t, 44, {bold: true, color: WB.red, dur: 8, sfx: 'none', box: k.id(`ref${j}`)});
+      rx += w + 20;
+    });
     items.forEach((it) => { it.at = Math.max(it.at, T0); });   // 鏡頭到位前不畫；同時開始的照寫入順序（標題先、再卡片）
     items.sort((a, b) => a.at - b.at);
     const end = s.from + s.dur - 4, want = items.map((it) => [it.at, it.dur]);
@@ -423,6 +443,138 @@ const buildItems = (spec: TplSpec): Item[] => {
   });
   return all;
 };
+
+/* ---------- 加料特效（2026-10-09，系列教學；使用者選定 6 種，每支片自己判斷挑 2～3 種用）----------
+   場景 props.fx = [{type, cue, x, y, ...}]（x、y＝場景區域內座標 0..1920 × 0..1080，內容放在 y<900）
+   zoom   鏡頭推近＋白色泡泡：{x, y, z=1.4, cue, untilCue|sec, text, bx, by}（泡泡尖角指著 x,y）
+   hl     螢光筆：{x, y, w, h, cue}（從 x 往右劃一道；筆畫出來）
+   sticky 便利貼：{x, y, w, h, text, cue, rot}（老師提醒用；筆畫出來）
+   stamp  紅色印章：{x, y, text="統測必考", cue, rot=-12}
+   pow    擬聲字：{x, y, text="正解！", cue, sec=2.5, rot}
+   roll   數字往上數：{x, y, from, to, base=10, pad, size, suffix, cue, sec=2}
+   pup    吉祥物反應：{x, y, mood: yay|wow|think, size=260, cue, sec=3}（storyboard brand 資料夾要有 mascot.png）
+   卡片、清單依旁白錯開出現（骨牌）用原本的 cueMap。 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Fx = {type: string; cue?: number; untilCue?: number; sec?: number; x?: number; y?: number; [k: string]: any};
+type Ov = {kind: string; at: number; end: number; x: number; y: number; p: Fx};
+type Zoom = {a: number; b: number; x: number; y: number; z: number};
+const FX_CACHE = new WeakMap<object, {ov: Ov[]; zm: Zoom[]}>();
+const fxOf = (spec: TplSpec) => {
+  const hit = FX_CACHE.get(spec);
+  if (hit) return hit;
+  const v: {ov: Ov[]; zm: Zoom[]} = {ov: [], zm: []};
+  spec.scenes.forEach((s, i) => {
+    const g = region(i), last = s.from + s.dur - 6;
+    const C = (ci: number | undefined, fb: number) => s.from + cue(s.cues ?? [], ci, fb);
+    ((s.props?.fx ?? []) as Fx[]).forEach((e) => {
+      const at = Math.max(C(e.cue, 30), s.from + PAN + 4);
+      const end = Math.min(last, e.untilCue !== undefined ? C(e.untilCue, 90) : at + Math.round((e.sec ?? 3) * 30));
+      const x = g.x + (e.x ?? 960), y = g.y + (e.y ?? 540);
+      if (e.type === 'zoom') {
+        const z = e.z ?? 1.4, hw = 960 / z, hh = 540 / z;     // 推近的視野不超出這個場景的區域（不然會看到隔壁場景）
+        v.zm.push({a: at, b: end, x: g.x + Math.min(1920 - hw, Math.max(hw, e.x ?? 960)), y: g.y + Math.min(1080 - hh, Math.max(hh, e.y ?? 540)), z});
+        if (e.text) v.ov.push({kind: 'bubble', at: at + 12, end: end - 8, x: g.x + (e.bx ?? (e.x ?? 960)), y: g.y + (e.by ?? ((e.y ?? 540) - 190)), p: {...e, tx: x, ty: y}});
+      } else if (['stamp', 'pow', 'roll', 'pup'].includes(e.type)) {
+        v.ov.push({kind: e.type, at, end: e.type === 'stamp' || e.type === 'roll' ? last : end, x, y, p: e});
+      }
+    });
+  });
+  FX_CACHE.set(spec, v);
+  return v;
+};
+const popIn = (f: number, at: number, over = 1.25) => {
+  const t = f - at;
+  if (t < 0) return 0;
+  return t < 6 ? interpolate(t, [0, 6], [0.2, over]) : t < 12 ? interpolate(t, [6, 12], [over, 1]) : 1;
+};
+const FxLayer: React.FC<{spec: TplSpec; f: number}> = ({spec, f}) => {
+  const {ov} = fxOf(spec);
+  return (
+    <>
+      {ov.map((o, i) => {
+        if (f < o.at || f > o.end + 10) return null;
+        const out = 1 - lerp(f, o.end, o.end + 10), p = o.p;
+        if (o.kind === 'stamp') {
+          const t = String(p.text ?? '統測必考'), size = p.size ?? 58, w = wbTextW(t, size) + 70, h = size * 1.7;
+          const sc = f - o.at < 6 ? interpolate(f - o.at, [0, 6], [1.8, 1]) : 1, op = lerp(f, o.at, o.at + 4);
+          return (
+            <g key={i} data-qa="ignore" transform={`translate(${o.x} ${o.y}) rotate(${p.rot ?? -12}) scale(${sc})`} opacity={op * 0.92}>
+              <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={14} fill="none" stroke="#d6342a" strokeWidth={8} />
+              <rect x={-w / 2 + 10} y={-h / 2 + 10} width={w - 20} height={h - 20} rx={8} fill="none" stroke="#d6342a" strokeWidth={3} />
+              <text x={0} y={size * 0.36} textAnchor="middle" style={{fontFamily: BOLD}} fontWeight={900} fontSize={size} fill="#d6342a" letterSpacing={4}>{t}</text>
+            </g>);
+        }
+        if (o.kind === 'pow') {
+          const t = String(p.text ?? '正解！'), size = p.size ?? 110, sc = popIn(f, o.at, 1.3) * (1 + 0.03 * Math.sin((f - o.at) / 3));
+          return (
+            <g key={i} data-qa="ignore" transform={`translate(${o.x} ${o.y}) rotate(${p.rot ?? -8}) scale(${sc})`} opacity={out}>
+              <text x={0} y={size * 0.36} textAnchor="middle" style={{fontFamily: BOLD, paintOrder: 'stroke fill'}} fontWeight={900} fontSize={size}
+                fill="#ffd23f" stroke="#1d232a" strokeWidth={14} strokeLinejoin="round">{t}</text>
+            </g>);
+        }
+        if (o.kind === 'pup') {
+          const m = spec.brand?.mascot;
+          if (!m) return null;
+          const H = p.size ?? 260, W = H * 0.58, t = f - o.at, mood = p.mood ?? 'yay';
+          const dy = mood === 'yay' ? -Math.abs(Math.sin(t / 5)) * 26 : 0;
+          const rot = mood === 'wow' ? Math.sin(t * 1.4) * 5 * Math.max(0, 1 - t / 24) : mood === 'think' ? Math.sin(t / 10) * 4 : 0;
+          const mark = mood === 'yay' ? '✦' : mood === 'wow' ? '！' : '？', mc = mood === 'yay' ? WB.yellow : mood === 'wow' ? WB.red : WB.blue;
+          return (
+            <g key={i} data-qa="ignore" transform={`translate(${o.x} ${o.y + dy}) rotate(${rot}) scale(${popIn(f, o.at, 1.12) * out})`}>
+              <ellipse cx={0} cy={H / 2 - 6 - dy} rx={W * 0.42} ry={12} fill="#000" opacity={0.12} />
+              <image href={staticFile(m)} x={-W / 2} y={-H / 2} width={W} height={H} />
+              <text x={W * 0.48} y={-H * 0.32} textAnchor="middle" style={{fontFamily: BOLD, paintOrder: 'stroke fill'}} fontWeight={900}
+                fontSize={H * 0.24} fill={mc} stroke="#fff" strokeWidth={8} opacity={lerp(f, o.at + 8, o.at + 12)}>{mark}</text>
+            </g>);
+        }
+        if (o.kind === 'roll') {
+          const base = p.base ?? 10, size = p.size ?? 160, from = p.from ?? 0, to = p.to ?? 0, pad = p.pad ?? 0;
+          const n = Math.round((p.sec ?? 2) * 30), tt = lerp(f, o.at, o.at + n, 0, 1, Easing.out(Easing.cubic));
+          const val = from + (to - from) * tt, v = Math.min(to, Math.floor(val + 1e-6)), fr = v >= to ? 0 : val - v;
+          const sa = v.toString(base).toUpperCase().padStart(pad, '0'), sb = Math.min(to, v + 1).toString(base).toUpperCase().padStart(sa.length, '0');
+          const dw = size * 0.62, W = sa.length * dw, col = p.color ?? WB.orange, e = Easing.inOut(Easing.cubic)(fr);
+          return (
+            <g key={i} transform={`translate(${o.x} ${o.y})`}>
+              <clipPath id={`roll${i}`}><rect x={-W / 2 - 10} y={-size * 0.95} width={W + 20} height={size * 1.25} /></clipPath>
+              <g clipPath={`url(#roll${i})`}>
+                {[...sa].map((d, j) => {
+                  const nd = sb[j] ?? d, cx = -W / 2 + dw * (j + 0.5);
+                  const txt = (ch: string, oy: number, op: number) => <text x={cx} y={oy} textAnchor="middle" style={{fontFamily: BOLD}} fontWeight={900}
+                    fontSize={size} fill={textInk(col, size)} opacity={op}>{ch}</text>;
+                  return <g key={j}>{nd !== d ? <>{txt(d, -e * size, 1 - e)}{txt(nd, (1 - e) * size, e)}</> : txt(d, 0, 1)}</g>;
+                })}
+              </g>
+              {p.suffix && <text x={W / 2 + 14} y={0} style={{fontFamily: BOLD}} fontWeight={900} fontSize={size * 0.45} fill={WB.ink}>{p.suffix}</text>}
+            </g>);
+        }
+        if (o.kind === 'bubble') {
+          const t = String(p.text), size = p.size ?? 46, w = wbTextW(t, size) + 70, h = size * 1.9, sc = popIn(f, o.at, 1.08) * out;
+          const dx = p.tx - o.x, dy = p.ty - o.y, by = dy > 0 ? h / 2 : -h / 2, bx = Math.max(-w / 2 + 40, Math.min(w / 2 - 40, dx * 0.4));
+          return (
+            <g key={i} transform={`translate(${o.x} ${o.y}) scale(${sc})`} data-qa-box={`bub${i}`}>
+              <path d={`M${bx - 24} ${by} L${dx * 0.85} ${dy * 0.85} L${bx + 24} ${by} Z`} fill="#fff" stroke={WB.ink} strokeWidth={6} strokeLinejoin="round" />
+              <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={h / 2} fill="#fff" stroke={WB.ink} strokeWidth={6} />
+              <rect x={bx - 21} y={by - 9} width={42} height={18} fill="#fff" />
+              <text data-qa-in={`bub${i}`} x={0} y={size * 0.36} textAnchor="middle" style={{fontFamily: BOLD}} fontWeight={900} fontSize={size} fill={WB.ink}>{t}</text>
+            </g>);
+        }
+        return null;
+      })}
+    </>
+  );
+};
+/** 特效音：印章、吉祥物「啵」；擬聲字與數字停住「叮」 */
+const FxSfx: React.FC<{spec: TplSpec}> = ({spec}) => (
+  <>
+    {fxOf(spec).ov.map((o, i) => {
+      if (o.kind === 'bubble') return null;
+      const n = o.kind === 'roll' ? Math.round((o.p.sec ?? 2) * 30) : o.kind === 'stamp' ? 5 : 0;
+      const wav = o.kind === 'pow' || o.kind === 'roll' ? 'ding' : 'pop';
+      return <Sequence key={i} from={o.at + n} durationInFrames={36} layout="none">
+        <Audio src={staticFile(`sfx_d/${wav}.wav`)} volume={o.kind === 'stamp' ? 0.4 : 0.28} /></Sequence>;
+    })}
+  </>
+);
 
 /* ---------- 鏡頭 ---------- */
 /** 片尾拉遠的起點：最後一句字幕結束後（最晚 = 片尾前 80 格） */
@@ -445,6 +597,10 @@ const camAt = (spec: TplSpec, f: number): Cam => {
     const p = lerp(f, s0, s0 + PAN, 0, 1, Easing.inOut(Easing.cubic));
     const dip = Math.min(0.28, Math.hypot(b.x - a.x, b.y - a.y) / 9000);
     cam = {x: a.x + (b.x - a.x) * p, y: a.y + (b.y - a.y) * p, z: 1 - dip * Math.sin(Math.PI * p)};
+  }
+  for (const zq of fxOf(spec).zm) {                       // 加料特效 zoom：推近、停住、拉回
+    const w = lerp(f, zq.a, zq.a + 14) * (1 - lerp(f, zq.b - 14, zq.b));
+    if (w > 0) cam = {x: cam.x + (zq.x - cam.x) * w, y: cam.y + (zq.y - cam.y) * w, z: cam.z * Math.pow(zq.z, w)};
   }
   // 片尾：拉遠看整張白板
   const rows = Math.ceil(n / COLS), cols = Math.min(n, COLS);
@@ -504,7 +660,9 @@ export const TemplateD: React.FC<TplSpec> = (spec) => {
   const c = camAt(spec, f);
   const pen = penAt(spec, items, f, c);
   const cap = f < outroStart(spec) ? captionAt(spec, f, 8) : undefined;
-  const capO = cap ? interpolate(f, [cap.from - 2, cap.from + 3], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}) : 0;
+  // 前一頁字幕 10 格內剛結束（接續換頁）就直接顯示、不淡入：淡入第一格只有 40%，短頁（「是數位」）會被判成字幕帶空一格閃爍（2026-10-09 1-1 抓到）
+  const joined = cap ? spec.captions.some((c) => c !== cap && c.to <= cap.from && cap.from - c.to <= 10) : false;
+  const capO = cap ? (joined ? 1 : interpolate(f, [cap.from - 2, cap.from + 3], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})) : 0;
   const fade = Math.max(0, spec.brand ? 0 : 1 - f / 8, (f - (spec.totalFrames - 12)) / 12);   // 有片頭時由片頭淡入白板，不從黑開場
   const vis = items.filter((it) => it.at <= f);
   return (
@@ -519,23 +677,25 @@ export const TemplateD: React.FC<TplSpec> = (spec) => {
             {vis.map((it, i) => it.kind === 'shape'
               ? <DrawShape key={i} it={it} f={f} />
               : <DrawText key={i} it={it} f={f} id={`wbt${i}`} hand={HAND} bold={BOLD} />)}
+            <FxLayer spec={spec} f={f} />
           </g>
         </svg>
       </div>
       <svg data-qa="ignore" width={1920} height={1080} style={{position: 'absolute'}}>
-        <Marker x={pen.x} y={pen.y} scale={0.95 * Math.max(0.75, c.z)} tilt={Math.sin(f / 9) * 2} />
+        <Marker x={pen.x} y={pen.y} scale={0.95 * Math.max(0.75, c.z)} tilt={Math.sin(f / 9) * 2} kind={spec.pen} />
       </svg>
       {cap && (
         <div data-qa="caption" style={{position: 'absolute', left: 60, right: 60, top: 948, textAlign: 'center', opacity: capO, fontFamily: BOLD, fontWeight: 900,
           fontSize: 54, color: '#fff', letterSpacing: 2, WebkitTextStroke: '10px #1d232a', paintOrder: 'stroke fill', textShadow: '0 4px 10px rgba(0,0,0,0.25)'}}>{cap.text}</div>
       )}
-      <BrandLogo logo={spec.brand?.logo} />
+      <BrandLogo logo={spec.brand?.logo} width={spec.brand?.logoWidth} />
       <AbsoluteFill style={{background: '#000', opacity: fade, pointerEvents: 'none'}} />
       {spec.qa && <QaProbe w={spec.width} h={spec.height} />}
       {spec.music && <Audio src={staticFile(spec.music)} volume={spec.musicVolume ?? 0.5} />}
       {spec.voice && <Audio src={staticFile(spec.voice)} />}
       <Audio src={staticFile('tpl_sfx.wav')} />
       <DrawSfx items={items} />
+      <FxSfx spec={spec} />
     </AbsoluteFill>
   );
 };

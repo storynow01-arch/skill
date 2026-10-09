@@ -158,7 +158,7 @@ export const TemplateH: React.FC<TplSpec> = (spec) => {
       })}
       {cap && <div data-qa="caption" style={{position: 'absolute', left: 0, right: 0, bottom: 92, display: 'flex', justifyContent: 'center'}}>
         <div style={{fontFamily: TC, fontWeight: 700, fontSize: 42, color: '#fff', background: 'rgba(0,0,0,0.72)', padding: '8px 26px', borderRadius: 10, letterSpacing: 1, maxWidth: 1600}}>{cap.text}</div></div>}
-      <BrandLogo logo={spec.brand?.logo} />
+      <BrandLogo logo={spec.brand?.logo} width={spec.brand?.logoWidth} />
       <AbsoluteFill style={{background: '#000', opacity: fade, pointerEvents: 'none'}} />
       {spec.qa && <QaProbe w={spec.width} h={spec.height} />}
       {spec.music && <Audio src={staticFile(spec.music)} volume={spec.musicVolume ?? 0.25} />}

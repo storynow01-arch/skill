@@ -29,7 +29,7 @@ export const lerp = (f: number, a: number, b: number, from = 0, to = 1, e = ease
 export type Fill = {d: string; c: string; o?: number};
 export type Shape = {strokes: string[]; fills?: Fill[]; w?: number; ink?: string; extra?: React.ReactNode; o?: [number, number]};
 export type Sfx = 'pop' | 'ding' | 'buzz' | 'none';
-export type DrawItem = {kind: 'shape'; at: number; dur: number; x: number; y: number; s?: number; rot?: number; shape: Shape; sfx?: Sfx; boxId?: string};
+export type DrawItem = {kind: 'shape'; at: number; dur: number; x: number; y: number; s?: number; rot?: number; shape: Shape; sfx?: Sfx; boxId?: string; inBox?: string};   // inBox＝放在哪個容器裡（品檢：圖示不可超出、不可被框線穿過，2026-10-09）
 export type TextItem = {kind: 'text'; at: number; dur: number; x: number; y: number; text: string; size: number; color?: string;
   bold?: boolean; anchor?: 'start' | 'middle'; sfx?: Sfx; box?: string};   // box＝所屬容器（品檢：字不可超出）
 export type Item = DrawItem | TextItem;
@@ -81,7 +81,7 @@ export const DrawShape: React.FC<{it: DrawItem; f: number}> = ({it, f}) => {
   const s = (it.s ?? 1) * bump;
   const [ox, oy] = shape.o ?? [0, 0];
   return (
-    <g data-qa-box={it.boxId} transform={`translate(${it.x} ${it.y}) rotate(${it.rot ?? 0}) scale(${s}) translate(${ox} ${oy})`}>
+    <g data-qa-box={it.boxId} data-qa-in={it.inBox} transform={`translate(${it.x} ${it.y}) rotate(${it.rot ?? 0}) scale(${s}) translate(${ox} ${oy})`}>
       <g opacity={fillP}>{shape.fills?.map((fl, i) => <path key={i} d={fl.d} fill={fl.c} opacity={fl.o ?? 1} />)}</g>
       {shape.strokes.map((d, i) => {
         const vis = Math.max(0, Math.min(lens[i], L));
@@ -111,17 +111,48 @@ export const DrawText: React.FC<{it: TextItem; f: number; id: string; hand: stri
 };
 
 /** 馬克筆（筆尖在原點，朝右下斜放），附淡陰影 */
-export const Marker: React.FC<{x: number; y: number; scale: number; tilt: number}> = ({x, y, scale, tilt}) => (
-  <g transform={`translate(${x} ${y}) scale(${scale}) rotate(${48 + tilt})`}>
-    <rect x={48} y={11} width={330} height={30} rx={12} fill="#000" opacity={0.16} transform="translate(0 14)" />
-    <polygon points="2,0 30,-9 30,9" fill={WB.ink} />
-    <path d="M30 -11 L52 -14 L52 14 L30 11 Z" fill="#9aa3ab" stroke={WB.ink} strokeWidth={4} strokeLinejoin="round" />
-    <rect x={52} y={-15} width={250} height={30} rx={8} fill="#fff" stroke={WB.ink} strokeWidth={4} />
-    <rect x={150} y={-15} width={40} height={30} fill={WB.blue} stroke={WB.ink} strokeWidth={4} />
-    <rect x={290} y={-17} width={70} height={34} rx={10} fill={WB.blue} stroke={WB.ink} strokeWidth={4} />
-    <path d="M62 -7 H140" stroke="#dfe5ea" strokeWidth={5} strokeLinecap="round" />
-  </g>
-);
+/** 筆的種類（2026-10-09，系列教學隨章節升級）：pencil 鉛筆、blue 藍色馬克筆（預設）、red 紅色馬克筆、gold 金色鋼筆。
+ *  只換筆本身的外觀，畫出來的線與字顏色不變。storyboard 頂層 "pen" 指定。 */
+export type PenKind = 'pencil' | 'blue' | 'red' | 'gold';
+export const Marker: React.FC<{x: number; y: number; scale: number; tilt: number; kind?: string | null}> = ({x, y, scale, tilt, kind}) => {
+  const k = (kind ?? 'blue') as PenKind;
+  const shadow = <rect x={48} y={11} width={330} height={30} rx={12} fill="#000" opacity={0.16} transform="translate(0 14)" />;
+  let body: React.ReactNode;
+  if (k === 'pencil') {
+    body = (<>
+      <polygon points="2,0 24,-7 24,7" fill="#3a3f45" />
+      <path d="M24 -7 L62 -15 L62 15 L24 7 Z" fill="#f2d3a2" stroke={WB.ink} strokeWidth={4} strokeLinejoin="round" />
+      <rect x={62} y={-15} width={230} height={30} fill="#f6c23e" stroke={WB.ink} strokeWidth={4} />
+      <path d="M62 -5 H292 M62 5 H292" stroke="#d9a422" strokeWidth={3} />
+      <rect x={292} y={-16} width={34} height={32} fill="#b9c0c7" stroke={WB.ink} strokeWidth={4} />
+      <path d="M302 -16 V16 M314 -16 V16" stroke="#8d959d" strokeWidth={3} />
+      <rect x={326} y={-15} width={40} height={30} rx={9} fill="#f29bb0" stroke={WB.ink} strokeWidth={4} />
+    </>);
+  } else if (k === 'gold') {
+    body = (<>
+      <path d="M2 0 L34 -10 Q44 0 34 10 Z" fill="#e8b84a" stroke={WB.ink} strokeWidth={4} strokeLinejoin="round" />
+      <path d="M10 0 H30" stroke={WB.ink} strokeWidth={3} />
+      <path d="M34 -12 L60 -15 L60 15 L34 12 Z" fill="#2b2f3a" stroke={WB.ink} strokeWidth={4} strokeLinejoin="round" />
+      <rect x={60} y={-16} width={240} height={32} rx={14} fill="#1f2a44" stroke={WB.ink} strokeWidth={4} />
+      <rect x={140} y={-16} width={14} height={32} fill="#e8b84a" stroke={WB.ink} strokeWidth={3} />
+      <rect x={288} y={-17} width={78} height={34} rx={14} fill="#1f2a44" stroke={WB.ink} strokeWidth={4} />
+      <rect x={288} y={-17} width={12} height={34} fill="#e8b84a" stroke={WB.ink} strokeWidth={3} />
+      <path d="M300 -21 H352 Q360 -21 360 -13" fill="none" stroke="#e8b84a" strokeWidth={7} strokeLinecap="round" />
+      <path d="M72 -8 H130" stroke="#46557a" strokeWidth={5} strokeLinecap="round" />
+    </>);
+  } else {
+    const c = k === 'red' ? WB.red : WB.blue;
+    body = (<>
+      <polygon points="2,0 30,-9 30,9" fill={WB.ink} />
+      <path d="M30 -11 L52 -14 L52 14 L30 11 Z" fill="#9aa3ab" stroke={WB.ink} strokeWidth={4} strokeLinejoin="round" />
+      <rect x={52} y={-15} width={250} height={30} rx={8} fill="#fff" stroke={WB.ink} strokeWidth={4} />
+      <rect x={150} y={-15} width={40} height={30} fill={c} stroke={WB.ink} strokeWidth={4} />
+      <rect x={290} y={-17} width={70} height={34} rx={10} fill={c} stroke={WB.ink} strokeWidth={4} />
+      <path d="M62 -7 H140" stroke="#dfe5ea" strokeWidth={5} strokeLinecap="round" />
+    </>);
+  }
+  return <g transform={`translate(${x} ${y}) scale(${scale}) rotate(${48 + tilt})`}>{shadow}{body}</g>;
+};
 
 /* ---------- 形狀小工具 ---------- */
 export const R = (x: number, y: number, w: number, h: number, r = 0) =>
@@ -149,6 +180,115 @@ export const box = (w: number, h: number): Shape => ({strokes: [R(-w / 2, -h / 2
 
 /* ---------- 圖示庫 ---------- */
 export const WB_ICONS: Record<string, () => Shape> = {
+  /* ---------- 數位邏輯專用符號（2026-10-09）：照高職課本的 ANSI／IEEE 標準形狀（特徵形），不可用一般圖示代替 ----------
+     及閘＝D 形（平背＋半圓頭）；或閘＝弧背＋尖頭；反閘＝三角形＋小圓圈；反及／反或＝輸出端加小圓圈；
+     互斥或＝或閘背後多一條弧線。左邊兩條輸入線、右邊一條輸出線。 */
+  gate_and: () => ({
+    strokes: ['M-55 -55 H5 A55 55 0 0 1 5 55 H-55 Z', Ln(-100, -28, -55, -28), Ln(-100, 28, -55, 28), Ln(60, 0, 100, 0)],
+    fills: [{d: 'M-55 -55 H5 A55 55 0 0 1 5 55 H-55 Z', c: C.sky}],
+  }),
+  gate_nand: () => ({
+    strokes: ['M-55 -55 H5 A55 55 0 0 1 5 55 H-55 Z', O(71, 0, 11), Ln(-100, -28, -55, -28), Ln(-100, 28, -55, 28), Ln(82, 0, 100, 0)],
+    fills: [{d: 'M-55 -55 H5 A55 55 0 0 1 5 55 H-55 Z', c: C.sky}, {d: O(71, 0, 11), c: C.white}],
+  }),
+  gate_or: () => ({
+    strokes: ['M-62 -55 Q-30 0 -62 55 Q20 55 62 0 Q20 -55 -62 -55 Z', Ln(-100, -28, -50, -28), Ln(-100, 28, -50, 28), Ln(62, 0, 100, 0)],
+    fills: [{d: 'M-62 -55 Q-30 0 -62 55 Q20 55 62 0 Q20 -55 -62 -55 Z', c: C.sky}],
+  }),
+  gate_nor: () => ({
+    strokes: ['M-62 -55 Q-30 0 -62 55 Q20 55 62 0 Q20 -55 -62 -55 Z', O(73, 0, 11), Ln(-100, -28, -50, -28), Ln(-100, 28, -50, 28), Ln(84, 0, 100, 0)],
+    fills: [{d: 'M-62 -55 Q-30 0 -62 55 Q20 55 62 0 Q20 -55 -62 -55 Z', c: C.sky}, {d: O(73, 0, 11), c: C.white}],
+  }),
+  gate_xor: () => ({
+    strokes: ['M-52 -55 Q-20 0 -52 55 Q30 55 72 0 Q30 -55 -52 -55 Z', 'M-72 -55 Q-40 0 -72 55', Ln(-100, -28, -62, -28), Ln(-100, 28, -62, 28), Ln(72, 0, 100, 0)],
+    fills: [{d: 'M-52 -55 Q-20 0 -52 55 Q30 55 72 0 Q30 -55 -52 -55 Z', c: C.sky}],
+  }),
+  gate_xnor: () => ({
+    strokes: ['M-52 -55 Q-20 0 -52 55 Q30 55 72 0 Q30 -55 -52 -55 Z', 'M-72 -55 Q-40 0 -72 55', O(83, 0, 10), Ln(-100, -28, -62, -28), Ln(-100, 28, -62, 28)],
+    fills: [{d: 'M-52 -55 Q-20 0 -52 55 Q30 55 72 0 Q30 -55 -52 -55 Z', c: C.sky}, {d: O(83, 0, 10), c: C.white}],
+  }),
+  gate_not: () => ({
+    strokes: ['M-50 -45 L38 0 L-50 45 Z', O(49, 0, 11), Ln(-100, 0, -50, 0), Ln(60, 0, 100, 0)],
+    fills: [{d: 'M-50 -45 L38 0 L-50 45 Z', c: C.sky}, {d: O(49, 0, 11), c: C.white}],
+  }),
+  /** 反相：字母 A 上面一條橫線（A bar） */
+  abar: () => ({
+    strokes: ['M-40 60 L0 -38 L40 60', 'M-23 22 H23', 'M-46 -66 H46'], w: 12,
+  }),
+  /** 真值表：A、B、Y 三欄、四列（AND 的真值表） */
+  truthtable: () => ({
+    strokes: [R(-84, -84, 168, 168, 8), Ln(-84, -50, 84, -50), Ln(-28, -84, -28, 84), Ln(28, -84, 28, 84)],
+    fills: [{d: R(-84, -84, 168, 168, 8), c: C.white}, {d: R(-84, -84, 168, 34, 8), c: C.sky}],
+    extra: (
+      <g fontSize={24} fontWeight={700} textAnchor="middle" fill={C.ink}>
+        {['A', 'B', 'Y'].map((t, i) => <text key={t} x={-56 + i * 56} y={-59}>{t}</text>)}
+        {[['0', '0', '0'], ['0', '1', '0'], ['1', '0', '0'], ['1', '1', '1']].map((row, r) =>
+          row.map((t, i) => <text key={`${r}${i}`} x={-56 + i * 56} y={-22 + r * 31} fill={i === 2 && t === '1' ? C.red : C.ink}>{t}</text>))}
+      </g>),
+  }),
+  /** 水銀溫度計（類比）：玻璃管＋紅色水銀柱＋刻度 */
+  thermometer: () => ({
+    strokes: [R(-15, -88, 30, 132, 15), O(0, 62, 27), Ln(15, -60, 30, -60), Ln(15, -35, 30, -35), Ln(15, -10, 30, -10), Ln(15, 15, 30, 15)],
+    fills: [{d: R(-15, -88, 30, 132, 15), c: C.white}, {d: R(-7, -30, 14, 80, 4), c: C.red}, {d: O(0, 62, 27), c: C.red}],
+  }),
+  /** 計算機：螢幕顯示數字＋按鍵 */
+  calculator: () => ({
+    strokes: [R(-62, -88, 124, 176, 14), R(-46, -72, 92, 40, 4),
+      ...[0, 1, 2].flatMap((r) => [0, 1, 2].map((c) => R(-46 + c * 33, -18 + r * 33, 26, 26, 5)))],
+    fills: [{d: R(-62, -88, 124, 176, 14), c: C.gray}, {d: R(-46, -72, 92, 40, 4), c: '#dff3df'},
+      ...[0, 1, 2].flatMap((r) => [0, 1, 2].map((c) => ({d: R(-46 + c * 33, -18 + r * 33, 26, 26, 5), c: c === 2 ? C.orange : C.white})))],
+    extra: <text x={38} y={-42} textAnchor="end" fontSize={26} fontWeight={700} fill={C.ink}>12</text>,
+  }),
+  /** 數位錶：液晶數字 */
+  dwatch: () => ({
+    strokes: [R(-38, -92, 76, 184, 18), R(-72, -48, 144, 96, 18), R(-56, -32, 112, 64, 6)],
+    fills: [{d: R(-38, -92, 76, 184, 18), c: C.blue}, {d: R(-72, -48, 144, 96, 18), c: C.gray}, {d: R(-56, -32, 112, 64, 6), c: '#dff3df'}],
+    extra: <text x={0} y={14} textAnchor="middle" fontSize={40} fontWeight={700} fill={C.ink}>12:05</text>,
+  }),
+  /** 電子溫度計（數位）：液晶顯示數字＋探針 */
+  dthermo: () => ({
+    strokes: [R(-46, -88, 92, 120, 16), R(-34, -72, 68, 44, 6), Ln(0, 32, 0, 90), O(-16, 6, 8), O(16, 6, 8)],
+    fills: [{d: R(-46, -88, 92, 120, 16), c: C.blue}, {d: R(-34, -72, 68, 44, 6), c: '#dff3df'}],
+    extra: <text x={0} y={-40} textAnchor="middle" fontSize={26} fontWeight={700} fill={C.ink}>25.4°</text>,
+  }),
+  /** 液晶體重計（數位） */
+  dscale: () => ({
+    strokes: [R(-88, -40, 176, 110, 22), R(-40, -24, 80, 34, 6), Ln(-60, 70, -60, 84), Ln(60, 70, 60, 84)],
+    fills: [{d: R(-88, -40, 176, 110, 22), c: C.white}, {d: R(-40, -24, 80, 34, 6), c: '#dff3df'}],
+    extra: <text x={0} y={2} textAnchor="middle" fontSize={24} fontWeight={700} fill={C.ink}>52.4</text>,
+  }),
+  /** 沙漏（類比：沙連續往下流） */
+  hourglass: () => ({
+    strokes: [Ln(-55, -88, 55, -88), Ln(-55, 88, 55, 88), 'M-45 -88 Q-45 -20 0 0 Q-45 20 -45 88', 'M45 -88 Q45 -20 0 0 Q45 20 45 88'],
+    fills: [{d: 'M-30 -40 Q-20 -12 0 0 Q20 -12 30 -40 Z', c: C.yellow}, {d: 'M-40 88 Q-30 40 0 34 Q30 40 40 88 Z', c: C.yellow}],
+  }),
+  /** 傳統收音機（類比）：喇叭網＋調頻轉盤＋天線 */
+  radio: () => ({
+    strokes: [R(-90, -45, 180, 120, 16), O(-38, 15, 32), O(48, 0, 18), Ln(20, 45, 76, 45), Ln(40, -45, 80, -100)],
+    fills: [{d: R(-90, -45, 180, 120, 16), c: C.orange}, {d: O(-38, 15, 32), c: C.gray}, {d: O(48, 0, 18), c: C.white}],
+  }),
+  /** 麥克風 */
+  mic: () => ({
+    strokes: [R(-28, -88, 56, 104, 28), 'M-46 -10 Q-46 46 0 46 Q46 46 46 -10', Ln(0, 46, 0, 80), Ln(-36, 82, 36, 82), Ln(-14, -60, 14, -60), Ln(-14, -38, 14, -38)],
+    fills: [{d: R(-28, -88, 56, 104, 28), c: C.gray}],
+  }),
+  /** 喇叭 */
+  speaker: () => ({
+    strokes: ['M-80 -30 H-42 L8 -72 V72 L-42 30 H-80 Z', 'M32 -38 Q58 0 32 38', 'M54 -62 Q92 0 54 62'],
+    fills: [{d: 'M-80 -30 H-42 L8 -72 V72 L-42 30 H-80 Z', c: C.orange}],
+  }),
+  /** ADC：左邊連續波（類比）→ 方塊 → 右邊方波（數位） */
+  adc: () => ({
+    strokes: [R(-52, -44, 104, 88, 12), 'M-100 0 Q-92 -30 -84 0 Q-76 30 -68 0 L-52 0', 'M52 12 H62 V-12 H74 V12 H86 V-12 H100'],
+    fills: [{d: R(-52, -44, 104, 88, 12), c: C.yellow}],
+    extra: <text x={0} y={13} textAnchor="middle" fontSize={34} fontWeight={900} fill={C.ink}>ADC</text>,
+  }),
+  /** DAC：左邊方波（數位）→ 方塊 → 右邊連續波（類比） */
+  dac: () => ({
+    strokes: [R(-52, -44, 104, 88, 12), 'M-100 12 H-88 V-12 H-76 V12 H-64 V-12 H-52', 'M52 0 Q60 -30 68 0 Q76 30 84 0 Q92 -30 100 0'],
+    fills: [{d: R(-52, -44, 104, 88, 12), c: C.yellow}],
+    extra: <text x={0} y={13} textAnchor="middle" fontSize={34} fontWeight={900} fill={C.ink}>DAC</text>,
+  }),
   computer: () => ({
     strokes: [R(-95, -80, 190, 125, 10), R(-80, -66, 160, 97, 4), Ln(-20, 45, -28, 78), Ln(20, 45, 28, 78), Ln(-60, 80, 60, 80)],
     fills: [{d: R(-95, -80, 190, 125, 10), c: C.blue}, {d: R(-80, -66, 160, 97, 4), c: C.sky}, {d: 'M-20 45 L-28 78 L28 78 L20 45 Z', c: C.gray}],

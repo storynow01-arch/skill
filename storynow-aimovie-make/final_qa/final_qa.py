@@ -203,7 +203,17 @@ def main():
 
     boxes = band_boxes(mp4, a.band_y, a.band_h)
     fl, jt = flicker_and_jitter(boxes, fps)
-    R["F1"] = {"count": len(fl), "examples": fl[:10]}
+    after = 0
+    if a.spec:
+        # 最後一句字幕之後沒有字幕：那段字幕帶有東西是畫面本身（範本D 片尾拉遠時白板經過字幕區），不算字幕閃爍（2026-10-09）
+        sp = json.loads(Path(a.spec).read_text(encoding="utf-8"))
+        caps, sfps = sp.get("captions") or [], sp.get("fps", 30)
+        if caps and sp.get("totalFrames"):
+            off = max(0.0, dur - sp["totalFrames"] / sfps)          # 前面接了封面／片頭時整段往後移
+            last = off + max(c["to"] for c in caps) / sfps + 0.5
+            after = sum(1 for x in fl if x["sec"] > last)
+            fl = [x for x in fl if x["sec"] <= last]
+    R["F1"] = {"count": len(fl), "examples": fl[:10], "after_last_caption": after}
     R["F2"] = {"count": len(jt), "examples": jt[:10]}
 
     r = sh(["ffmpeg", "-nostats", "-i", str(mp4), "-vf", "blackdetect=d=0.3:pix_th=0.08:pic_th=0.98",

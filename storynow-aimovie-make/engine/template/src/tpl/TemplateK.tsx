@@ -880,7 +880,7 @@ export const TemplateK: React.FC<TplSpec> = (spec) => {
         <div data-qa="caption" style={{position: 'absolute', left: 60, right: 60, top: 952, textAlign: 'center', opacity: capO, fontFamily: NOTO, fontWeight: 900,
           fontSize: capS, color: '#fff', letterSpacing: 2, whiteSpace: 'nowrap', WebkitTextStroke: '8px #05070f', paintOrder: 'stroke fill'}}>{cap.text}</div>
       )}
-      <BrandLogo logo={spec.brand?.logo} />
+      <BrandLogo logo={spec.brand?.logo} width={spec.brand?.logoWidth} />
       <AbsoluteFill style={{background: '#000', opacity: fade, pointerEvents: 'none'}} />
       {spec.qa && <QaProbe w={spec.width} h={spec.height} />}
       {spec.music && <Audio src={staticFile(spec.music)} volume={spec.musicVolume ?? 0.4} />}

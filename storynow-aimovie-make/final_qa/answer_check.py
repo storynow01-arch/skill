@@ -39,6 +39,9 @@ def check(sb, table, table_path, rec):
         if official is None:
             rec.problem('A2.缺表', where, f'答案表查不到這一題（{table_path or "沒有答案表"}）', sc)
             continue
+        if str(official).strip() == '送分':
+            rec.problem('A2.送分', where, '這題官方公告送分（題目有瑕疵），不適合當例題，要用就要在影片裡講清楚', sc)
+            continue
         letters = sc.get('examOptions') or list('ABCDE')
         if 'answer' in p:
             shown = str(p['answer']).strip().upper()
@@ -47,7 +50,9 @@ def check(sb, table, table_path, rec):
         else:
             rec.problem('A2.答案', where, '場景沒有 answerIndex 或 answer，無法核對', sc)
             continue
-        if shown != str(official).strip().upper():
+        official = str(official).strip().upper()
+        # 疑義後公告「A 或 C 皆可」記成 "AC"：影片寫其中一個就算對
+        if shown != official and not (len(official) > 1 and len(shown) == 1 and shown in official):
             rec.problem('A2.答案', where, f'影片的答案是 {shown}，官方參考答案是 {official}', sc)
     rec.note(f'核對 {n} 題' + (f'（答案表 {table_path}）' if table_path else ''))
 

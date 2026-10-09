@@ -58,6 +58,11 @@ def text_cases(work):
     storyboard_case(work, 'A2 答對', 'answer_check.py', {'scenes': [{'id': 'S1', 'exam': '114-專二-1', 'props': {'answerIndex': 2}}]}, set(), ('--answers', ans))
     storyboard_case(work, 'A2 答錯', 'answer_check.py', {'scenes': [{'id': 'S1', 'exam': '114-專二-1', 'props': {'answerIndex': 1}}]}, {'A2.答案'}, ('--answers', ans))
     storyboard_case(work, 'A2 缺表', 'answer_check.py', {'scenes': [{'id': 'S1', 'exam': '113-專二-1', 'props': {'answerIndex': 1}}]}, {'A2.缺表'}, ('--answers', ans))
+    sym = os.path.join(work, 'sym.json')
+    json.dump({'名詞': {'及閘': {'符號': ['gate_and']}, '或閘': {'符號': ['gate_or']}}}, open(sym, 'w', encoding='utf-8'), ensure_ascii=False)
+    storyboard_case(work, 'S1 符號正確', 'symbol_check.py', {'scenes': [{'id': 'S1', 'type': 'cards', 'props': {'cards': [{'icon': 'gate_and'}]}, 'lines': ['及閘長得像 D']}]}, set(), ('--symbols', sym))
+    storyboard_case(work, 'S1 及閘畫成紙箱', 'symbol_check.py', {'scenes': [{'id': 'S1', 'type': 'cards', 'props': {'cards': [{'icon': 'package'}]}, 'lines': ['及閘長得像 D']}]}, {'S1.符號'}, ('--symbols', sym))
+    storyboard_case(work, 'S1 只畫一個', 'symbol_check.py', {'scenes': [{'id': 'S1', 'type': 'cards', 'props': {'cards': [{'icon': 'gate_and'}]}, 'lines': ['及閘和或閘']}]}, {'S1.部分'}, ('--symbols', sym))
     km = lambda groups, ones=(1, 3, 9, 15): {'id': 'S2', 'type': 'kmap', 'props': {'rowVar': 'AB', 'colVar': 'CD', 'ones': list(ones), 'groups': groups}}
     good = [{'cells': [1, 3], 'term': "A'B'D"}, {'cells': [1, 9], 'term': "B'C'D"}, {'cells': [15], 'term': 'ABCD'}]
     terms = {'id': 'S1', 'type': 'terms', 'props': {'terms': ["A'B'C'D", "A'B'CD", "AB'C'D", 'ABCD']}}

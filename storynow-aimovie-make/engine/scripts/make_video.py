@@ -284,7 +284,7 @@ def main():
         if rc != 0 and not a.force:
             raise SystemExit('文稿檢查有「必改」，見 qa/文稿檢查/文稿檢查報告.html（改完重跑，或加 --force）')
         # 內容正確（2026-10-08）：程式碼實際執行、歷屆答案、計算與化簡；擋下就不配音（改稿最便宜）
-        bad = [step for step, script in (('A1 程式碼執行', 'code_check.py'), ('A2 答案核對', 'answer_check.py'), ('A3 計算與化簡', 'math_check.py'))
+        bad = [step for step, script in (('A1 程式碼執行', 'code_check.py'), ('A2 答案核對', 'answer_check.py'), ('A3 計算與化簡', 'math_check.py'), ('S1 專業名詞符號', 'symbol_check.py'))
                if timed(step, [py, os.path.join(SKILL, 'final_qa', script), a.storyboard, '--out', REC], check=False)]
         timed('唸法清單', [py, os.path.join(SKILL, 'final_qa', 'read_list.py'), a.storyboard, '--out', 'qa/唸法清單', '--rec', REC], check=False)
         if bad and not a.force:

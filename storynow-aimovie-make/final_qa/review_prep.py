@@ -22,7 +22,9 @@ def sentences(p: Path) -> list[tuple[str, str]]:
     if p.suffix.lower() == ".json":
         sb = json.loads(p.read_text(encoding="utf-8"))
         if "scenes" in sb:
-            return [(sc.get("id", f"S{i}"), ln) for i, sc in enumerate(sb["scenes"], 1) for ln in sc.get("lines") or []]
+            # 句子可寫成 {"text": 字幕, "say": 念法}：審的是字幕原文（念法由唸法清單另外檢查）
+            return [(sc.get("id", f"S{i}"), ln["text"] if isinstance(ln, dict) else ln)
+                    for i, sc in enumerate(sb["scenes"], 1) for ln in sc.get("lines") or []]
         if "segments" in sb:
             return [(f"第{i}段", sg["say"]) for i, sg in enumerate(sb["segments"], 1)]
         raise SystemExit("看不懂這份 storyboard（要有 scenes[].lines 或 segments[].say）")

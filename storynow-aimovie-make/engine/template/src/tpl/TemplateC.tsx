@@ -313,7 +313,7 @@ export const TemplateC: React.FC<TplSpec & {bpm?: number}> = (spec) => {
       {flash && <AbsoluteFill style={{background: AC, opacity: 1 - (f - cur.from) / 3}} />}
       {cap && <div data-qa="caption" style={{position: 'absolute', left: 0, right: 0, bottom: 40, display: 'flex', justifyContent: 'center'}}>
         <div style={{fontFamily: TC, fontWeight: 700, fontSize: 36, color: WH, background: 'rgba(0,0,0,0.8)', padding: '8px 28px', borderLeft: `6px solid ${AC}`, maxWidth: 1600}}>{cap.text}</div></div>}
-      <BrandLogo logo={spec.brand?.logo} />
+      <BrandLogo logo={spec.brand?.logo} width={spec.brand?.logoWidth} />
       <AbsoluteFill style={{background: '#000', opacity: fade, pointerEvents: 'none'}} />
       {spec.qa && <QaProbe w={spec.width} h={spec.height} />}
       {spec.music && <Audio src={staticFile(spec.music)} volume={spec.musicVolume ?? 0.55} />}

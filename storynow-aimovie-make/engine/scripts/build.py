@@ -697,6 +697,10 @@ def main():
         lg = os.path.join(bdir, bd.get('logo', 'logo.png'))
         if bd.get('logo', 'logo.png') and os.path.exists(lg):
             shutil.copy(lg, os.path.join(pub, 'brand_logo' + os.path.splitext(lg)[1])); brand['logo'] = 'brand_logo' + os.path.splitext(lg)[1]
+        if bd.get('logoWidth'): brand['logoWidth'] = bd['logoWidth']        # 方形徽章要比橫式 LOGO 窄（2026-10-09）
+        mc = os.path.join(bdir, bd.get('mascot', 'mascot.png'))        # 吉祥物（範本D 的 pup 反應特效用）
+        if os.path.exists(mc):
+            shutil.copy(mc, os.path.join(pub, 'brand_mascot.png')); brand['mascot'] = 'brand_mascot.png'
         for k2, dflt in (('cover', 'cover.jpg'), ('intro', 'intro.mp4')):
             f2 = os.path.join(bdir, bd.get(k2, dflt))
             if bd.get(k2, dflt) and os.path.exists(f2): brand[k2] = f2
@@ -739,7 +743,7 @@ def main():
             'hud': sb.get('hud'), 'music': music_file, 'voice': voice_file,
             'musicVolume': sb.get('musicVolume', 0.5 if mode == 'teach' else 1.0), 'duckTo': sb.get('duckTo', 0.14),
             'duck': duck, 'impacts': [round(x * fps) for x in impacts], 'captions': caps if sb.get('captions', True) else [],
-            'scenes': scenes, 'voiceLines': vlines, 'bpm': bpm, 'narrator': sb.get('narrator'), 'brand': brand}
+            'scenes': scenes, 'voiceLines': vlines, 'bpm': bpm, 'narrator': sb.get('narrator'), 'brand': brand, 'pen': sb.get('pen')}
     os.makedirs(os.path.join(proj, 'src', 'data'), exist_ok=True)
     spec_path = os.path.join(proj, 'src', 'data', 'spec.json')
     json.dump(spec, open(spec_path + '.new', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)

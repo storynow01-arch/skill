@@ -247,9 +247,11 @@ const measure = (W: number, H: number) => {
     if (!box || visible(box) < 0.35) continue;
     const r = el.getBoundingClientRect(), bb = box.getBoundingClientRect();
     if (r.width < 2 || bb.width < 2 || r.right < 0 || r.left > W) continue;
-    const label = (el.textContent ?? '').trim().slice(0, 24);
+    const isText = !!(el.textContent ?? '').trim();
+    const label = isText ? (el.textContent ?? '').trim().slice(0, 24) : '圖示';
+    const kind = isText ? '文字超出圖形' : '圖示超出圖形';
     const out = Math.max(bb.left - r.left, r.right - bb.right, bb.top - r.top, r.bottom - bb.bottom);
-    if (out > 2) { issues.push({kind: '文字超出圖形', detail: `「${label}」超出所屬框 ${Math.round(out)}px`}); continue; }
+    if (out > 2) { issues.push({kind, detail: `「${label}」超出所屬框 ${Math.round(out)}px`}); continue; }
     // 框線（含圓孔、尖角）穿過文字：沿每條描邊取樣，點落在文字範圍內就算（只看外框範圍抓不到，2026-10-05 負面測試）
     let hits = 0;
     for (const path of Array.from(box.querySelectorAll('path')) as SVGPathElement[]) {
@@ -262,7 +264,7 @@ const measure = (W: number, H: number) => {
         if (x > r.left + 2 && x < r.right - 2 && y > r.top + r.height * 0.15 && y < r.bottom - r.height * 0.15) hits++;
       }
     }
-    if (hits) issues.push({kind: '文字超出圖形', detail: `「${label}」壓到所屬框的框線（${hits} 點）`});
+    if (hits) issues.push({kind, detail: `「${label}」壓到所屬框的框線（${hits} 點）`});
   }
   // ⑥ LOGO 保留區：任何文字或容器圖形碰到 LOGO
   const logo = document.querySelector('[data-qa="logo"]');

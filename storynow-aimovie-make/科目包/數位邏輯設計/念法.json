@@ -1,8 +1,9 @@
 {
-  "_說明": "數位邏輯設計專用的 edge-tts 念法（storyboard 寫 \"subject\": \"數位邏輯設計\" 時，build.py 併入全域詞典）。Gemini 不套詞典。",
+  "_說明": "數位邏輯設計專用的 edge-tts 念法（storyboard 寫 \"subject\": \"數位邏輯設計\" 時，build.py 併入全域詞典）。Gemini 不套詞典。 bar（反相）念四聲「霸」，2026-10-09 使用者指定。",
   "詞典": {
     "AB": "A B",
     "BC": "B C",
-    "CD": "C D"
+    "CD": "C D",
+    "bar": "霸"
   }
 }
