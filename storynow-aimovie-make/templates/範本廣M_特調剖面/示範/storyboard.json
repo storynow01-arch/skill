@@ -1,0 +1,17 @@
+{
+ "_source": "skill engine/ad/範例文本_小店開幕.md（虛構的晴窗咖啡書房開幕）；畫面上的字都能在該文本找到，沒有編造數字（「晴窗特調」是範本的包裝：把開幕資訊當成一杯特調的各層）",
+ "name": "晴窗咖啡書房_特調剖面",
+ "header": "晴窗咖啡書房｜11 月 1 日（週六）開幕",
+ "title": {"tag": "晴窗咖啡書房", "lines": ["晴窗", "開幕特調"], "sub": "綠川街 18 號・11 月 1 日開幕"},
+ "layers": [
+  {"kind": "liquid", "name": "一樓咖啡", "amount": "12", "unit": "款", "note": "手沖豆 12 款\n招牌飲品：桂花拿鐵", "color": "#B8742E"},
+  {"kind": "soda", "name": "二樓選書", "amount": "3000", "unit": "冊", "note": "三個區域一次逛完", "color": "#E8B21E"},
+  {"kind": "ice", "name": "座位", "amount": "48", "unit": "席", "note": "每天 09:00～21:00\n週三公休"},
+  {"kind": "float", "name": "窗邊甜點", "note": "人氣甜點：伯爵茶戚風", "color": "#3550D9"},
+  {"kind": "garnish", "name": "開幕優惠", "items": ["前 100 名送手沖咖啡", "會員免費加入", "生日當月再送一杯"], "short": "開幕優惠"}
+ ],
+ "react": {"layer": 4, "color": "#9B4FD0", "text": "開幕週 → 全品項 8 折"},
+ "done": {"name": "晴窗開幕特調", "pill": "一杯咖啡的時間，翻一本好書"},
+ "stamp": {"top": "11 月 1 日", "main": "開幕", "bottom": "綠川街 18 號"},
+ "board": {"tag": "晴窗咖啡書房 SUNNY WINDOW", "line": "一樓咖啡・二樓選書・", "em": "窗邊甜點", "name": "晴窗咖啡書房", "slogan": "一杯咖啡的時間，翻一本好書。", "url": "sunnywindow.example　(02) 2345-6789"}
+}

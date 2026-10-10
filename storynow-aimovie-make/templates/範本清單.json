@@ -26,6 +26,10 @@
     {"code": "廣J", "dir": "範本廣J_寵物直播", "type": "standalone", "kind": "ad", "name": "寵物直播", "trigger": "廣J／寵物直播／直播帶貨廣告"},
     {"code": "廣K", "dir": "範本廣K_紅點作品集", "type": "standalone", "kind": "ad", "name": "紅點作品集", "trigger": "廣K／紅點作品集／作品集快剪"},
     {"code": "廣L", "dir": "範本廣L_新創快剪", "type": "standalone", "kind": "ad", "name": "新創快剪", "trigger": "廣L／新創快剪／產品發表廣告"},
+    {"code": "廣M", "dir": "範本廣M_特調剖面", "type": "standalone", "kind": "ad", "name": "特調剖面", "trigger": "廣M／特調剖面／調飲料廣告"},
+    {"code": "廣N", "dir": "範本廣N_數位故障", "type": "standalone", "kind": "ad", "name": "數位故障", "trigger": "廣N／數位故障／故障風廣告"},
+    {"code": "廣O", "dir": "範本廣O_電影片頭", "type": "standalone", "kind": "ad", "name": "電影片頭", "trigger": "廣O／電影片頭／片頭字幕廣告"},
+    {"code": "廣P", "dir": "範本廣P_粗框醒目", "type": "standalone", "kind": "ad", "name": "粗框醒目", "trigger": "廣P／粗框醒目／粗野主義廣告"},
     {"code": "info1", "dir": "資訊科範本1", "type": "standalone", "name": "資訊科範本1（活動說明＋資訊科宣傳片）", "trigger": "資訊科範本1",
      "legacy_name": true}
   ]

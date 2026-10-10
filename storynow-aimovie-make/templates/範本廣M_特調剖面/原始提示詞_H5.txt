@@ -1,0 +1,4 @@
+來源：skillry.dev 熱門提示詞第 17 名 @Ror_Fly（Explainers，30 秒，讚 1,034、觀看 77,709、書籤 1,460；2026-10-09 依原推文按讚數排名，513 支裡第 17 名）https://skillry.dev/ai-videos/opus-5-5/ror-fly-880547
+（逐字保存，含原文拼字 ingreidents；原作者讓 AI 自選 javascript 或 html；本機「熱門 H5 調飲料食譜」與這個範本改用 Remotion＋numpy 配樂）
+
+We're going to try a little test. Do you think you could render a recipe motion graphic animation using javascript or html (w/e you think will produce the best) to show the full recipe from start to finish (empty glass to completed cocktail) - Explainer video style - Showing the recipe ingreidents + measurements as they're going into the cup. Should be a 30s video.

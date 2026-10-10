@@ -1,0 +1,29 @@
+{
+ "_source": "skill/storynow-aimovie-make/engine/ad/範例文本_小店開幕.md（虛構的晴窗咖啡書房開幕，所有廣告範本共用的示範文本）；畫面上的字都取自文本（OPEN 11.01＝11 月 1 日開幕；SEATS、BOOKS、BEANS 是座位、藏書、手沖豆的英文）。開始、已選、PRINT、RECEIPT、THANK YOU、設定、Ctrl+Z、載入中… 是範本的介面字",
+ "name": "晴窗咖啡書房_粗框醒目",
+ "chapters": [
+  {"type": "start", "title": "晴窗咖啡書房", "sub": "11 月 1 日（週六）綠川街 18 號開幕", "badge": "SUNNY WINDOW",
+   "en": "OPEN 11.01", "stickers": ["一杯咖啡的時間", "翻一本好書"], "tape": "★ 晴窗咖啡書房 SUNNY WINDOW ★ 綠川街 18 號 "},
+  {"type": "buttons", "head": "座位・藏書・手沖豆", "items": [
+   {"n": "48", "unit": "席", "en": "SEATS", "tip": "座位"},
+   {"n": "3000", "unit": "冊", "en": "BOOKS", "tip": "藏書"},
+   {"n": "12", "unit": "款", "en": "BEANS", "tip": "手沖豆"}
+  ]},
+  {"type": "checklist", "head": "三個區域", "items": ["一樓咖啡", "二樓選書", "窗邊甜點"]},
+  {"type": "counter", "head": "開幕週全品項", "n": "8", "unit": "折", "app": "opening.app",
+   "receipt": {"rows": [
+    {"label": "前 100 名", "value": "送手沖咖啡一杯"},
+    {"label": "會員", "value": "免費加入"},
+    {"label": "生日當月", "value": "再送一杯"}
+   ]},
+   "stamp": "開幕優惠"},
+  {"type": "settings", "head": "營業時間", "items": [
+   {"label": "每天 09:00～21:00", "word": "每天", "sub": "09:00～21:00", "icon": "clock"},
+   {"label": "週三公休", "word": "週三", "sub": "公休", "icon": "house"},
+   {"label": "預約座位", "word": "預約", "sub": "sunnywindow.example", "icon": "cup"}
+  ]},
+  {"type": "end", "slogan": "一杯咖啡的時間，翻一本好書", "name": "晴窗咖啡書房", "title": "SUNNY WINDOW",
+   "en": "SUNNY WINDOW", "full": "11 月 1 日（週六）綠川街 18 號開幕", "url": "sunnywindow.example", "tel": "(02) 2345-6789",
+   "tape": "預約座位 ★ sunnywindow.example ★ "}
+ ]
+}

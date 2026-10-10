@@ -1,0 +1,26 @@
+{
+ "_source": "skill engine/ad/範例文本_小店開幕.md（虛構的晴窗咖啡書房開幕）；畫面上的字都能在該文本找到，沒有編造數字或人名。電影片頭的包裝：片名＝店名，主演＝招牌飲品桂花拿鐵、人氣甜點伯爵茶戚風，票房＝開幕優惠；SUNNY 取自英文店名 SUNNY WINDOW；主演、STARRING、劇情大綱、SYNOPSIS、票房紀錄、BOX OFFICE、THE END 是範本的介面字",
+ "name": "晴窗咖啡書房_電影片頭",
+ "chapters": [
+  {"type": "title", "presents": "晴窗咖啡書房　出品", "presentsEn": "A SUNNY WINDOW PICTURE", "title": "晴窗", "en": "SUNNY WINDOW", "vertical": "一杯咖啡的時間"},
+  {"type": "cast", "items": [
+   {"name": "桂花拿鐵", "en": "SIGNATURE DRINK", "role": "招牌飲品", "hook": "一樓咖啡", "icon": "cup"},
+   {"name": "伯爵茶戚風", "en": "POPULAR DESSERT", "role": "人氣甜點", "hook": "窗邊甜點", "icon": "cake"}
+  ]},
+  {"type": "discs", "items": [
+   {"n": "48", "unit": "席", "label": "座位"},
+   {"n": "3000", "unit": "冊", "label": "藏書"},
+   {"n": "12", "unit": "款", "label": "手沖豆"}
+  ], "note": "三個區域一次逛完"},
+  {"type": "synopsis", "items": [
+   {"lines": ["一樓咖啡", "手沖豆 12 款"], "icon": "cup"},
+   {"lines": ["二樓選書", "翻一本好書"], "icon": "book"},
+   {"lines": ["窗邊甜點", "伯爵茶戚風"], "icon": "cake"}
+  ]},
+  {"type": "boxoffice", "tickets": [
+   {"label": "開幕優惠　前", "value": "100", "unit": "名", "foot": "送手沖咖啡一杯"},
+   {"label": "開幕週全品項", "value": "8", "unit": "折", "foot": "會員免費加入"}
+  ], "stamp": {"top": "生日當月", "big": "再送一杯"}},
+  {"type": "end", "badge": "SUNNY", "slogan": ["一杯咖啡的時間", "翻一本好書"], "full": "11 月 1 日（週六）綠川街 18 號開幕", "url": "sunnywindow.example　(02) 2345-6789", "after": "預約座位"}
+ ]
+}
