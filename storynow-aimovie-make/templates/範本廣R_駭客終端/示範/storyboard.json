@@ -1,0 +1,25 @@
+{
+ "_source": "skill engine/ad/範例文本_小店開幕.md（虛構的晴窗咖啡書房開幕）；畫面上的字與數字都出自該文本。指令（ls、tmux、cat、sudo、clear…）、PASS、OK、BUILD SUCCESS、ACCESS GRANTED、身分驗證等是範本的終端機介面字；主機名 sunnywindow 取自店名英文",
+ "name": "晴窗咖啡書房_駭客終端",
+ "chapters": [
+  {"type": "boot", "title": "晴窗咖啡書房", "ascii": "SUNNY WINDOW", "sub": "11 月 1 日（週六）綠川街 18 號開幕",
+   "bios": ["一樓咖啡", "二樓選書", "窗邊甜點", "座位 48 席", "藏書 3000 冊", "手沖豆 12 款"]},
+  {"type": "ls", "dir": "./sunnywindow/", "items": [
+    {"name": "一樓咖啡", "tag": "1F", "note": "招牌飲品：桂花拿鐵"},
+    {"name": "二樓選書", "tag": "2F", "note": "藏書 3000 冊"},
+    {"name": "窗邊甜點", "tag": "窗邊", "note": "人氣甜點：伯爵茶戚風"}],
+   "summary": "三個區域一次逛完"},
+  {"type": "tmux", "panes": [
+    {"label": "開幕優惠", "style": "list", "lines": ["開幕週全品項 8 折", "會員免費加入"], "star": "生日當月再送一杯"},
+    {"label": "招牌", "style": "tree", "lines": ["飲品：桂花拿鐵", "甜點：伯爵茶戚風"]},
+    {"label": "營業時間", "style": "log", "lines": ["每天 09:00～21:00", "週三公休"]},
+    {"label": "開幕", "style": "make", "lines": ["11 月 1 日（週六）", "綠川街 18 號"], "star": "OPEN"}]},
+  {"type": "cat", "file": "開幕.txt", "boxes": [
+    {"label": "座位", "pre": "座位", "n": "48", "unit": "席"},
+    {"label": "藏書", "pre": "藏書", "n": "3000", "unit": "冊"}],
+   "rows": [{"label": "手沖豆", "n": "12", "unit": "款"}, {"label": "開幕送手沖咖啡一杯", "n": "100", "unit": "名", "note": "# 前 100 名"}]},
+  {"type": "end", "join": "晴窗咖啡書房", "welcome": "歡迎光臨 晴窗咖啡書房", "sub": "預約座位：(02) 2345-6789",
+   "checks": ["11 月 1 日（週六）開幕", "綠川街 18 號", "會員免費加入"],
+   "slogan": "一杯咖啡的時間，翻一本好書", "full": "晴窗咖啡書房 · 綠川街 18 號", "url": "sunnywindow.example"}
+ ]
+}

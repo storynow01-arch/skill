@@ -1,0 +1,24 @@
+{
+ "_source": "skill engine/ad/範例文本_小店開幕.md（虛構的晴窗咖啡書房開幕）；畫面上的字都取自範例文本（OPEN＝開幕的英文）。MOTION REEL、MOTION DESIGN SHOW REEL、SHOWREEL、TYPE / DECONSTRUCT / REBUILD、GRID SYSTEM、8 種技法名是範本的介面字",
+ "name": "晴窗咖啡書房_技法巡禮",
+ "chapters": [
+  {"type": "open", "title": "晴窗咖啡書房", "mark": "SUNNY WINDOW", "kicker": "11 月 1 日（週六）・綠川街 18 號", "tag": "OPEN / 11.01"},
+  {"type": "type", "line1": "一杯咖啡", "line2": "一本好書", "hi": "咖啡書"},
+  {"type": "data", "panels": [
+   {"kind": "bars", "tag": "座位", "head": "一樓咖啡・二樓選書", "n": "48", "unit": "席"},
+   {"kind": "slot", "head": "二樓選書", "hi": "書", "n": "3000", "unit": "冊", "note": "藏書 3000 冊", "stamp": "書"},
+   {"kind": "dots", "tag": "手沖豆", "n": "12", "unit": "款"},
+   {"kind": "ring", "tag": "開幕優惠", "n": "8", "unit": "折", "head": "開幕週全品項"}
+  ]},
+  {"type": "grid", "head": "三個區域，一次逛完", "items": [
+   {"name": "一樓咖啡", "note": "桂花拿鐵"},
+   {"name": "二樓選書", "note": "藏書 3000 冊"},
+   {"name": "窗邊甜點", "note": "伯爵茶戚風"},
+   {"name": "每天 09:00～21:00", "note": "週三公休"},
+   {"name": "會員免費加入", "note": "生日當月再送一杯"},
+   {"name": "預約座位", "note": "sunnywindow.example"}
+  ]},
+  {"type": "logo", "name": "晴窗咖啡書房", "en": "SUNNY WINDOW — 11.01 OPEN", "slogan": "一杯咖啡的時間・翻一本好書",
+   "url": "sunnywindow.example", "tel": "(02) 2345-6789", "words": ["一杯咖啡", "的時間", "翻一本", "好書"]}
+ ]
+}

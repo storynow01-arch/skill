@@ -30,6 +30,8 @@
     {"code": "廣N", "dir": "範本廣N_數位故障", "type": "standalone", "kind": "ad", "name": "數位故障", "trigger": "廣N／數位故障／故障風廣告"},
     {"code": "廣O", "dir": "範本廣O_電影片頭", "type": "standalone", "kind": "ad", "name": "電影片頭", "trigger": "廣O／電影片頭／片頭字幕廣告"},
     {"code": "廣P", "dir": "範本廣P_粗框醒目", "type": "standalone", "kind": "ad", "name": "粗框醒目", "trigger": "廣P／粗框醒目／粗野主義廣告"},
+    {"code": "廣R", "dir": "範本廣R_駭客終端", "type": "standalone", "kind": "ad", "name": "駭客終端", "trigger": "廣R／駭客終端／終端機廣告"},
+    {"code": "廣S", "dir": "範本廣S_技法巡禮", "type": "standalone", "kind": "ad", "name": "技法巡禮", "trigger": "廣S／技法巡禮／動態設計作品集"},
     {"code": "info1", "dir": "資訊科範本1", "type": "standalone", "name": "資訊科範本1（活動說明＋資訊科宣傳片）", "trigger": "資訊科範本1",
      "legacy_name": true}
   ]
