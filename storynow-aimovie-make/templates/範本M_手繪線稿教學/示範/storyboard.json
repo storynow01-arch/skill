@@ -1,0 +1,241 @@
+{
+  "title": "範本M 示範",
+  "mode": "teach",
+  "snapBars": false,
+  "narrator": "皇小米",
+  "voice": {
+    "provider": "edge",
+    "name": "zh-TW-YunJheNeural",
+    "rate": "+15%",
+    "pitch": "+0Hz"
+  },
+  "lineGap": 0.15,
+  "lead": 0.15,
+  "tail": 0.25,
+  "pauseSec": 0.3,
+  "scenes": [
+    {
+      "id": "S1",
+      "type": "title",
+      "props": {
+        "eyebrow": "範本M",
+        "title": "手繪線稿教學",
+        "subtitle": "皇小米帶你學",
+        "en": "HAND-DRAWN LESSON"
+      },
+      "lines": [
+        "範本M，手繪線稿教學，皇小米帶你學。"
+      ]
+    },
+    {
+      "id": "S2",
+      "type": "scenario",
+      "props": {
+        "heading": "教學影片的煩惱",
+        "icon": "clock",
+        "pills": [
+          "畫面太單調",
+          "觀念講不清"
+        ],
+        "cueMap": [
+          0,
+          1
+        ]
+      },
+      "lines": [
+        "很多教學影片，畫面都很單調，",
+        "觀念也講不清楚。"
+      ]
+    },
+    {
+      "id": "S3",
+      "type": "definition",
+      "props": {
+        "label": "範本是什麼",
+        "bigText": "丟進文本就出片",
+        "highlight": "就出片",
+        "sideNotes": [
+          "線條一筆筆畫出",
+          "字幕自動對齊"
+        ],
+        "cueMap": [
+          0,
+          0
+        ],
+        "noteCues": [
+          1,
+          1
+        ]
+      },
+      "lines": [
+        "丟進文本就出片，",
+        "線條一筆筆畫出，字幕自動對齊。"
+      ]
+    },
+    {
+      "id": "S4",
+      "type": "cards",
+      "props": {
+        "heading": "三個步驟",
+        "cards": [
+          {
+            "icon": "document",
+            "title": "寫文本"
+          },
+          {
+            "icon": "gear",
+            "title": "選範本"
+          },
+          {
+            "icon": "rocket",
+            "title": "出影片"
+          }
+        ],
+        "cueMap": [
+          0,
+          0,
+          0
+        ]
+      },
+      "lines": [
+        "三個步驟：寫文本、選範本、出影片。"
+      ]
+    },
+    {
+      "id": "S5",
+      "type": "code",
+      "props": {
+        "heading": "跑跑看",
+        "file": "hello.py",
+        "code": [
+          "for i in range(3):",
+          "    print(\"Hello\", i)"
+        ],
+        "steps": [
+          {
+            "line": 0,
+            "vars": {
+              "i": 0
+            }
+          },
+          {
+            "line": 1,
+            "out": "Hello 0"
+          },
+          {
+            "line": 0,
+            "vars": {
+              "i": 1
+            }
+          },
+          {
+            "line": 1,
+            "out": "Hello 1"
+          },
+          {
+            "line": 0,
+            "vars": {
+              "i": 2
+            }
+          },
+          {
+            "line": 1,
+            "out": "Hello 2"
+          }
+        ]
+      },
+      "verify": [
+        {
+          "type": "code",
+          "lang": "python",
+          "src": "for i in range(3):\n    print(\"Hello\", i)",
+          "stdout": "Hello 0\nHello 1\nHello 2"
+        }
+      ],
+      "lines": [
+        "還能跑程式，",
+        "一行行執行，輸出和變數同步出現。"
+      ]
+    },
+    {
+      "id": "S6",
+      "type": "vs",
+      "props": {
+        "heading": "比一比",
+        "left": {
+          "frame": "danger",
+          "icon": "document",
+          "text": "照念投影片"
+        },
+        "right": {
+          "frame": "success",
+          "icon": "bulb",
+          "text": "畫面跟著講"
+        },
+        "cueMap": [
+          0,
+          1
+        ]
+      },
+      "lines": [
+        "與其照念投影片，",
+        "不如讓畫面跟著你講。"
+      ]
+    },
+    {
+      "id": "S7",
+      "type": "stat",
+      "props": {
+        "heading": "場景型別",
+        "value": "10",
+        "suffix": "種",
+        "label": "場景型別",
+        "sub": "皇小米每一場都在"
+      },
+      "lines": [
+        "一共有十種場景，",
+        "皇小米每一場都在。"
+      ]
+    },
+    {
+      "id": "S8",
+      "type": "quiz",
+      "props": {
+        "question": "範本M 的主角是誰",
+        "options": [
+          "皇小米",
+          "小助手",
+          "機器人"
+        ],
+        "answerIndex": 0,
+        "revealCue": 2,
+        "afterNote": "頻道主角皇小米"
+      },
+      "lines": [
+        "考考你，範本M 的主角是誰？",
+        "皇小米、小助手，還是機器人？",
+        "答案是，皇小米！"
+      ]
+    },
+    {
+      "id": "S9",
+      "type": "recap",
+      "props": {
+        "takeaway": [
+          "丟文本就出片",
+          "程式一行行跑",
+          "皇小米陪你學"
+        ],
+        "takeCues": [
+          0,
+          0,
+          1
+        ]
+      },
+      "lines": [
+        "丟文本就出片，",
+        "皇小米陪你學。"
+      ]
+    }
+  ]
+}

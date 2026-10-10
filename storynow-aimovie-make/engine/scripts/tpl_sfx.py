@@ -83,6 +83,19 @@ def whiteboard_sfx():
     write_mono('public/sfx_d/buzz.wav', y / np.max(np.abs(y)) * .4)
 
 
+def hand_sfx():
+    """範本M（手繪線稿教學）、範本N（行前通知），2026-10-10：畫面自己在事件那一格播的短音效 → public/sfx_m/*.wav"""
+    os.makedirs('public/sfx_m', exist_ok=True)
+    n = lambda s: int(s * SR)
+    k = n(.03); write_mono('public/sfx_m/type.wav', (M.sine(1300, k) * .6 + M.bp(M.noise(k), 2000, 4000) * .4) * M.ex(k, .005) * .5)
+    k = n(.04); write_mono('public/sfx_m/tick.wav', M.sine(2400, k) * M.ex(k, .008) * .5)
+    k = n(1.0); write_mono('public/sfx_m/ding.wav', (M.sine(1568, k) + .5 * M.sine(2093, k)) * M.ex(k, .35) * .45)
+    write_mono('public/sfx_m/buzz.wav', buzz() * 3.5)
+    write_mono('public/sfx_m/whoosh.wav', M.whoosh(.55) * .6)
+    k = n(.14); write_mono('public/sfx_m/pop.wav', np.sin(2 * np.pi * np.cumsum(np.linspace(500, 1100, k)) / SR) * M.ex(k, .04) * .5)
+    k = n(.35); write_mono('public/sfx_m/stamp.wav', M.lp(M.noise(k), 900) * M.ex(k, .05) * .9 + M.sine(70, k) * M.ex(k, .08) * .7)
+
+
 def main():
     tpl = (sys.argv[1] if len(sys.argv) > 1 else 'A').upper()
     spec = json.load(open('src/data/spec.json', encoding='utf-8'))
@@ -147,6 +160,8 @@ def main():
             if t0 > 0: put(M.whoosh(.5), t0 + 2, .6)
             for c in s['cues']: put(pop(), t0 + c, .8)
             if typ in ('title', 'stat', 'recap'): put(M.impact(.8), t0 + 8, .4)
+        elif tpl in ('M', 'N'):   # 手繪線稿教學、行前通知（2026-10-10）：每句旁白開始時物件「啵」；咻、打字、執行到哪一行的音效由 TemplateM 自己播（sfx_m/）
+            for c in s['cues']: put(pop(), t0 + c, .55)
         elif tpl == 'D':   # 白板手繪：逐筆音效由 TemplateD 播放，這裡只放換場 whoosh
             if t0 > 0: put(M.whoosh(.8), t0 - 4, .45)
         else:   # C 快剪
@@ -155,6 +170,7 @@ def main():
             if typ == 'stat': put(M.impact(1.4), t0 + 6, .9)
             if typ == 'quiz': put(M.impact(1.0), C(s, p.get('revealCue'), int(s['dur'] * .6)), .8)
     if tpl == 'D': whiteboard_sfx()
+    if tpl in ('M', 'N'): hand_sfx()
     st = np.stack([out, out])[:, :int(spec['totalFrames'] / FPS * SR)] * .9
     with wave.open('public/tpl_sfx.wav', 'wb') as w:
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes((np.clip(st, -1, 1).T * 32767).astype(np.int16).tobytes())

@@ -1,0 +1,311 @@
+{
+  "title": "程式設計：選擇結構",
+  "mode": "teach",
+  "snapBars": false,
+  "narrator": "皇小米",
+  "voice": {
+    "provider": "edge",
+    "name": "zh-TW-YunJheNeural",
+    "rate": "+8%",
+    "pitch": "+0Hz"
+  },
+  "lineGap": 0.22,
+  "lead": 0.25,
+  "tail": 0.45,
+  "pauseSec": 1.0,
+  "scenes": [
+    {
+      "id": "S1",
+      "type": "title",
+      "props": {
+        "eyebrow": "Python 第 3 課",
+        "title": "選擇結構",
+        "subtitle": "讓程式學會判斷",
+        "en": "IF ／ ELSE ／ ELIF"
+      },
+      "lines": [
+        "嗨，我是皇小米！今天來學選擇結構。"
+      ]
+    },
+    {
+      "id": "S2",
+      "type": "scenario",
+      "props": {
+        "heading": "出門前",
+        "icon": "cloud",
+        "pills": [
+          "下雨就帶傘",
+          "沒下雨就不帶",
+          "電腦怎麼判斷"
+        ],
+        "cueMap": [
+          1,
+          1,
+          2
+        ]
+      },
+      "lines": [
+        "出門前，你會先看一眼天空嗎？",
+        "下雨就帶傘，沒下雨就不帶。",
+        "那電腦怎麼判斷呢？"
+      ]
+    },
+    {
+      "id": "S3",
+      "type": "definition",
+      "props": {
+        "label": "選擇結構",
+        "bigText": "看情況做決定",
+        "highlight": "做決定",
+        "sideNotes": [
+          "條件成立才執行",
+          "不成立就跳過"
+        ],
+        "cueMap": [
+          0,
+          0
+        ],
+        "noteCues": [
+          1,
+          1
+        ]
+      },
+      "lines": [
+        "這種看情況做決定，就是選擇結構。",
+        "條件成立才執行，不成立就跳過。"
+      ]
+    },
+    {
+      "id": "S4",
+      "type": "code",
+      "props": {
+        "heading": "if 要不要做",
+        "file": "weather.py",
+        "code": [
+          "rain = True",
+          "if rain:",
+          "    print(\"帶傘\")",
+          "print(\"出門\")"
+        ],
+        "steps": [
+          {
+            "line": 0,
+            "vars": {
+              "rain": "True"
+            },
+            "cue": 0
+          },
+          {
+            "line": 1,
+            "ok": true,
+            "cue": 1
+          },
+          {
+            "line": 2,
+            "out": "帶傘",
+            "cue": 1
+          },
+          {
+            "line": 3,
+            "out": "出門",
+            "cue": 2
+          }
+        ]
+      },
+      "verify": [
+        {
+          "type": "code",
+          "lang": "python",
+          "src": "rain = True\nif rain:\n    print(\"帶傘\")\nprint(\"出門\")",
+          "stdout": "帶傘\n出門"
+        }
+      ],
+      "lines": [
+        "第一種，if。rain 是 True，",
+        "條件成立，就執行縮排裡的程式，帶傘，",
+        "然後出門。"
+      ]
+    },
+    {
+      "id": "S5",
+      "type": "code",
+      "props": {
+        "heading": "if else 二選一",
+        "file": "score.py",
+        "code": [
+          "score = 45",
+          "if score >= 60:",
+          "    print(\"及格\")",
+          "else:",
+          "    print(\"不及格\")"
+        ],
+        "steps": [
+          {
+            "line": 0,
+            "vars": {
+              "score": 45
+            },
+            "cue": 0
+          },
+          {
+            "line": 1,
+            "ok": false,
+            "cue": 1
+          },
+          {
+            "line": 3,
+            "cue": 2
+          },
+          {
+            "line": 4,
+            "out": "不及格",
+            "cue": 2
+          }
+        ]
+      },
+      "verify": [
+        {
+          "type": "code",
+          "lang": "python",
+          "src": "score = 45\nif score >= 60:\n    print(\"及格\")\nelse:\n    print(\"不及格\")",
+          "stdout": "不及格"
+        }
+      ],
+      "lines": [
+        "第二種，if else，二選一。分數四十五，",
+        "大於等於六十嗎？不成立，",
+        "就走 else，印出不及格。"
+      ]
+    },
+    {
+      "id": "S6",
+      "type": "code",
+      "props": {
+        "heading": "elif 多選一",
+        "file": "grade.py",
+        "code": [
+          "score = 85",
+          "if score >= 90:",
+          "    print(\"A\")",
+          "elif score >= 80:",
+          "    print(\"B\")",
+          "else:",
+          "    print(\"加油\")"
+        ],
+        "steps": [
+          {
+            "line": 0,
+            "vars": {
+              "score": 85
+            },
+            "cue": 0
+          },
+          {
+            "line": 1,
+            "ok": false,
+            "cue": 1
+          },
+          {
+            "line": 3,
+            "ok": true,
+            "cue": 2
+          },
+          {
+            "line": 4,
+            "out": "B",
+            "cue": 3
+          }
+        ]
+      },
+      "verify": [
+        {
+          "type": "code",
+          "lang": "python",
+          "src": "score = 85\nif score >= 90:\n    print(\"A\")\nelif score >= 80:\n    print(\"B\")\nelse:\n    print(\"加油\")",
+          "stdout": "B"
+        }
+      ],
+      "lines": [
+        "第三種，elif，多選一。分數八十五，",
+        "九十以上？不成立。",
+        "八十以上？成立！",
+        "印出 B，後面的就全部跳過。"
+      ]
+    },
+    {
+      "id": "S7",
+      "type": "cards",
+      "props": {
+        "heading": "三種怎麼選",
+        "cards": [
+          {
+            "icon": "checklist",
+            "title": "if",
+            "note": "要不要做"
+          },
+          {
+            "icon": "shuffle",
+            "title": "if else",
+            "note": "二選一"
+          },
+          {
+            "icon": "network",
+            "title": "elif",
+            "note": "多選一"
+          }
+        ],
+        "cueMap": [
+          0,
+          1,
+          1
+        ]
+      },
+      "lines": [
+        "記住，if 是要不要做，",
+        "if else 是二選一，elif 是多選一。"
+      ]
+    },
+    {
+      "id": "S8",
+      "type": "quiz",
+      "props": {
+        "question": "分數 75 會印出什麼",
+        "options": [
+          "A",
+          "B",
+          "加油"
+        ],
+        "answerIndex": 2,
+        "revealCue": 2,
+        "afterNote": "兩個條件都不成立就走 else"
+      },
+      "lines": [
+        "考考你，分數七十五，會印出什麼？",
+        "A、B，還是加油？",
+        "答案是加油，兩個條件都不成立，就走 else。"
+      ]
+    },
+    {
+      "id": "S9",
+      "type": "recap",
+      "props": {
+        "takeaway": [
+          "if 要不要做",
+          "if else 二選一",
+          "elif 多選一"
+        ],
+        "takeCues": [
+          0,
+          0,
+          0
+        ],
+        "nextTeaser": "迴圈",
+        "nextCue": 1
+      },
+      "lines": [
+        "if 要不要做，if else 二選一，elif 多選一。",
+        "下一課，我們來學迴圈！"
+      ]
+    }
+  ]
+}

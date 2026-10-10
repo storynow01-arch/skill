@@ -36,6 +36,8 @@ metadata:
 | 「範本J」「地圖風」「地圖範本」 | 照 [`templates/範本J_地圖風/README.md`](templates/範本J_地圖風/README.md)：任何文本 → 地圖風（一張羊皮紙探索地圖，每個場景是一站：紅色虛線路線一站站畫過去、圖釘落下、墨線水彩地標、註記卡與蠟封章，回顧時重畫走過的路）；共用 9 種場景，`make_video.py storyboard.json --template J`（同一套品質關卡） |
 | 「範本K」「宇宙風」「宇宙範本」 | 照 [`templates/範本K_宇宙風/README.md`](templates/範本K_宇宙風/README.md)：任何文本 → 宇宙風（太空船星際航行，每個場景是一顆星體：航行星點拉光線、HUD 鎖定 LOCKED、全像資料面板逐行出現、片尾星圖）；共用 9 種場景，`make_video.py storyboard.json --template K`（同一套品質關卡） |
 | 「範本L」「黏土玩具風」「黏土範本」 | 照 [`templates/範本L_黏土玩具風/README.md`](templates/範本L_黏土玩具風/README.md)：任何文本 → 黏土玩具風（暖米白桌面攝影棚＋黏土玩具實景、立體字、章節膠囊、翻頁捲角、深色膠囊字幕；**固定主角是使用者畫的捲毛小狗**）；共用 9 種場景，`make_video.py storyboard.json --template L`（同一套品質關卡） |
+| 「範本M」「手繪線稿」「線稿教學」「皇小米範本」 | 照 [`templates/範本M_手繪線稿教學/README.md`](templates/範本M_手繪線稿教學/README.md)：任何文本 → 米白紙手繪線稿教學（黑色粗線稿＋磚紅點綴、標題粗明體逐字模糊淡入、線稿圖示一筆筆畫出、右下淡金色巨大章節數字、白底黑框字幕），固定主角頻道的**皇小米**（沒有燈泡天線）每場都在；共用 9 種場景＋範本M 專用 `code` 程式執行場景（打字、高亮執行到哪一行、輸出與變數同步、成立打勾不成立打叉，加 `verify` 讓 A1 實際執行比對）；`make_video.py storyboard.json --template M`（同一套品質關卡） |
+| 「範本N」「行前通知」「活動通知影片」「研習通知影片」 | 照 [`templates/範本N_行前通知/README.md`](templates/範本N_行前通知/README.md)：行前通知、活動與研習說明 → 和範本M 同一套手繪線稿與主角皇小米，多 7 種行前通知場景：`when` 桌曆翻頁＋時鐘跑到結束＋時數章、`drive` 俯視地圖開車進校門停進指定停車場（追蹤框、警衛對話、柵欄升起）、`walk` 校園步行路線（皇小米沿紅色虛線走）、`building` 搭電梯上樓＋簽到簽退、`seats` 教室座位亮到名額、`steps` 流程節點＋方格進度、`stamp` 文件蓋章＋注意事項；也可用範本M 的 10 種場景；`make_video.py storyboard.json --template N`（同一套品質關卡）。畫面上的字只能用通知裡有的資訊 |
 | 「廣A」「一個形狀不剪接」「UI 動態廣告」 | 照 [`templates/範本廣A_一個形狀不剪接/README.md`](templates/範本廣A_一個形狀不剪接/README.md)：**廣告範本（無旁白）**，任何文本 → 一個圓角形狀從頭到尾不剪接、游標驅動變形成按鈕／播放器／開關／分頁／圖表／⌘K／通知；照 README「內容欄位」寫 `storyboard.json`（狀態可任意排列、省略），`python engine/ad/make_ad.py 廣A <專案>` 一行出片，片長依內容伸縮。文本怎麼拆、太多太少怎麼辦見 [`references/廣告範本工作流.md`](references/廣告範本工作流.md) |
 | 「廣B」「日報號外」「報紙廣告」「號外風」 | 照 [`templates/範本廣B_日報號外/README.md`](templates/範本廣B_日報號外/README.md)：**廣告範本（無旁白）**，任何文本 → 深夜趕印號外：印刷機吐報、號外章蓋下、鏡頭在大報紙上讀頭條（打字機）與 2～4 個專欄（圖示統計／圓餅／打勾清單／分類廣告，可省略），翻到第二版、摺報丟上報紙堆、背面大名；紅鉛筆是主角。照 README「內容欄位」寫 `storyboard.json`，`python engine/ad/make_ad.py 廣B <專案>` 一行出片 |
 | 「廣C」「機密檔案」「偵探牆」「任務檔案」 | 照 [`templates/範本廣C_機密檔案/README.md`](templates/範本廣C_機密檔案/README.md)：**廣告範本（無旁白）**，任何文本 → 俯拍木桌上的機密檔案：極機密章、撕封條、文件攤成偵探牆（任務簡報打字＋紅筆圈、抽象地圖航線、拍立得與便利貼線索、裝備清單打勾，地圖／線索／清單可省略），最後蓋下「核准」大印章、檔案闔上；紅桿鋼筆是主角、冷爵士配樂。照 README「內容欄位」寫 `storyboard.json`，`python engine/ad/make_ad.py 廣C <專案>` 一行出片 |
@@ -118,6 +120,8 @@ templates/範本I_漫畫風/    漫畫風（共用 make_video、共用 9 種場�
 templates/範本J_地圖風/    地圖風（共用 make_video、共用 9 種場景；元件 engine/template/src/lib/map/（kit、world、icons）、渲染器 tpl/TemplateJ.tsx）、示範片、9 場景完整測試分鏡、完整版提示詞
 templates/範本K_宇宙風/    宇宙風（共用 make_video、共用 9 種場景；元件 engine/template/src/lib/cosmos/（kit、icons）、渲染器 tpl/TemplateK.tsx）、示範片、9 場景完整測試分鏡、完整版提示詞
 templates/範本L_黏土玩具風/  黏土玩具風（共用 make_video、共用 9 種場景；元件 engine/template/src/lib/clay/（kit、pup＝固定主角小狗、props、objects、icons）、渲染器 tpl/TemplateL.tsx）、示範片、9 場景完整測試分鏡、完整版提示詞；
+templates/範本M_手繪線稿教學/  手繪線稿教學（共用 make_video、共用 9 種場景＋code；元件 engine/template/src/lib/hand/（kit＝配色／字模糊淡入／線條畫出／視窗／打勾打叉／震動線／印章／線稿圖示、mascot＝皇小米）、渲染器 tpl/TemplateM.tsx）、示範片、選擇結構完整測試分鏡、完整版提示詞
+templates/範本N_行前通知/  行前通知（共用 make_video；範本M 的 10 種場景＋7 種行前通知場景；渲染器 tpl/TemplateN.tsx（外框用 TemplateM.tsx 的 makeHandTemplate、元件 lib/hand/））、30 秒示範片、60 秒完整版分鏡（9/30 研習行前通知）、完整版提示詞
                    範本I～L 的數字往上數共用 lib/rollnum.tsx（舊數字往上滑出淡出、新的從下滑入淡入）
 templates/範本廣A_一個形狀不剪接/  廣告範本（無旁白、自帶產線）：engine（timeline.py＝欄位檢查＋依內容排時間表、music.py＝配樂與 UI 音效、remotion/src＝畫面），示範片、完整版提示詞
 templates/範本廣B_日報號外/  廣告範本（無旁白、自帶產線）：engine（timeline.py、music.py、remotion/src＝Ad.tsx 鏡頭鉛筆印刷機翻頁摺報＋pages.tsx 版面＋halftone.tsx 網點照片），示範片、完整版提示詞

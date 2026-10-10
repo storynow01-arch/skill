@@ -32,6 +32,8 @@ TPL = {
     'J': {'name': '地圖風', 'dir': '範本J_地圖風', 'music': {'genre': 'acoustic', 'bpm': 120, 'key': 'G'}},
     'K': {'name': '宇宙風', 'dir': '範本K_宇宙風', 'music': {'genre': 'minimal', 'bpm': 120, 'key': 'Am'}},
     'L': {'name': '黏土玩具風', 'dir': '範本L_黏土玩具風', 'music': {'genre': 'marimba', 'bpm': 120, 'key': 'F'}},
+    'M': {'name': '手繪線稿教學', 'dir': '範本M_手繪線稿教學', 'music': {'genre': 'pianopulse', 'bpm': 96, 'key': 'F'}},   # 2026-10-10：lofi 會加黑膠劈啪聲，使用者聽成雜音
+    'N': {'name': '行前通知', 'dir': '範本N_行前通知', 'music': {'genre': 'pianopulse', 'bpm': 96, 'key': 'F'}},
 }
 
 

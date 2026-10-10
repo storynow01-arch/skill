@@ -217,6 +217,8 @@ def check(sb, rec):
                     val = int(str(v['value']), int(v['from']))
                     if val != int(str(v['result']), int(v['to'])):
                         rec.problem('A3.算錯', sid, f'{v["value"]}（{v["from"]} 進位）= {val}（10 進位），畫面寫 {v["result"]}（{v["to"]} 進位）', sc)
+                elif kind == 'code':   # 程式碼由 A1 code_check.py 實際執行驗證（2026-10-10：原本這裡會把它當成不認得而擋下）
+                    continue
                 else:
                     rec.problem('A3.算錯', sid, f'不認得的 verify 類型「{kind}」', sc)
             except (ValueError, KeyError, SyntaxError, ZeroDivisionError) as e:

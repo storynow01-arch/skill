@@ -1,0 +1,163 @@
+{
+  "title": "範本N 示範",
+  "_source": "旁白介紹範本N；場景內容取自 00_素材/研習通知和廣告/行前通知_教師AI程式設計增能研習_9月30日.pdf",
+  "mode": "teach",
+  "snapBars": false,
+  "narrator": "皇小米",
+  "voice": {
+    "provider": "edge",
+    "name": "zh-TW-HsiaoChenNeural",
+    "rate": "+14%",
+    "pitch": "+0Hz"
+  },
+  "lineGap": 0.15,
+  "lead": 0.15,
+  "tail": 0.25,
+  "pauseSec": 0.3,
+  "scenes": [
+    {
+      "id": "S1",
+      "type": "title",
+      "props": {
+        "eyebrow": "範本N",
+        "title": "行前通知",
+        "subtitle": "皇小米幫你提醒",
+        "en": "BEFORE YOU GO"
+      },
+      "lines": [
+        "範本N，行前通知，皇小米幫你提醒。"
+      ]
+    },
+    {
+      "id": "S2",
+      "type": "when",
+      "props": {
+        "heading": "什麼時候",
+        "month": "115 年 9 月",
+        "day": "30",
+        "weekday": "星期三",
+        "start": "12:10",
+        "end": "15:10",
+        "stamp": "研習時數\n3 小時",
+        "cueMap": [
+          0
+        ]
+      },
+      "lines": [
+        "九月三十日星期三，時間一眼看清楚。"
+      ]
+    },
+    {
+      "id": "S3",
+      "type": "drive",
+      "props": {
+        "heading": "怎麼來",
+        "building": "電子大樓",
+        "lot": "指定停車場",
+        "guard": "警衛室",
+        "say": "來參加研習的！",
+        "cueMap": [
+          0
+        ]
+      },
+      "lines": [
+        "開車進校門、停進指定停車場，畫給你看。"
+      ]
+    },
+    {
+      "id": "S4",
+      "type": "walk",
+      "props": {
+        "heading": "怎麼走",
+        "from": "校門",
+        "to": "電子大樓",
+        "cueMap": [
+          0
+        ]
+      },
+      "lines": [
+        "從校門走到電子大樓，路線一路畫出來。"
+      ]
+    },
+    {
+      "id": "S5",
+      "type": "building",
+      "props": {
+        "heading": "在哪裡",
+        "name": "電子大樓",
+        "floors": 3,
+        "floor": 3,
+        "room": "實習工場 3F",
+        "checks": [
+          "簽到",
+          "簽退"
+        ],
+        "cueMap": [
+          0
+        ]
+      },
+      "lines": [
+        "搭電梯到實習工場三樓，簽到簽退打勾。"
+      ]
+    },
+    {
+      "id": "S6",
+      "type": "seats",
+      "props": {
+        "heading": "名額",
+        "limit": 30,
+        "label": "限 30 名",
+        "podium": "講台",
+        "cueMap": [
+          0
+        ]
+      },
+      "lines": [
+        "名額三十位，座位一格格亮起。"
+      ]
+    },
+    {
+      "id": "S7",
+      "type": "steps",
+      "props": {
+        "heading": "流程",
+        "title": "當日流程",
+        "items": [
+          {
+            "icon": "person",
+            "title": "開場"
+          },
+          {
+            "icon": "laptop",
+            "title": "實作"
+          },
+          {
+            "icon": "clock",
+            "title": "休息"
+          },
+          {
+            "icon": "network",
+            "title": "座談"
+          }
+        ]
+      },
+      "lines": [
+        "開場、實作、休息、座談，流程一步步亮起。"
+      ]
+    },
+    {
+      "id": "S8",
+      "type": "stamp",
+      "props": {
+        "heading": "注意",
+        "doc": "學生名冊",
+        "stamp": "模擬\n資料",
+        "warn": "請勿使用",
+        "em": "真實個資"
+      },
+      "lines": [
+        "注意事項蓋章提醒：請勿使用真實個資。"
+      ]
+    }
+  ]
+}

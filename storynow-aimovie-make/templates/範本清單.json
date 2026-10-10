@@ -14,6 +14,8 @@
     {"code": "J", "dir": "範本J_地圖風", "type": "shared", "name": "地圖風", "trigger": "範本J／地圖風／地圖範本"},
     {"code": "K", "dir": "範本K_宇宙風", "type": "shared", "name": "宇宙風", "trigger": "範本K／宇宙風／宇宙範本"},
     {"code": "L", "dir": "範本L_黏土玩具風", "type": "shared", "name": "黏土玩具風", "trigger": "範本L／黏土玩具風／黏土範本"},
+    {"code": "M", "dir": "範本M_手繪線稿教學", "type": "shared", "name": "手繪線稿教學", "trigger": "範本M／手繪線稿／線稿教學／皇小米範本"},
+    {"code": "N", "dir": "範本N_行前通知", "type": "shared", "name": "行前通知", "trigger": "範本N／行前通知／活動通知影片／研習通知影片"},
     {"code": "廣A", "dir": "範本廣A_一個形狀不剪接", "type": "standalone", "kind": "ad", "name": "一個形狀不剪接", "trigger": "廣A／一個形狀不剪接／UI 動態廣告"},
     {"code": "廣B", "dir": "範本廣B_日報號外", "type": "standalone", "kind": "ad", "name": "日報號外", "trigger": "廣B／日報號外／報紙廣告／號外風"},
     {"code": "廣C", "dir": "範本廣C_機密檔案", "type": "standalone", "kind": "ad", "name": "機密檔案", "trigger": "廣C／機密檔案／偵探牆／任務檔案"},
