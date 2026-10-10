@@ -1,0 +1,7 @@
+{
+  "name": "record-mask",
+  "version": "0.1.0",
+  "description": "錄影遮罩：/record 開關，畫面上我打的訊息、Claude 的回答、指令與工具結果裡的 email、API key、電話號碼換成遮罩（只改畫面，不改 Claude 讀到的內容）",
+  "types": "./types/index.d.ts",
+  "author": { "name": "storynow01-arch" }
+}

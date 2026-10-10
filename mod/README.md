@@ -6,6 +6,13 @@
 |---|---|
 | `token-meter` | 輸入框上方一列：上下文／5 小時／7 天用量數字＋進度條＋本次花費；`/token` 切換 |
 | `task-dashboard` | 輸入框上方一列：只列執行中的專案、全部進度百分比、預計完成時間；`/dashboard` 開完整面板。掃描 `~/.claude/projects` 對話紀錄（只讀，需要 Python `py`）；專案用 `.claude/dashboard.json` 設定（見下） |
+| `edit-guard` | 多個對話改同一個檔案時先問：每次 Write／Edit／NotebookEdit 成功後，把檔名、時間、對話 ID、專案資料夾記到 `~/.claude/edit-ledger.json`（所有對話共用，只留 30 分鐘）；寫檔前發現 30 分鐘內別的對話改過同一個檔案，跳出對話框問「繼續寫入／取消」。只管這三個工具，用 Bash 寫檔不會被記錄或攔下 |
+| `record-mask` | `/record` 開關錄影遮罩：我打的訊息、Claude 的回答、指令與工具結果裡的 email、API key、電話號碼換成遮罩（狀態列顯示「● 錄影遮罩中」）；只改畫面，Claude 讀到的內容不變。不遮輸入框裡正在打的字、狀態列與面板 |
+| `handoff-button` | 上下文用到 70% 時，輸入框上方出現「交接（收工）」按鈕；按下送出「收工…」，照 `shift-log` skill 寫交接文件（不 commit） |
+
+三個新 mod 都在系統提示加一段說明（`prompt.compose`），之後開的每個對話都知道它們的行為。
+
+**這台電腦（storynow）的裝法**：三個新 mod 另外放在使用者資料夾的本機市集 `C:\Users\storynow\claude-mods`（`storynow-local-mods`，user 範圍安裝、直接讀那個資料夾）；這裡是同一份的倉庫備份，改版時兩邊同步。其他電腦照下面裝法用 `storynow-mods` 安裝即可。
 
 ## 安裝（每台電腦做一次）—— 建議：直接讀本機的 skill 資料夾
 
@@ -15,9 +22,12 @@
 /plugin marketplace add D:\claude\skill-push
 /plugin install token-meter@storynow-mods
 /plugin install task-dashboard@storynow-mods
+/plugin install edit-guard@storynow-mods
+/plugin install record-mask@storynow-mods
+/plugin install handoff-button@storynow-mods
 ```
 
-之前從 GitHub 裝過的，先 `/plugin marketplace remove storynow-mods` 再做上面三行。
+之前從 GitHub 裝過的，先 `/plugin marketplace remove storynow-mods` 再做上面幾行。
 
 **之後更新**：在 skill 資料夾 `git pull`，開新對話就是最新版（不用 marketplace update、不用重新下載）。
 `/plugin list` 會顯示 `Read from: D:\claude\skill-push\mod\…` 表示是讀本機資料夾。

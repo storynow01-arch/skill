@@ -1,0 +1,7 @@
+{
+  "name": "handoff-button",
+  "version": "0.1.0",
+  "description": "交接按鈕：上下文用到七成時輸入框上方出現「交接（收工）」按鈕，按下送出「收工」，照 shift-log skill 完成交接文件",
+  "types": "./types/index.d.ts",
+  "author": { "name": "storynow01-arch" }
+}

@@ -16,6 +16,21 @@
       "name": "task-dashboard",
       "source": "./mod/task-dashboard",
       "description": "輸入框上方一列：執行中的專案與工作清單進度；/dashboard 開完整面板"
+    },
+    {
+      "name": "edit-guard",
+      "source": "./mod/edit-guard",
+      "description": "多個對話改同一個檔案時先問：寫檔後記檔名、時間、對話 ID（共用、留 30 分鐘），寫檔前 30 分鐘內別的對話改過就停下來問"
+    },
+    {
+      "name": "record-mask",
+      "source": "./mod/record-mask",
+      "description": "/record 錄影遮罩：畫面上的 email、API key、電話號碼換成遮罩，只改畫面"
+    },
+    {
+      "name": "handoff-button",
+      "source": "./mod/handoff-button",
+      "description": "上下文用到七成時輸入框上方出現「交接（收工）」按鈕，照 shift-log skill 完成交接文件"
     }
   ]
 }
