@@ -1,0 +1,5 @@
+來源：skillry.dev 熱門提示詞第 7 名 @deedydas（Explainers，26 秒，讚 3,269、觀看 348,247、書籤 4,695；2026-10-09 依原推文按讚數排名，513 支裡第 7 名）https://skillry.dev/ai-videos/opus-5-5/deedydas-252537
+（逐字保存；原頁面的提示詞只有下面兩行，第二行 GSAP 是原作者指定的動畫函式庫；本機「熱門 H3 新創公司快剪」與這個範本改用 Remotion＋numpy 配樂）
+
+make a modern slick and punchy video for a modern startup that works on inference
+GSAP

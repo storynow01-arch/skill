@@ -1,0 +1,16 @@
+{
+ "_source": "skill/engine/ad/範例文本_小店開幕.md（虛構的晴窗咖啡書房開幕，所有廣告範本共用的示範文本）",
+ "name": "晴窗咖啡書房_點線面",
+ "title": "晴窗咖啡書房　開幕",
+ "head": {"kicker": "SUNNY WINDOW　綠川街 18 號", "line": "11 月 1 日，晴窗開幕。", "ask": "三個區域，一次逛完。"},
+ "line": {"object": "cup", "label": "一樓咖啡", "note": "招牌飲品：桂花拿鐵"},
+ "plane": {"object": "book", "label": "二樓選書", "note": "藏書 3000 冊"},
+ "solid": {"object": "shop", "label": "座位 48 席", "note": "窗邊甜點：伯爵茶戚風"},
+ "film": {"wide": "開幕週　全品項 8 折", "title": "開幕優惠", "sub": "前 100 名送手沖咖啡一杯", "words": ["會員免費", "生日再送"]},
+ "end": {
+  "name": "晴窗咖啡書房",
+  "sub": "每天 09:00～21:00・週三公休",
+  "slogan": "一杯咖啡的時間，翻一本好書。",
+  "url": "sunnywindow.example"
+ }
+}

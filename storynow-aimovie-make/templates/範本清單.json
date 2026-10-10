@@ -22,6 +22,10 @@
     {"code": "廣F", "dir": "範本廣F_職人食譜", "type": "standalone", "kind": "ad", "name": "職人食譜", "trigger": "廣F／職人食譜／食譜廣告"},
     {"code": "廣G", "dir": "範本廣G_證書的旅程", "type": "standalone", "kind": "ad", "name": "證書的旅程", "trigger": "廣G／證書的旅程／繪本蓋章廣告"},
     {"code": "廣H", "dir": "範本廣H_晶片之旅", "type": "standalone", "kind": "ad", "name": "晶片之旅", "trigger": "廣H／晶片之旅／電路城市廣告"},
+    {"code": "廣I", "dir": "範本廣I_點線面", "type": "standalone", "kind": "ad", "name": "點線面", "trigger": "廣I／點線面／升維廣告"},
+    {"code": "廣J", "dir": "範本廣J_寵物直播", "type": "standalone", "kind": "ad", "name": "寵物直播", "trigger": "廣J／寵物直播／直播帶貨廣告"},
+    {"code": "廣K", "dir": "範本廣K_紅點作品集", "type": "standalone", "kind": "ad", "name": "紅點作品集", "trigger": "廣K／紅點作品集／作品集快剪"},
+    {"code": "廣L", "dir": "範本廣L_新創快剪", "type": "standalone", "kind": "ad", "name": "新創快剪", "trigger": "廣L／新創快剪／產品發表廣告"},
     {"code": "info1", "dir": "資訊科範本1", "type": "standalone", "name": "資訊科範本1（活動說明＋資訊科宣傳片）", "trigger": "資訊科範本1",
      "legacy_name": true}
   ]

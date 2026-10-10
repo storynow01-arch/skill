@@ -1,0 +1,25 @@
+{
+ "_source": "skill/engine/ad/範例文本_小店開幕.md（虛構的晴窗咖啡書房開幕，所有廣告範本共用的示範文本）",
+ "name": "晴窗咖啡書房_寵物直播",
+ "title": "晴窗咖啡書房",
+ "products": [
+  {"icon": "cup", "name": "桂花拿鐵", "price": "招牌飲品"},
+  {"icon": "cake", "name": "伯爵茶戚風", "price": "人氣甜點"}
+ ],
+ "reveal": {"pre": "這間店是", "name": "晴窗咖啡書房", "post": "11 月 1 日開幕！", "tag": "綠川街 18 號"},
+ "keywords": [
+  {"icon": "cup", "word": "一樓咖啡"},
+  {"icon": "book", "word": "二樓選書"},
+  {"icon": "cake", "word": "窗邊甜點"}
+ ],
+ "shows": [
+  {"kind": "ticket", "top": "開幕週", "main": "全品項", "big": "8 折"}
+ ],
+ "comments": ["想喝桂花拿鐵", "11 月 1 日見", "想去晴窗"],
+ "end": {
+  "name": "晴窗咖啡書房",
+  "sub": "11 月 1 日開幕",
+  "slogan": "一杯咖啡的時間，翻一本好書。",
+  "url": "sunnywindow.example"
+ }
+}
