@@ -1,0 +1,13 @@
+{
+ "_source": "skill/engine/ad/範例文本_小店開幕.md（虛構的晴窗咖啡書房開幕，所有廣告範本共用的示範文本）",
+ "name": "晴窗咖啡書房_晶片之旅",
+ "board": {"top": "晴窗咖啡書房", "bottom": "SUNNY WINDOW"},
+ "chip": {"lines": ["11 月 1 日（週六）", "綠川街 18 號開幕"], "code": "SUNNY WINDOW"},
+ "towers": ["一樓咖啡", "二樓選書", "窗邊甜點", "座位 48 席"],
+ "drop": ["開幕週", "全品項 8 折"],
+ "end": {
+  "name": "晴窗咖啡書房",
+  "slogan": ["一杯咖啡的時間", "翻一本好書"],
+  "url": "sunnywindow.example"
+ }
+}

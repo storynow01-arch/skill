@@ -18,6 +18,10 @@
     {"code": "廣B", "dir": "範本廣B_日報號外", "type": "standalone", "kind": "ad", "name": "日報號外", "trigger": "廣B／日報號外／報紙廣告／號外風"},
     {"code": "廣C", "dir": "範本廣C_機密檔案", "type": "standalone", "kind": "ad", "name": "機密檔案", "trigger": "廣C／機密檔案／偵探牆／任務檔案"},
     {"code": "廣D", "dir": "範本廣D_電視購物台", "type": "standalone", "kind": "ad", "name": "電視購物台", "trigger": "廣D／電視購物台／購物台廣告／綜藝廣告"},
+    {"code": "廣E", "dir": "範本廣E_一鏡到底", "type": "standalone", "kind": "ad", "name": "一鏡到底", "trigger": "廣E／一鏡到底廣告／色鉛筆一鏡到底"},
+    {"code": "廣F", "dir": "範本廣F_職人食譜", "type": "standalone", "kind": "ad", "name": "職人食譜", "trigger": "廣F／職人食譜／食譜廣告"},
+    {"code": "廣G", "dir": "範本廣G_證書的旅程", "type": "standalone", "kind": "ad", "name": "證書的旅程", "trigger": "廣G／證書的旅程／繪本蓋章廣告"},
+    {"code": "廣H", "dir": "範本廣H_晶片之旅", "type": "standalone", "kind": "ad", "name": "晶片之旅", "trigger": "廣H／晶片之旅／電路城市廣告"},
     {"code": "info1", "dir": "資訊科範本1", "type": "standalone", "name": "資訊科範本1（活動說明＋資訊科宣傳片）", "trigger": "資訊科範本1",
      "legacy_name": true}
   ]

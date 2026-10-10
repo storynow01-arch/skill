@@ -19,6 +19,10 @@ const TEMPLATES = [
   ['範本廣B_', 'ad-b'],
   ['範本廣C_', 'ad-c'],
   ['範本廣D_', 'ad-d'],
+  ['範本廣E_', 'ad-e'],
+  ['範本廣F_', 'ad-f'],
+  ['範本廣G_', 'ad-g'],
+  ['範本廣H_', 'ad-h'],
 ];
 // README 抓不到「適合／觸發」時用這裡（範本E、資訊科範本1 的 README 格式不同）
 const FALLBACK = {
